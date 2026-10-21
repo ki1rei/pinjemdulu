@@ -369,3 +369,28 @@ export async function createPeminjaman({
 
   return peminjamanBaru;
 }
+
+
+/**
+ * Perbarui status peminjaman pada store mock (khusus simulasi frontend).
+ * @param {string|number} id
+ * @param {string} status
+ */
+export async function updateMockPeminjamanStatus(id, status) {
+  await delay(80);
+  const allowed = [STATUS_PEMINJAMAN.DISETUJUI, STATUS_PEMINJAMAN.DITOLAK];
+  if (!allowed.includes(status)) throw new Error('Status tujuan tidak didukung.');
+  const row = mockPeminjaman.find((item) => String(item.id) === String(id) || String(item.idPeminjaman) === String(id));
+  if (!row) throw new Error('Data peminjaman tidak ditemukan.');
+  if (!(row.status === STATUS_PEMINJAMAN.DIAJUKAN || String(row.status).toLowerCase() === 'diajukan')) {
+    throw new Error('Hanya pengajuan berstatus Diajukan yang dapat diproses.');
+  }
+  row.status = status;
+  try {
+    store.save(PEMINJAMAN_STORE_KEY, mockPeminjaman);
+  } catch (error) {
+    // Penyimpanan lokal bersifat tambahan untuk demo; perubahan store memory tetap berlaku.
+    if (!store.isQuotaExceededError(error)) throw error;
+  }
+  return row;
+}
