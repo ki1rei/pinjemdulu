@@ -184,8 +184,8 @@ export function getPageTitle(hash = '') {
   if (clean === '#/kelola/pengembalian') return { title: 'Kelola Pengembalian', icon: 'Sliders' };
   if (clean === '#/kelola/pengajuan-pj') return { title: 'List Pengajuan PJ', icon: 'Sliders' };
   if (clean === '#/kelola/pengguna') return { title: 'Kelola Pengguna', icon: 'Sliders' };
-  if (clean === '#/pengajuan-saya/peminjaman') return { title: 'Peminjaman', icon: 'HandCoins' };
-  if (clean === '#/pengajuan-saya/pengembalian') return { title: 'Pengembalian', icon: 'HandCoins' };
+  if (clean === '#/pengajuan-saya/peminjaman') return { title: 'Pengajuan Saya', icon: 'HandCoins' };
+  if (clean === '#/pengajuan-saya/pengembalian') return { title: 'Pengajuan Saya', icon: 'HandCoins' };
   if (clean === '#/pengajuan-pj') return { title: 'Pengajuan PJ', icon: 'UserRoundPlus' };
   if (clean === '#/tata-tertib') return { title: 'Tata Tertib', icon: 'FileText' };
   if (clean === '#/login') return { title: 'Masuk', icon: null };
