@@ -79,7 +79,7 @@ export function render(ctx = {}) {
               <p class="mb-2 text-sm font-medium text-zinc-500">
                 Selamat Datang Kembali!
               </p>
-              <h1 class="mb-2 text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-[32px]">
+              <h1 class="mb-2 text-3xl font-semibold tracking-[0] text-zinc-900 sm:text-[32px] leading-[1.4]">
                 Siap mengelola atau meminjam?
               </h1>
               <p class="text-sm leading-6 text-zinc-500">
