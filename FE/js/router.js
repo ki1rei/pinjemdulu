@@ -8,6 +8,7 @@ import * as InventarisPage from './pages/inventaris.js';
 import * as DetailPage from './pages/detail.js';
 import * as KelolaInventarisPage from './pages/kelola-inventaris.js';
 import * as KelolaPeminjamanPage from './pages/kelola-peminjaman.js';
+import * as KelolaPengembalianPage from './pages/kelola-pengembalian.js';
 import * as KelolaInventarisFormPage from './pages/kelola-inventaris-form.js';
 import * as KelolaKategoriPage from './pages/kelola-kategori.js';
 import * as AjukanPage from './pages/ajukan.js';
@@ -26,6 +27,7 @@ const MODULES = {
   pengembalian: PengembalianPage,
   'kelola-inventaris': KelolaInventarisPage,
   'kelola-peminjaman': KelolaPeminjamanPage,
+  'kelola-pengembalian': KelolaPengembalianPage,
   'kelola-inventaris-tambah': KelolaInventarisFormPage,
   'kelola-inventaris-ubah': KelolaInventarisFormPage,
   'kelola-kategori': KelolaKategoriPage,
