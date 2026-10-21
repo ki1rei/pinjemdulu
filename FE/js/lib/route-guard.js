@@ -63,6 +63,10 @@ export function resolveRoute({ hash = '', user = null } = {}) {
     return { type: 'render', route: 'kelola-inventaris' };
   }
 
+  if (cleanHash === '#/kelola/peminjaman') {
+    return { type: 'render', route: 'kelola-peminjaman' };
+  }
+
   if (cleanHash === '#/kelola/inventaris/tambah') {
     return { type: 'render', route: 'kelola-inventaris-tambah' };
   }
