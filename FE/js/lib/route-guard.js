@@ -71,6 +71,14 @@ export function resolveRoute({ hash = '', user = null } = {}) {
     return { type: 'render', route: 'kelola-pengembalian' };
   }
 
+  if (cleanHash === '#/kelola/pengajuan-pj') {
+    return { type: 'render', route: 'kelola-pengajuan-pj' };
+  }
+
+  if (cleanHash === '#/kelola/pengguna') {
+    return { type: 'render', route: 'kelola-pengguna' };
+  }
+
   if (cleanHash === '#/kelola/inventaris/tambah') {
     return { type: 'render', route: 'kelola-inventaris-tambah' };
   }
