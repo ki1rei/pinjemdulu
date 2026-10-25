@@ -6,6 +6,7 @@
 import { renderIcon } from './icons.js';
 import { escapeHtml } from './html.js';
 import { getNavForRole, ROLE_LABEL, isActivePath, getInitials } from '../lib/navigation.js';
+import { ROLES } from '../lib/constants.js';
 
 export const STORAGE_KEY_SIDEBAR = 'pd:v1:sidebar-collapsed';
 
@@ -66,19 +67,27 @@ function renderSidebarBrand(collapsed) {
  * @param {Array<object>} items
  * @param {boolean} collapsed
  * @param {string} currentHash
+ * @param {string} [role]
  * @returns {string}
  */
-function renderSidebarNav(items, collapsed, currentHash) {
+function renderSidebarNav(items, collapsed, currentHash, role = '') {
   const listItems = items
     .map((item) => {
       const isGroup = item.type === 'group' || (Array.isArray(item.children) && item.children.length > 0);
 
       if (isGroup) {
         const hasActiveChild = (item.children || []).some((c) => isActivePath(c.href, currentHash));
-        const isOpen = hasActiveChild;
-        const icon = item.icon ? renderIcon(item.icon, 'h-6 w-6 text-zinc-500') : '';
+        const isDashboardOpen =
+          role === ROLES.PEMINJAM &&
+          item.key === 'nav-pengajuan-saya' &&
+          isActivePath('#/dashboard-peminjam', currentHash);
+        const isOpen = hasActiveChild || isDashboardOpen;
+        const icon = item.icon ? renderIcon(item.icon, 'h-6 w-6 text-zinc-400') : '';
         const chevron = isOpen ? renderIcon('ChevronUp', 'h-4 w-4 text-zinc-400') : renderIcon('ChevronDown', 'h-4 w-4 text-zinc-400');
         const tooltip = collapsed ? `title="${escapeHtml(item.label)}"` : '';
+        const groupBadge = item.badge
+          ? `<span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-white">${escapeHtml(String(item.badge))}</span>`
+          : '';
 
         if (collapsed) {
           return `
@@ -102,6 +111,9 @@ function renderSidebarNav(items, collapsed, currentHash) {
         const childItems = (item.children || [])
           .map((child) => {
             const childActive = isActivePath(child.href, currentHash);
+            const childBadge = child.badge
+              ? `<span class="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-white">${escapeHtml(String(child.badge))}</span>`
+              : '';
             return `
               <li>
                 <a
@@ -114,9 +126,10 @@ function renderSidebarNav(items, collapsed, currentHash) {
                   }"
                 >
                   <span class="inline-block size-2 shrink-0 rounded-full ${
-                    childActive ? 'bg-zinc-900' : 'bg-zinc-400 group-hover:bg-zinc-600'
+                    childActive ? 'bg-zinc-900' : 'bg-zinc-600 group-hover:bg-zinc-800'
                   }"></span>
                   <span class="leading-tight">${escapeHtml(child.label)}</span>
+                  ${childBadge}
                 </a>
               </li>
             `;
@@ -131,7 +144,7 @@ function renderSidebarNav(items, collapsed, currentHash) {
               data-group="${escapeHtml(item.key)}"
               aria-expanded="${isOpen}"
               aria-controls="sub-${escapeHtml(item.key)}"
-              class="group flex w-full items-center justify-between rounded-2xl px-3 py-3 text-[15px] text-zinc-600 transition hover:bg-zinc-50/60 hover:text-zinc-900 font-medium"
+              class="group flex w-full items-center justify-between rounded-2xl px-3 py-3 text-[15px] text-zinc-400 transition hover:bg-zinc-50/60 hover:text-zinc-900 font-medium"
             >
               <div class="flex items-center gap-3">
                 <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center">
@@ -139,9 +152,12 @@ function renderSidebarNav(items, collapsed, currentHash) {
                 </span>
                 <span class="leading-tight text-[15.5px]">${escapeHtml(item.label)}</span>
               </div>
-              <span class="transition-transform duration-200" data-chevron="${escapeHtml(item.key)}">
-                ${chevron}
-              </span>
+              <div class="flex items-center gap-2">
+                ${groupBadge}
+                <span class="transition-transform duration-200" data-chevron="${escapeHtml(item.key)}">
+                  ${chevron}
+                </span>
+              </div>
             </button>
             <ul
               id="sub-${escapeHtml(item.key)}"
@@ -267,7 +283,7 @@ function renderSidebarUserCard(user, collapsed) {
  * @param {{ user: object|null, currentHash: string, collapsed?: boolean }} props
  * @returns {string}
  */
-export function renderSidebar({ user = null, currentHash = '#/dashboard', collapsed = false } = {}) {
+export function renderSidebar({ user = null, currentHash = '#/dashboard-peminjam', collapsed = false } = {}) {
   const items = getNavForRole(user?.role);
   const widthClass = collapsed ? 'w-[84px]' : 'w-[280px]';
 
@@ -278,7 +294,7 @@ export function renderSidebar({ user = null, currentHash = '#/dashboard', collap
       class="sticky top-0 hidden h-screen shrink-0 flex-col border-r border-zinc-100 bg-white transition-[width] duration-200 ease-out md:flex ${widthClass}"
     >
       ${renderSidebarBrand(collapsed)}
-      ${renderSidebarNav(items, collapsed, currentHash)}
+      ${renderSidebarNav(items, collapsed, currentHash, user?.role)}
       ${renderSidebarUserCard(user, collapsed)}
     </aside>
   `;
@@ -289,7 +305,7 @@ export function renderSidebar({ user = null, currentHash = '#/dashboard', collap
  * @param {{ user: object|null, currentHash: string, open?: boolean }} props
  * @returns {string}
  */
-export function renderMobileDrawer({ user = null, currentHash = '#/dashboard', open = false } = {}) {
+export function renderMobileDrawer({ user = null, currentHash = '#/dashboard-peminjam', open = false } = {}) {
   const items = getNavForRole(user?.role);
 
   return `
@@ -335,7 +351,7 @@ export function renderMobileDrawer({ user = null, currentHash = '#/dashboard', o
         </button>
       </div>
 
-      ${renderSidebarNav(items, false, currentHash)}
+      ${renderSidebarNav(items, false, currentHash, user?.role)}
       ${renderSidebarUserCard(user, false)}
     </aside>
   `;
