@@ -33,8 +33,18 @@ export function resolveRoute({ hash = '', user = null } = {}) {
   }
 
   // 4. Pencocokan rute internal yang sah
-  if (cleanHash === '#/dashboard') {
-    return { type: 'render', route: 'dashboard' };
+  if (cleanHash === '#/dashboard-peminjam') {
+    if (user.role === ROLES.PENANGGUNG_JAWAB) {
+      return { type: 'redirect', to: '#/dashboard-pj' };
+    }
+    return { type: 'render', route: 'dashboard-peminjam' };
+  }
+
+  if (cleanHash === '#/dashboard-pj') {
+    if (user.role === ROLES.PEMINJAM) {
+      return { type: 'redirect', to: '#/dashboard-peminjam' };
+    }
+    return { type: 'render', route: 'dashboard-pj' };
   }
 
   if (cleanHash === '#/inventaris') {

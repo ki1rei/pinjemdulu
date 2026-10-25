@@ -8,7 +8,22 @@ export const ROLE_LABEL = Object.freeze({
   [ROLES.PENANGGUNG_JAWAB]: 'PJ Inventaris',
 });
 
-const PENGAJUAN_SAYA_CHILDREN = Object.freeze([
+const PENGAJUAN_SAYA_PEMINJAM_CHILDREN = Object.freeze([
+  {
+    key: 'nav-pengajuan-saya-peminjaman',
+    label: 'Peminjaman',
+    href: '#/pengajuan-saya/peminjaman',
+    badge: 2,
+  },
+  {
+    key: 'nav-pengajuan-saya-pengembalian',
+    label: 'Pengembalian',
+    href: '#/pengajuan-saya/pengembalian',
+    badge: 2,
+  },
+]);
+
+const PENGAJUAN_SAYA_PJ_CHILDREN = Object.freeze([
   {
     key: 'nav-pengajuan-saya-peminjaman',
     label: 'Peminjaman',
@@ -56,7 +71,7 @@ const NAV_PEMINJAM = Object.freeze([
   {
     key: 'nav-dashboard',
     label: 'Dashboard',
-    href: '#/dashboard',
+    href: '#/dashboard-peminjam',
     icon: 'LayoutGrid',
   },
   {
@@ -70,7 +85,8 @@ const NAV_PEMINJAM = Object.freeze([
     label: 'Pengajuan Saya',
     type: 'group',
     icon: 'HandCoins',
-    children: PENGAJUAN_SAYA_CHILDREN,
+    badge: 4,
+    children: PENGAJUAN_SAYA_PEMINJAM_CHILDREN,
   },
   {
     key: 'nav-pengajuan-pj',
@@ -94,7 +110,7 @@ const NAV_PENANGGUNG_JAWAB = Object.freeze([
   {
     key: 'nav-dashboard',
     label: 'Dashboard',
-    href: '#/dashboard',
+    href: '#/dashboard-pj',
     icon: 'LayoutGrid',
   },
   {
@@ -108,7 +124,7 @@ const NAV_PENANGGUNG_JAWAB = Object.freeze([
     label: 'Pengajuan Saya',
     type: 'group',
     icon: 'HandCoins',
-    children: PENGAJUAN_SAYA_CHILDREN,
+    children: PENGAJUAN_SAYA_PJ_CHILDREN,
   },
   {
     key: 'nav-pengelolaan',
@@ -161,7 +177,6 @@ export function isActivePath(itemHref, currentHash) {
   const current = normalize(currentHash);
 
   if (target === current) return true;
-  if (target === '#/dashboard') return false;
   return current.startsWith(`${target}/`);
 }
 
@@ -171,8 +186,8 @@ export function isActivePath(itemHref, currentHash) {
  * @returns {{ title: string, icon: string|null }}
  */
 export function getPageTitle(hash = '') {
-  const clean = String(hash || '').replace(/\?.*$/, '').replace(/\/$/, '') || '#/dashboard';
-  if (clean === '#/dashboard') return { title: 'Dashboard', icon: 'LayoutGrid' };
+  const clean = String(hash || '').replace(/\?.*$/, '').replace(/\/$/, '') || '#/dashboard-peminjam';
+  if (clean === '#/dashboard-peminjam' || clean === '#/dashboard-pj') return { title: 'Dashboard', icon: 'LayoutGrid' };
   if (clean === '#/inventaris') return { title: 'Inventaris', icon: 'Archive' };
   if (/^#\/inventaris\/[^/]+\/ajukan$/.test(clean)) return { title: 'Ajukan Peminjaman', icon: 'HandCoins' };
   if (/^#\/inventaris\/[^/]+$/.test(clean)) return { title: 'Inventaris', icon: 'Archive' };

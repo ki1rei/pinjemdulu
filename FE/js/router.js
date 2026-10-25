@@ -4,6 +4,7 @@
 
 import { resolveRoute } from './lib/route-guard.js';
 import * as LoginPage from './pages/login.js';
+import * as DashboardPeminjamPage from './pages/dashboard-peminjam.js';
 import * as InventarisPage from './pages/inventaris.js';
 import * as DetailPage from './pages/detail.js';
 import * as KelolaInventarisPage from './pages/kelola-inventaris.js';
@@ -21,7 +22,8 @@ import * as NotFoundPage from './pages/notfound.js';
 
 const MODULES = {
   login: LoginPage,
-  dashboard: PlaceholderPage,
+  'dashboard-peminjam': DashboardPeminjamPage,
+  'dashboard-pj': PlaceholderPage,
   inventaris: InventarisPage,
   detail: DetailPage,
   ajukan: AjukanPage,
