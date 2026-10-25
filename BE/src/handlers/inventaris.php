@@ -1,66 +1,100 @@
 <?php
+// Handler /api/inventaris. Dipanggil dari public/index.php ($pdo sudah tersedia).
+// Input dan output memakai camelCase (idKategori, namaBarang, ...).
 
+const SQL_INVENTARIS = 'SELECT i.id_inventaris, i.nama_barang, i.total_barang, i.kondisi,
+        i.deskripsi_barang, i.id_kategori, k.nama_kategori,
+        i.id_organisasi, o.nama_organisasi, r.jumlah_tersedia,
+        CASE WHEN COALESCE(r.jumlah_tersedia, 0) > 0
+             THEN \'Tersedia\' ELSE \'Dipinjam\' END AS status_ketersediaan
+    FROM inventaris i
+    JOIN kategori k ON k.id_kategori = i.id_kategori
+    JOIN organisasi o ON o.id_organisasi = i.id_organisasi
+    JOIN v_inv_ringkas r ON r.id_inventaris = i.id_inventaris';
+
+/** Validasi untuk POST dan PUT; mengembalikan data bersih. */
+function validasi_inventaris(array $d): array
+{
+    $err = [];
+
+    $nama = trim((string)($d['namaBarang'] ?? ''));
+    if ($nama === '' || mb_strlen($nama) > 100) {
+        $err['namaBarang'] = 'Nama barang wajib diisi (maksimal 100 karakter).';
+    }
+
+    $kat = filter_var($d['idKategori'] ?? null, FILTER_VALIDATE_INT);
+    if ($kat === false || $kat < 1) {
+        $err['idKategori'] = 'Kategori tidak valid.';
+    }
+
+    $org = filter_var($d['idOrganisasi'] ?? null, FILTER_VALIDATE_INT);
+    if ($org === false || $org < 1) {
+        $err['idOrganisasi'] = 'Organisasi tidak valid.';
+    }
+
+    $total = filter_var($d['totalBarang'] ?? null, FILTER_VALIDATE_INT);
+    if ($total === false || $total < 0) {
+        $err['totalBarang'] = 'Total barang harus angka 0 atau lebih.';
+    }
+
+    $kondisi = $d['kondisi'] ?? '';
+    if (!in_array($kondisi, ['Baik', 'Rusak'], true)) {
+        $err['kondisi'] = "Kondisi harus 'Baik' atau 'Rusak'.";
+    }
+
+    $desk = $d['deskripsiBarang'] ?? null;
+    if ($desk !== null && (!is_string($desk) || mb_strlen($desk) > 255)) {
+        $err['deskripsiBarang'] = 'Deskripsi maksimal 255 karakter.';
+    }
+
+    if ($err) {
+        json_error('Validasi gagal.', 'VALIDASI_GAGAL', 422, $err);
+    }
+
+    return [
+        'nama'  => $nama,
+        'kat'   => $kat,
+        'org'   => $org,
+        'total' => $total,
+        'kond'  => $kondisi,
+        'desk'  => ($desk === '' ? null : $desk),
+    ];
+}
 
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int)$_GET['id'] : null;
 
-// Validasi untuk POST & PUT; mengembalikan data bersih
-function validasi(array $d): array {
-    $err = [];
-    $nama = trim($d['nama_barang'] ?? '');
-    if ($nama === '' || mb_strlen($nama) > 100) $err[] = 'nama_barang wajib diisi (maks 100 karakter)';
-    if (!filter_var($d['id_kategori'] ?? null, FILTER_VALIDATE_INT)) $err[] = 'id_kategori tidak valid';
-    if (!filter_var($d['id_organisasi'] ?? null, FILTER_VALIDATE_INT)) $err[] = 'id_organisasi tidak valid';
-    $total = filter_var($d['total_barang'] ?? null, FILTER_VALIDATE_INT);
-    if ($total === false || $total < 0) $err[] = 'total_barang harus angka >= 0';
-    if (!in_array($d['kondisi'] ?? '', ['Baik', 'Rusak'], true)) $err[] = "kondisi harus 'Baik' atau 'Rusak'";
-    if (mb_strlen($d['deskripsi_barang'] ?? '') > 255) $err[] = 'deskripsi_barang maks 255 karakter';
-    if ($err) json_out(['error' => $err], 422);
-
-    return [
-        'nama'  => $nama,
-        'kat'   => (int)$d['id_kategori'],
-        'org'   => (int)$d['id_organisasi'],
-        'total' => $total,
-        'kond'  => $d['kondisi'],
-        'desk'  => $d['deskripsi_barang'] ?? null,
-    ];
-}
-
 try {
     switch ($method) {
 
-        // READ: daftar atau satu data
         case 'GET':
-            $sql = 'SELECT i.id_inventaris, i.nama_barang, i.total_barang, i.kondisi,
-                           i.deskripsi_barang, i.id_kategori, k.nama_kategori,
-                           i.id_organisasi, o.nama_organisasi
-                    FROM inventaris i
-                    JOIN kategori k ON k.id_kategori = i.id_kategori
-                    JOIN organisasi o ON o.id_organisasi = i.id_organisasi';
             if ($id) {
-                $stmt = $pdo->prepare("$sql WHERE i.id_inventaris = :id");
+                $stmt = $pdo->prepare(SQL_INVENTARIS . ' WHERE i.id_inventaris = :id');
                 $stmt->execute(['id' => $id]);
                 $row = $stmt->fetch();
-                $row ? json_out($row) : json_out(['error' => 'Data tidak ditemukan'], 404);
+                if (!$row) {
+                    json_error('Inventaris tidak ditemukan.', 'NOT_FOUND', 404);
+                }
+                json_out(camel_keys($row));
             }
-            json_out($pdo->query("$sql ORDER BY i.nama_barang")->fetchAll());
+            $rows = $pdo->query(SQL_INVENTARIS . ' ORDER BY i.nama_barang')->fetchAll();
+            json_out(array_map('camel_keys', $rows));
 
-        // CREATE
         case 'POST':
-            $v = validasi(input());
+            $v = validasi_inventaris(input());
             $stmt = $pdo->prepare(
                 'INSERT INTO inventaris (id_kategori, id_organisasi, nama_barang, total_barang, kondisi, deskripsi_barang)
                  VALUES (:kat, :org, :nama, :total, :kond, :desk)
                  RETURNING id_inventaris'
             );
             $stmt->execute($v);
-            json_out(['id_inventaris' => $stmt->fetchColumn(), 'pesan' => 'Berhasil ditambahkan'], 201);
+            json_out(['idInventaris' => $stmt->fetchColumn(), 'message' => 'Berhasil ditambahkan'], 201);
 
-        // UPDATE
         case 'PUT':
-            if (!$id) json_out(['error' => 'Parameter id wajib'], 400);
-            $v = validasi(input());
+            if (!$id) {
+                json_error('Parameter id wajib.', 'ID_WAJIB', 400);
+            }
+            $v = validasi_inventaris(input());
             $v['id'] = $id;
             $stmt = $pdo->prepare(
                 'UPDATE inventaris
@@ -69,25 +103,25 @@ try {
                   WHERE id_inventaris = :id'
             );
             $stmt->execute($v);
-            $stmt->rowCount() ? json_out(['pesan' => 'Berhasil diubah'])
-                              : json_out(['error' => 'Data tidak ditemukan'], 404);
+            if (!$stmt->rowCount()) {
+                json_error('Inventaris tidak ditemukan.', 'NOT_FOUND', 404);
+            }
+            json_out(['message' => 'Berhasil diubah']);
 
-        // DELETE
         case 'DELETE':
-            if (!$id) json_out(['error' => 'Parameter id wajib'], 400);
+            if (!$id) {
+                json_error('Parameter id wajib.', 'ID_WAJIB', 400);
+            }
             $stmt = $pdo->prepare('DELETE FROM inventaris WHERE id_inventaris = :id');
             $stmt->execute(['id' => $id]);
-            $stmt->rowCount() ? json_out(['pesan' => 'Berhasil dihapus'])
-                              : json_out(['error' => 'Data tidak ditemukan'], 404);
+            if (!$stmt->rowCount()) {
+                json_error('Inventaris tidak ditemukan.', 'NOT_FOUND', 404);
+            }
+            json_out(['message' => 'Berhasil dihapus']);
 
         default:
-            json_out(['error' => 'Method tidak didukung'], 405);
+            json_error('Method tidak didukung.', 'METHOD_NOT_ALLOWED', 405);
     }
 } catch (PDOException $e) {
-    // 23503 = foreign key; 23505 = duplikat; 23514 = CHECK gagal
-    $kode = $e->getCode();
-    if ($kode === '23503') json_out(['error' => 'Data masih dipakai tabel lain (kategori/organisasi tidak ada, atau barang pernah dipinjam)'], 409);
-    if ($kode === '23514') json_out(['error' => 'Data melanggar aturan tabel'], 422);
-    error_log($e->getMessage());               // detail hanya di log server
-    json_out(['error' => 'Kesalahan database'], 500);
+    pdo_error($e);
 }
