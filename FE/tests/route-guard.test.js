@@ -12,7 +12,7 @@ test('route-guard: belum login membuka rute internal dialihkan ke #/login', () =
     type: 'redirect',
     to: '#/login',
   });
-  assert.deepEqual(resolveRoute({ hash: '#/dashboard', user: null }), {
+  assert.deepEqual(resolveRoute({ hash: '#/dashboard-peminjam', user: null }), {
     type: 'redirect',
     to: '#/login',
   });
@@ -96,4 +96,13 @@ test('route-guard: rute tidak dikenal menghasilkan rute notfound', () => {
     type: 'render',
     route: 'notfound',
   });
+});
+
+test('resolveRoute: dashboard dipisah per peran', () => {
+  const peminjam = { role: ROLES.PEMINJAM };
+  const pj = { role: ROLES.PENANGGUNG_JAWAB };
+  assert.deepEqual(resolveRoute({ hash: '#/dashboard-peminjam', user: peminjam }), { type: 'render', route: 'dashboard-peminjam' });
+  assert.deepEqual(resolveRoute({ hash: '#/dashboard-pj', user: pj }), { type: 'render', route: 'dashboard-pj' });
+  assert.deepEqual(resolveRoute({ hash: '#/dashboard-pj', user: peminjam }), { type: 'redirect', to: '#/dashboard-peminjam' });
+  assert.deepEqual(resolveRoute({ hash: '#/dashboard-peminjam', user: pj }), { type: 'redirect', to: '#/dashboard-pj' });
 });

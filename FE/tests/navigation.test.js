@@ -29,7 +29,7 @@ test('getNavForRole: peminjam berisi menu lengkap peminjam tanpa menu kelola', (
   assert.equal(nav.length, 5);
 
   assert.equal(nav[0].label, 'Dashboard');
-  assert.equal(nav[0].href, '#/dashboard');
+  assert.equal(nav[0].href, '#/dashboard-peminjam');
   assert.equal(nav[0].icon, 'LayoutGrid');
 
   assert.equal(nav[1].label, 'Inventaris');
@@ -57,7 +57,7 @@ test('getNavForRole: PJ berisi Dashboard, Inventaris, Pengajuan Saya, Pengelolaa
   assert.equal(nav.length, 6);
 
   assert.equal(nav[0].label, 'Dashboard');
-  assert.equal(nav[0].href, '#/dashboard');
+  assert.equal(nav[0].href, '#/dashboard-pj');
   assert.equal(nav[0].icon, 'LayoutGrid');
 
   assert.equal(nav[1].label, 'Inventaris');
@@ -96,7 +96,7 @@ test('isActivePath: cocok persis dan prefix sub-halaman', () => {
   assert.equal(isActivePath('#/inventaris', '#/inventaris'), true);
   assert.equal(isActivePath('#/inventaris', '#/inventaris/inv-1'), true);
   assert.equal(isActivePath('#/inventaris', '#/inventaris/inv-1/ajukan'), true);
-  assert.equal(isActivePath('#/dashboard', '#/dashboard'), true);
+  assert.equal(isActivePath('#/dashboard-peminjam', '#/dashboard-peminjam'), true);
 });
 
 test('isActivePath: menolak sibling dengan nama awalan mirip', () => {
@@ -114,7 +114,7 @@ test('isActivePath: menoleransi trailing slash dan format path biasa', () => {
 /* ========================================================================== */
 
 test('getPageTitle: mengembalikan judul dan icon yang sesuai', () => {
-  const d = getPageTitle('#/dashboard');
+  const d = getPageTitle('#/dashboard-peminjam');
   assert.equal(d.title, 'Dashboard');
   assert.equal(d.icon, 'LayoutGrid');
 
@@ -143,14 +143,14 @@ test('getPageTitle: mengembalikan judul dan icon yang sesuai', () => {
 
 test('canAccess: peminjam dilarang akses rute kelola', () => {
   assert.equal(canAccess(ROLES.PEMINJAM, '#/inventaris'), true);
-  assert.equal(canAccess(ROLES.PEMINJAM, '#/dashboard'), true);
+  assert.equal(canAccess(ROLES.PEMINJAM, '#/dashboard-peminjam'), true);
   assert.equal(canAccess(ROLES.PEMINJAM, '#/kelola/inventaris'), false);
   assert.equal(canAccess(ROLES.PEMINJAM, '#/kelola/kategori'), false);
 });
 
 test('canAccess: PJ diizinkan akses rute kelola dan katalog', () => {
   assert.equal(canAccess(ROLES.PENANGGUNG_JAWAB, '#/inventaris'), true);
-  assert.equal(canAccess(ROLES.PENANGGUNG_JAWAB, '#/dashboard'), true);
+  assert.equal(canAccess(ROLES.PENANGGUNG_JAWAB, '#/dashboard-pj'), true);
   assert.equal(canAccess(ROLES.PENANGGUNG_JAWAB, '#/kelola/inventaris'), true);
   assert.equal(canAccess(ROLES.PENANGGUNG_JAWAB, '#/kelola/kategori'), true);
 });
@@ -158,7 +158,7 @@ test('canAccess: PJ diizinkan akses rute kelola dan katalog', () => {
 test('canAccess: tamu tanpa role dilarang akses rute internal selain login', () => {
   assert.equal(canAccess(null, '#/login'), true);
   assert.equal(canAccess(null, '#/inventaris'), false);
-  assert.equal(canAccess(undefined, '#/dashboard'), false);
+  assert.equal(canAccess(undefined, '#/dashboard-peminjam'), false);
 });
 
 /* ========================================================================== */
