@@ -1,6 +1,5 @@
 <?php
-require __DIR__ . '/../includes/koneksi.php';
-require __DIR__ . '/../includes/helpers.php';
+
 
 $method = $_SERVER['REQUEST_METHOD'];
 $id     = isset($_GET['id']) ? (int)$_GET['id'] : null;
