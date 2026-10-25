@@ -5,8 +5,9 @@
 const SQL_INVENTARIS = 'SELECT i.id_inventaris, i.nama_barang, i.total_barang, i.kondisi,
         i.deskripsi_barang, i.id_kategori, k.nama_kategori,
         i.id_organisasi, o.nama_organisasi, r.jumlah_tersedia,
-        CASE WHEN COALESCE(r.jumlah_tersedia, 0) > 0
-             THEN \'Tersedia\' ELSE \'Dipinjam\' END AS status_ketersediaan
+        CASE WHEN i.kondisi = \'Rusak\' THEN \'Tidak Tersedia\'
+        WHEN COALESCE(r.jumlah_tersedia, 0) > 0 THEN \'Tersedia\'
+        ELSE \'Dipinjam\' END AS status_ketersediaan
     FROM inventaris i
     JOIN kategori k ON k.id_kategori = i.id_kategori
     JOIN organisasi o ON o.id_organisasi = i.id_organisasi
@@ -77,7 +78,7 @@ try {
                 }
                 json_out(camel_keys($row));
             }
-            $rows = $pdo->query(SQL_INVENTARIS . ' ORDER BY i.nama_barang')->fetchAll();
+            $rows = $pdo->query(SQL_INVENTARIS . " WHERE i.kondisi <> 'Rusak' ORDER BY i.nama_barang")->fetchAll();
             json_out(array_map('camel_keys', $rows));
 
         case 'POST':
