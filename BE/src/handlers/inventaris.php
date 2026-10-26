@@ -5,6 +5,7 @@
 const SQL_INVENTARIS = 'SELECT i.id_inventaris, i.nama_barang, i.total_barang, i.kondisi,
         i.deskripsi_barang, i.id_kategori, k.nama_kategori,
         i.id_organisasi, o.nama_organisasi, r.jumlah_tersedia,
+        (i.thumbnail IS NOT NULL) AS punya_thumbnail,
         CASE WHEN i.kondisi = \'Rusak\' THEN \'Tidak Tersedia\'
         WHEN COALESCE(r.jumlah_tersedia, 0) > 0 THEN \'Tersedia\'
         ELSE \'Dipinjam\' END AS status_ketersediaan
@@ -62,8 +63,23 @@ function validasi_inventaris(array $d): array
     ];
 }
 
+/** Satu baris hasil query -> JSON: camelCase, bytea diganti thumbnailUrl (null bila tak ada foto). */
+function format_inventaris(array $row): array
+{
+    $out = camel_keys($row);
+    $ada = filter_var($out['punyaThumbnail'], FILTER_VALIDATE_BOOLEAN);
+    unset($out['punyaThumbnail']);
+    $out['thumbnailUrl'] = url_gambar('/api/inventaris/thumbnail', (int)$out['idInventaris'], $ada);
+    return $out;
+}
+
 $method = $_SERVER['REQUEST_METHOD'];
-$id     = isset($_GET['id']) ? (int)$_GET['id'] : null;
+// PHP tidak mengisi $_POST/$_FILES untuk PUT multipart, jadi form dengan foto
+// mengirim POST ke ?id=N&_method=PUT.
+if ($method === 'POST' && ($_GET['_method'] ?? '') === 'PUT') {
+    $method = 'PUT';
+}
+$id = isset($_GET['id']) ? (int)$_GET['id'] : null;
 
 try {
     switch ($method) {
@@ -76,34 +92,61 @@ try {
                 if (!$row) {
                     json_error('Inventaris tidak ditemukan.', 'NOT_FOUND', 404);
                 }
-                json_out(camel_keys($row));
+                json_out(format_inventaris($row));
             }
             $rows = $pdo->query(SQL_INVENTARIS . " WHERE i.kondisi <> 'Rusak' ORDER BY i.nama_barang")->fetchAll();
-            json_out(array_map('camel_keys', $rows));
+            json_out(array_map('format_inventaris', $rows));
 
         case 'POST':
-            $v = validasi_inventaris(input());
-            $stmt = $pdo->prepare(
-                'INSERT INTO inventaris (id_kategori, id_organisasi, nama_barang, total_barang, kondisi, deskripsi_barang)
-                 VALUES (:kat, :org, :nama, :total, :kond, :desk)
+            $v     = validasi_inventaris(input());
+            $thumb = ambil_unggahan_gambar('thumbnail', true); // foto wajib
+            $fp    = fopen($thumb, 'rb');
+            $stmt  = $pdo->prepare(
+                'INSERT INTO inventaris (id_kategori, id_organisasi, nama_barang, total_barang, kondisi, deskripsi_barang, thumbnail)
+                 VALUES (:kat, :org, :nama, :total, :kond, :desk, :thumb)
                  RETURNING id_inventaris'
             );
-            $stmt->execute($v);
+            foreach ($v as $k => $nilai) {
+                $stmt->bindValue(':' . $k, $nilai);
+            }
+            $stmt->bindValue(':thumb', $fp, PDO::PARAM_LOB);
+            $stmt->execute();
             json_out(['idInventaris' => $stmt->fetchColumn(), 'message' => 'Berhasil ditambahkan'], 201);
 
         case 'PUT':
             if (!$id) {
                 json_error('Parameter id wajib.', 'ID_WAJIB', 400);
             }
-            $v = validasi_inventaris(input());
+            $v       = validasi_inventaris(input());
             $v['id'] = $id;
+            $thumb   = ambil_unggahan_gambar('thumbnail');
+
+            if ($thumb === null) {
+                // tidak ada foto baru: barang ini harus sudah punya foto
+                $cek = $pdo->prepare('SELECT (thumbnail IS NOT NULL) AS ada FROM inventaris WHERE id_inventaris = :id');
+                $cek->execute(['id' => $id]);
+                $baris = $cek->fetch();
+                if (!$baris) {
+                    json_error('Inventaris tidak ditemukan.', 'NOT_FOUND', 404);
+                }
+                if (!$baris['ada']) {
+                    json_error('Foto wajib diunggah.', 'VALIDASI_GAGAL', 422, ['thumbnail' => 'Foto wajib diunggah.']);
+                }
+            }
+
+            $fp   = $thumb !== null ? fopen($thumb, 'rb') : null;
             $stmt = $pdo->prepare(
                 'UPDATE inventaris
                     SET id_kategori = :kat, id_organisasi = :org, nama_barang = :nama,
-                        total_barang = :total, kondisi = :kond, deskripsi_barang = :desk
+                        total_barang = :total, kondisi = :kond, deskripsi_barang = :desk,
+                        thumbnail = COALESCE(:thumb, thumbnail)
                   WHERE id_inventaris = :id'
             );
-            $stmt->execute($v);
+            foreach ($v as $k => $nilai) {
+                $stmt->bindValue(':' . $k, $nilai);
+            }
+            $stmt->bindValue(':thumb', $fp, $fp ? PDO::PARAM_LOB : PDO::PARAM_NULL);
+            $stmt->execute();
             if (!$stmt->rowCount()) {
                 json_error('Inventaris tidak ditemukan.', 'NOT_FOUND', 404);
             }
