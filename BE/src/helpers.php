@@ -78,3 +78,68 @@ function pdo_error(PDOException $e): never
     error_log($pesan); // detail hanya di log server
     json_error('Kesalahan database', 'DB_ERROR', 500);
 }
+
+/** Deteksi JPG/PNG dari byte awal file (bukan dari nama file atau header klien). */
+function deteksi_mime_gambar(string $awal): ?string
+{
+    if (str_starts_with($awal, "\xFF\xD8\xFF")) {
+        return 'image/jpeg';
+    }
+    if (str_starts_with($awal, "\x89PNG\r\n\x1A\n")) {
+        return 'image/png';
+    }
+    return null;
+}
+
+/**
+ * Ambil unggahan gambar dari $_FILES[$kolom] (hanya multipart/form-data).
+ * Mengembalikan path file sementara kalau valid. Kalau tidak ada file:
+ * null, atau galat 422 bila $wajib = true.
+ * Kalau file tidak valid (bukan JPG/PNG, lebih dari 2 MB, unggah gagal): 422.
+ */
+function ambil_unggahan_gambar(string $kolom, bool $wajib = false, int $maksByte = 2097152): ?string
+{
+    $f    = $_FILES[$kolom] ?? null;
+    $kode = $f['error'] ?? UPLOAD_ERR_NO_FILE;
+
+    if ($kode === UPLOAD_ERR_NO_FILE) {
+        if ($wajib) {
+            json_error('Foto wajib diunggah.', 'VALIDASI_GAGAL', 422, [$kolom => 'Foto wajib diunggah.']);
+        }
+        return null;
+    }
+    if ($kode === UPLOAD_ERR_INI_SIZE || $kode === UPLOAD_ERR_FORM_SIZE || $f['size'] > $maksByte) {
+        json_error('Ukuran file maksimal 2 MB.', 'VALIDASI_GAGAL', 422, [$kolom => 'Ukuran file maksimal 2 MB.']);
+    }
+    if ($kode !== UPLOAD_ERR_OK || !is_uploaded_file($f['tmp_name'])) {
+        json_error('Unggahan file gagal.', 'UNGGAH_GAGAL', 422, [$kolom => 'Unggahan file gagal.']);
+    }
+
+    $h    = fopen($f['tmp_name'], 'rb');
+    $awal = $h ? (string)fread($h, 8) : '';
+    if ($h) {
+        fclose($h);
+    }
+    if (deteksi_mime_gambar($awal) === null) {
+        json_error('File harus berformat JPG atau PNG.', 'VALIDASI_GAGAL', 422, [$kolom => 'File harus berformat JPG atau PNG.']);
+    }
+
+    return $f['tmp_name'];
+}
+
+
+/** Alamat dasar server ini untuk membuat URL absolut. Bisa dipaksa lewat APP_URL di .env. */
+function base_url(): string
+{
+    if (!empty($_ENV['APP_URL'])) {
+        return rtrim($_ENV['APP_URL'], '/');
+    }
+    $https = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    return ($https ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost');
+}
+
+/** URL gambar absolut, atau null bila datanya tidak punya gambar. */
+function url_gambar(string $path, int $id, bool $ada): ?string
+{
+    return $ada ? base_url() . $path . '?id=' . $id : null;
+}
