@@ -16,6 +16,7 @@ export async function updateMockUser(id, updates = {}) {
   if (updates.nim !== undefined) user.nim = String(updates.nim).trim();
   if (updates.email !== undefined) user.email = String(updates.email).trim();
   if (updates.businessUnit !== undefined) user.businessUnit = String(updates.businessUnit).trim();
+  if (updates.displayOrganization !== undefined) user.displayOrganization = String(updates.displayOrganization).trim();
   if (updates.role !== undefined) {
     if (![ROLES.PEMINJAM, ROLES.PENANGGUNG_JAWAB].includes(updates.role)) throw new Error('Peran pengguna tidak valid.');
     user.role = updates.role;
@@ -42,7 +43,8 @@ export async function addMockUser(data = {}) {
     nim,
     email,
     organisasi: null,
-    businessUnit: String(data.businessUnit || 'Software Engineering').trim(),
+    displayOrganization: String(data.displayOrganization || 'HMTI').trim(),
+    businessUnit: String(data.businessUnit || '').trim(),
     role: data.role === ROLES.PENANGGUNG_JAWAB ? ROLES.PENANGGUNG_JAWAB : ROLES.PEMINJAM,
     statusAkun: data.statusAkun === STATUS_AKUN.NONAKTIF ? STATUS_AKUN.NONAKTIF : STATUS_AKUN.AKTIF,
     status_akun: data.statusAkun === STATUS_AKUN.NONAKTIF ? STATUS_AKUN.NONAKTIF : STATUS_AKUN.AKTIF,
