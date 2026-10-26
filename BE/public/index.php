@@ -7,6 +7,8 @@ $routes = [
     '/api/inventaris' => __DIR__ . '/../src/handlers/inventaris.php',
     '/api/kategori'   => __DIR__ . '/../src/handlers/kategori.php',
     '/api/organisasi' => __DIR__ . '/../src/handlers/organisasi.php',
+    '/api/inventaris/thumbnail' => __DIR__ . '/../src/handlers/gambar.php',
+    '/api/organisasi/icon'      => __DIR__ . '/../src/handlers/gambar.php',
     // endpoint baru nanti ditambah di sini
 ];
 
