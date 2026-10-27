@@ -15,6 +15,9 @@ import {
   alertClass,
 } from '../ui/classes.js';
 import { renderIcon } from '../ui/icons.js';
+import { renderSearchInput } from '../ui/search-input.js';
+import { renderModal } from '../ui/modal.js';
+import { renderFilterButton, renderFilterModal as renderBaseFilterModal } from '../ui/filter.js';
 import {
   getInventarisKelola,
   createInventaris,
@@ -140,12 +143,12 @@ export function renderRowSkeleton(cols = 7) {
   const cells = Array.from({ length: cols })
     .map(
       () => html`
-        <td class="px-3 py-3">
+        <td class="px-4 py-4">
           <div class="${skeletonClass('h-4 w-4/5 rounded')}"></div>
         </td>
       `
     );
-  return html`<tr>${raw(cells.join(''))}</tr>`;
+  return html`<tr class="border-b border-slate-100 last:border-0">${raw(cells.join(''))}</tr>`;
 }
 
 /**
@@ -173,35 +176,35 @@ export function renderTableRow(it, index, page = 1, perPage = 10) {
   const total = Number(it.totalBarang ?? 0);
 
   return html`
-    <tr class="transition hover:bg-muted/20" data-id="${it.idInventaris}">
-      <td class="px-3 py-3 text-muted-foreground align-top">${no}</td>
-      <td class="px-3 py-3 align-top min-w-[200px]">
+    <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50/60" data-id="${it.idInventaris}">
+      <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400 align-middle">${no}</td>
+      <td class="min-w-[200px] px-4 py-4 align-middle">
         <div class="flex flex-col gap-1.5">
-          <span class="font-medium text-foreground text-sm">${it.namaBarang}</span>
+          <span class="font-medium text-slate-800 text-xs">${it.namaBarang}</span>
           ${renderOrganisasiBadge(it.namaOrganisasi)}
         </div>
       </td>
-      <td class="px-3 py-3 align-top min-w-[120px]">
+      <td class="min-w-[120px] px-4 py-4 text-xs text-slate-400 align-middle">
         ${renderKategoriBadge(it.namaKategori)}
       </td>
-      <td class="px-3 py-3 text-right tabular-nums align-top min-w-[100px]">
-        <span class="font-medium">${total}</span>
-        <span class="ml-1 text-xs text-muted-foreground">(${sisa} sisa)</span>
+      <td class="whitespace-nowrap px-4 py-4 text-right tabular-nums text-xs align-middle min-w-[100px]">
+        <span class="font-medium text-slate-700">${total}</span>
+        <span class="ml-1 text-xs text-slate-400">(${sisa} sisa)</span>
       </td>
-      <td class="px-3 py-3 align-top min-w-[120px]">
+      <td class="whitespace-nowrap px-4 py-4 align-middle min-w-[120px]">
         ${renderKondisiBadge(it.kondisi)}
       </td>
-      <td class="px-3 py-3 align-top min-w-[100px]">
+      <td class="whitespace-nowrap px-4 py-4 align-middle min-w-[100px]">
         ${renderStatusBadge(it)}
       </td>
-      <td class="px-3 py-3 align-top min-w-[160px]">
+      <td class="whitespace-nowrap px-4 py-4 align-middle min-w-[160px]">
         <div class="flex items-center justify-center gap-1" role="group" aria-label="Aksi inventaris ${it.namaBarang}">
           <!-- Ubah (Link Halaman Terpisah) -->
           <a
             href="#/kelola/inventaris/${it.idInventaris}/ubah"
             aria-label="Ubah ${it.namaBarang}"
             title="Ubah ${it.namaBarang}"
-            class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             ${renderIcon('Pencil', 'h-4 w-4')}
           </a>
@@ -213,7 +216,7 @@ export function renderTableRow(it, index, page = 1, perPage = 10) {
             data-id="${it.idInventaris}"
             aria-label="Lihat detail ${it.namaBarang}"
             title="Lihat detail ${it.namaBarang}"
-            class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             ${renderIcon('Info', 'h-4 w-4')}
           </button>
@@ -225,7 +228,7 @@ export function renderTableRow(it, index, page = 1, perPage = 10) {
             data-id="${it.idInventaris}"
             aria-label="Hapus ${it.namaBarang}"
             title="Hapus ${it.namaBarang}"
-            class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-destructive transition hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-red-600 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             ${renderIcon('Trash2', 'h-4 w-4')}
           </button>
@@ -235,6 +238,8 @@ export function renderTableRow(it, index, page = 1, perPage = 10) {
   `;
 }
 
+import { renderPagination as renderSharedPagination } from '../ui/pagination.js';
+
 /**
  * Render paginasi tabel kelola inventaris.
  * @param {number} page
@@ -242,69 +247,11 @@ export function renderTableRow(it, index, page = 1, perPage = 10) {
  * @returns {import('../ui/html.js').SafeHtml}
  */
 export function renderPagination(page, totalPages) {
-  if (totalPages <= 1) return raw('');
-
-  const pages = buildPageList(page, totalPages);
-  const isFirst = page <= 1;
-  const isLast = page >= totalPages;
-
-  const btnPrev = html`
-    <button
-      type="button"
-      data-action="change-page"
-      data-page="${page - 1}"
-      ${isFirst ? raw('disabled aria-disabled="true"') : ''}
-      class="inline-flex h-9 items-center justify-center gap-1 rounded-xl border border-input bg-background px-3 text-xs font-medium transition hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
-      aria-label="Halaman sebelumnya"
-    >
-      ${renderIcon('ChevronLeft', 'h-4 w-4')}
-      <span>Sebelumnya</span>
-    </button>
-  `;
-
-  const btnNext = html`
-    <button
-      type="button"
-      data-action="change-page"
-      data-page="${page + 1}"
-      ${isLast ? raw('disabled aria-disabled="true"') : ''}
-      class="inline-flex h-9 items-center justify-center gap-1 rounded-xl border border-input bg-background px-3 text-xs font-medium transition hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
-      aria-label="Halaman berikutnya"
-    >
-      <span>Berikutnya</span>
-      ${renderIcon('ChevronRight', 'h-4 w-4')}
-    </button>
-  `;
-
-  const pageButtons = pages.map((p) => {
-    if (p === '…') {
-      return html`<span class="inline-flex h-9 w-9 items-center justify-center text-xs text-muted-foreground">…</span>`;
-    }
-    const isActive = p === page;
-    return html`
-      <button
-        type="button"
-        data-action="change-page"
-        data-page="${p}"
-        aria-current="${isActive ? 'page' : 'false'}"
-        class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-xs font-medium transition ${
-          isActive
-            ? 'bg-primary text-primary-foreground font-semibold shadow-sm'
-            : 'border border-input bg-background text-foreground hover:bg-accent'
-        }"
-      >
-        ${p}
-      </button>
-    `;
-  });
-
+  const current = Math.max(1, page || 1);
+  const total = Math.max(1, totalPages || 1);
   return html`
-    <nav class="mt-5 flex flex-wrap items-center justify-center gap-1.5 sm:justify-end" aria-label="Navigasi Halaman Inventaris">
-      ${btnPrev}
-      <div class="flex items-center gap-1">
-        ${raw(pageButtons.map((b) => b.toString()).join(''))}
-      </div>
-      ${btnNext}
+    <nav class="mt-5 flex flex-wrap items-center justify-center sm:justify-end" aria-label="Navigasi Halaman Inventaris">
+      ${raw(renderSharedPagination({ currentPage: current, totalPages: total, action: 'change-page' }))}
     </nav>
   `;
 }
@@ -327,119 +274,85 @@ export function renderFilterModal({ filters = {}, kategoriList = [], countActive
     ),
   ];
 
-  return html`
-    <dialog id="dialog-filter-kelola" aria-labelledby="dialog-filter-title" class="fixed inset-0 m-auto z-50 w-full max-w-sm rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm">
-      <div class="flex flex-col">
-        <!-- Header -->
-        <div class="flex items-center justify-between border-b border-border px-5 py-4">
-          <div class="flex items-center gap-2.5">
-            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary shrink-0">
-              ${renderIcon('Funnel', 'h-4 w-4')}
-            </span>
-            <div class="flex items-center gap-2">
-              <h2 id="dialog-filter-title" class="text-base font-semibold leading-tight text-foreground">
-                Filter Barang Inventaris
-              </h2>
-              ${countActive > 0 ? html`<span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-info px-1 text-[10px] font-semibold text-white">${countActive}</span>` : raw('')}
-            </div>
-          </div>
-          <button
-            type="button"
-            data-action="close-filter-dialog"
-            aria-label="Tutup filter"
-            class="inline-flex h-8 w-8 items-center justify-center rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            ${renderIcon('X', 'h-4 w-4')}
-          </button>
-        </div>
-
-        <!-- Body Form Filter -->
-        <form id="form-filter-kelola" class="space-y-4 px-5 py-4">
-          <!-- Kategori -->
-          <div class="space-y-1.5">
-            <label for="filter-kategori-select" class="text-sm font-medium text-foreground">Kategori</label>
-            <select id="filter-kategori-select" name="kategori" class="${selectClass()}">
-              ${raw(katOptions.map((o) => o.toString()).join(''))}
-            </select>
-          </div>
-
-          <!-- Kondisi -->
-          <fieldset class="space-y-2">
-            <legend class="text-sm font-medium text-foreground">Kondisi</legend>
-            <div class="space-y-2">
-              <label class="flex items-center gap-2.5 rounded-xl border border-border bg-background px-3 py-2 text-sm cursor-pointer transition hover:bg-muted/40">
-                <input
-                  type="radio"
-                  name="kondisi"
-                  value="baik"
-                  ${curKondisi === 'baik' ? raw('checked') : ''}
-                  class="size-4 accent-primary"
-                />
-                <span>Baik</span>
-              </label>
-              <label class="flex items-center gap-2.5 rounded-xl border border-border bg-background px-3 py-2 text-sm cursor-pointer transition hover:bg-muted/40">
-                <input
-                  type="radio"
-                  name="kondisi"
-                  value="rusak"
-                  ${curKondisi === 'rusak' ? raw('checked') : ''}
-                  class="size-4 accent-primary"
-                />
-                <span>Rusak</span>
-              </label>
-            </div>
-          </fieldset>
-
-          <!-- Status -->
-          <fieldset class="space-y-2">
-            <legend class="text-sm font-medium text-foreground">Status</legend>
-            <div class="space-y-2">
-              <label class="flex items-center gap-2.5 rounded-xl border border-border bg-background px-3 py-2 text-sm cursor-pointer transition hover:bg-muted/40">
-                <input
-                  type="radio"
-                  name="status"
-                  value="tersedia"
-                  ${curStatus === 'tersedia' ? raw('checked') : ''}
-                  class="size-4 accent-primary"
-                />
-                <span>Tersedia</span>
-              </label>
-              <label class="flex items-center gap-2.5 rounded-xl border border-border bg-background px-3 py-2 text-sm cursor-pointer transition hover:bg-muted/40">
-                <input
-                  type="radio"
-                  name="status"
-                  value="dipinjam"
-                  ${curStatus === 'dipinjam' ? raw('checked') : ''}
-                  class="size-4 accent-primary"
-                />
-                <span>Dipinjam</span>
-              </label>
-            </div>
-          </fieldset>
-        </form>
-
-        <!-- Footer -->
-        <div class="flex items-center justify-between border-t border-border px-5 py-3">
-          <button
-            type="button"
-            data-action="reset-filter-dialog"
-            class="text-sm font-medium text-muted-foreground hover:text-foreground"
-          >
-            Reset
-          </button>
-          <div class="flex gap-2">
-            <button
-              type="button"
-              data-action="apply-filter-dialog"
-              class="${buttonClass({ variant: 'default', size: 'sm' })}"
-            >
-              Terapkan
-            </button>
-          </div>
-        </div>
+  const bodyContent = html`
+    <!-- Kategori -->
+    <div class="space-y-1.5">
+      <label for="filter-kategori-select" class="text-sm font-medium text-foreground">Kategori</label>
+      <div class="relative">
+        <select id="filter-kategori-select" name="kategori" class="${selectClass('appearance-none pr-10 cursor-pointer')}">
+          ${raw(katOptions.map((o) => o.toString()).join(''))}
+        </select>
+        <span class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground flex items-center">
+          ${renderIcon('ChevronDown', 'h-4 w-4')}
+        </span>
       </div>
-    </dialog>
+    </div>
+
+    <!-- Kondisi -->
+    <fieldset class="space-y-2">
+      <legend class="text-sm font-medium text-foreground">Kondisi</legend>
+      <div class="space-y-2">
+        <label class="flex items-center gap-2.5 rounded-xl border border-border bg-background px-3 py-2 text-sm cursor-pointer transition hover:bg-muted/40">
+          <input
+            type="radio"
+            name="kondisi"
+            value="baik"
+            ${curKondisi === 'baik' ? raw('checked') : ''}
+            class="size-4 accent-primary"
+          />
+          <span>Baik</span>
+        </label>
+        <label class="flex items-center gap-2.5 rounded-xl border border-border bg-background px-3 py-2 text-sm cursor-pointer transition hover:bg-muted/40">
+          <input
+            type="radio"
+            name="kondisi"
+            value="rusak"
+            ${curKondisi === 'rusak' ? raw('checked') : ''}
+            class="size-4 accent-primary"
+          />
+          <span>Rusak</span>
+        </label>
+      </div>
+    </fieldset>
+
+    <!-- Status -->
+    <fieldset class="space-y-2">
+      <legend class="text-sm font-medium text-foreground">Status</legend>
+      <div class="space-y-2">
+        <label class="flex items-center gap-2.5 rounded-xl border border-border bg-background px-3 py-2 text-sm cursor-pointer transition hover:bg-muted/40">
+          <input
+            type="radio"
+            name="status"
+            value="tersedia"
+            ${curStatus === 'tersedia' ? raw('checked') : ''}
+            class="size-4 accent-primary"
+          />
+          <span>Tersedia</span>
+        </label>
+        <label class="flex items-center gap-2.5 rounded-xl border border-border bg-background px-3 py-2 text-sm cursor-pointer transition hover:bg-muted/40">
+          <input
+            type="radio"
+            name="status"
+            value="dipinjam"
+            ${curStatus === 'dipinjam' ? raw('checked') : ''}
+            class="size-4 accent-primary"
+          />
+          <span>Dipinjam</span>
+        </label>
+      </div>
+    </fieldset>
   `;
+
+  return renderBaseFilterModal({
+    id: 'dialog-filter-kelola',
+    title: 'Filter Barang Inventaris',
+    countActive,
+    closeAction: 'close-filter-dialog',
+    resetAction: 'reset-filter-dialog',
+    applyAction: 'apply-filter-dialog',
+    formId: 'form-filter-kelola',
+    bodyContent,
+  });
 }
 
 /**
@@ -450,7 +363,7 @@ export function renderFilterModal({ filters = {}, kategoriList = [], countActive
 export function renderDetailModal(item) {
   if (!item) {
     return html`
-      <dialog id="dialog-detail-kelola" aria-labelledby="dialog-detail-title" class="fixed inset-0 m-auto z-50 w-full max-w-xl rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm">
+      <dialog id="dialog-detail-kelola" aria-labelledby="dialog-detail-title" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 m-0 z-50 w-full max-w-xl rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm">
         <div class="p-6">
           <h2 id="dialog-detail-title" class="sr-only">Detail Inventaris</h2>
         </div>
@@ -463,7 +376,7 @@ export function renderDetailModal(item) {
   const jumlahText = sisa === total ? `${total} unit` : `${sisa} dari ${total} unit tersedia`;
 
   return html`
-    <dialog id="dialog-detail-kelola" aria-labelledby="dialog-detail-title" class="fixed inset-0 m-auto z-50 w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm">
+    <dialog id="dialog-detail-kelola" aria-labelledby="dialog-detail-title" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 m-0 z-50 w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm">
       <div class="flex flex-col max-h-[90vh]">
         <!-- Header -->
         <div class="flex items-center justify-between border-b border-border px-6 py-4">
@@ -650,7 +563,7 @@ export function renderFormModal({
       : 'Tambah Inventaris';
 
   return html`
-    <dialog id="dialog-form-kelola" aria-labelledby="dialog-form-title" class="fixed inset-0 m-auto z-50 w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm">
+    <dialog id="dialog-form-kelola" aria-labelledby="dialog-form-title" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 m-0 z-50 w-full max-w-2xl max-h-[90vh] overflow-hidden rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm">
       <form id="kelola-inventaris-form" class="flex flex-col max-h-[90vh]" onsubmit="return false;">
         <!-- Header Dialog -->
         <div class="flex items-center justify-between border-b border-border px-6 py-4">
@@ -727,19 +640,24 @@ export function renderFormModal({
               <label for="form-select-kategori" class="${labelClass()}">
                 Kategori <span class="text-rose-500">*</span>
               </label>
-              <select
-                id="form-select-kategori"
-                name="idKategori"
-                class="${selectClass({ error: Boolean(formErrors.idKategori) })}"
-                required
-              >
-                <option value="">Pilih kategori...</option>
-                ${raw(kategoriList.map((k) => `
-                  <option value="${escapeHtml(k.idKategori)}" ${formData.idKategori === k.idKategori ? 'selected' : ''}>
-                    ${escapeHtml(k.namaKategori)}
-                  </option>
-                `).join(''))}
-              </select>
+              <div class="relative">
+                <select
+                  id="form-select-kategori"
+                  name="idKategori"
+                  class="${selectClass({ error: Boolean(formErrors.idKategori), className: 'appearance-none pr-10 cursor-pointer' })}"
+                  required
+                >
+                  <option value="">Pilih kategori...</option>
+                  ${raw(kategoriList.map((k) => `
+                    <option value="${escapeHtml(k.idKategori)}" ${formData.idKategori === k.idKategori ? 'selected' : ''}>
+                      ${escapeHtml(k.namaKategori)}
+                    </option>
+                  `).join(''))}
+                </select>
+                <span class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground flex items-center">
+                  ${renderIcon('ChevronDown', 'h-4 w-4')}
+                </span>
+              </div>
               ${formErrors.idKategori ? html`
                 <p class="mt-1 text-xs text-rose-500">${formErrors.idKategori}</p>
               ` : raw('')}
@@ -889,7 +807,7 @@ export function renderFormModal({
 export function renderDeleteModal(item, isSubmitting = false) {
   if (!item) {
     return html`
-      <dialog id="dialog-delete-kelola" aria-labelledby="dialog-delete-title" class="fixed inset-0 m-auto z-50 w-full max-w-md rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm">
+      <dialog id="dialog-delete-kelola" aria-labelledby="dialog-delete-title" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 m-0 z-50 w-full max-w-md rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm">
         <div class="p-6">
           <h2 id="dialog-delete-title" class="sr-only">Hapus Inventaris</h2>
         </div>
@@ -897,46 +815,31 @@ export function renderDeleteModal(item, isSubmitting = false) {
     `;
   }
 
-  return html`
-    <dialog
-      id="dialog-delete-kelola"
-      aria-labelledby="dialog-delete-title"
-      class="fixed inset-0 m-auto z-50 w-full max-w-md rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm"
-    >
-      <div class="flex flex-col p-6 text-center items-center">
-        <!-- Icon Trash Merah -->
-        <div class="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
-          ${renderIcon('Trash2', 'h-8 w-8')}
-        </div>
+  const descHtml = html`Apakah anda yakin ingin menghapus inventaris <strong class="text-foreground">${item.namaBarang}</strong>? Tindakan ini tidak dapat dibatalkan.`;
 
-        <h2 id="dialog-delete-title" class="text-xl font-bold text-foreground">Hapus Inventaris?</h2>
-        <p class="mt-2 text-sm text-muted-foreground">
-          Apakah anda yakin ingin menghapus inventaris <strong class="text-foreground">${item.namaBarang}</strong>? Tindakan ini tidak dapat dibatalkan.
-        </p>
-
-        <!-- Tombol Aksi -->
-        <div class="mt-6 flex w-full items-center justify-center gap-3">
-          <button
-            type="button"
-            data-action="close-delete-dialog"
-            class="${buttonClass({ variant: 'outline', size: 'default', className: 'flex-1' })}"
-            ${isSubmitting ? 'disabled' : ''}
-          >
-            Kembali
-          </button>
-          <button
-            type="button"
-            data-action="confirm-delete-inventaris"
-            data-id="${item.idInventaris}"
-            class="${buttonClass({ variant: 'destructive', size: 'default', className: 'flex-1' })}"
-            ${isSubmitting ? 'disabled' : ''}
-          >
-            ${isSubmitting ? 'Menghapus...' : 'Hapus'}
-          </button>
-        </div>
-      </div>
-    </dialog>
-  `;
+  return renderModal({
+    asDialog: true,
+    id: 'dialog-delete-kelola',
+    titleId: 'dialog-delete-title',
+    variant: 'delete',
+    title: 'Hapus Inventaris?',
+    description: descHtml,
+    actions: [
+      {
+        label: 'Kembali',
+        action: 'close-delete-dialog',
+        variant: 'outline',
+        disabled: isSubmitting,
+      },
+      {
+        label: isSubmitting ? 'Menghapus...' : 'Hapus',
+        action: 'confirm-delete-inventaris',
+        dataId: item.idInventaris,
+        variant: 'destructive',
+        disabled: isSubmitting,
+      },
+    ],
+  });
 }
 
 /**
@@ -947,7 +850,7 @@ export function renderDeleteModal(item, isSubmitting = false) {
 export function renderFeedbackModal(feedback) {
   if (!feedback) {
     return html`
-      <dialog id="dialog-feedback-kelola" aria-labelledby="dialog-feedback-title" class="fixed inset-0 m-auto z-50 w-full max-w-md rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm">
+      <dialog id="dialog-feedback-kelola" aria-labelledby="dialog-feedback-title" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 m-0 z-50 w-full max-w-md rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm">
         <div class="p-6">
           <h2 id="dialog-feedback-title" class="sr-only">Notifikasi</h2>
         </div>
@@ -956,34 +859,22 @@ export function renderFeedbackModal(feedback) {
   }
 
   const isSuccess = feedback.type === 'success';
-  return html`
-    <dialog
-      id="dialog-feedback-kelola"
-      aria-labelledby="dialog-feedback-title"
-      class="fixed inset-0 m-auto z-50 w-full max-w-md rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm"
-    >
-      <div class="flex flex-col p-6 text-center items-center">
-        <div class="mb-4 inline-flex h-16 w-16 items-center justify-center rounded-2xl ${
-          isSuccess ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
-        }">
-          ${renderIcon(isSuccess ? 'CheckCircle2' : 'AlertCircle', 'h-8 w-8')}
-        </div>
-
-        <h2 id="dialog-feedback-title" class="text-xl font-bold text-foreground">${feedback.title}</h2>
-        <p class="mt-2 text-sm text-muted-foreground">${feedback.message}</p>
-
-        <div class="mt-6 flex w-full items-center justify-center">
-          <button
-            type="button"
-            data-action="close-feedback-dialog"
-            class="${buttonClass({ variant: 'default', size: 'default', className: 'w-full' })}"
-          >
-            Kembali
-          </button>
-        </div>
-      </div>
-    </dialog>
-  `;
+  return renderModal({
+    asDialog: true,
+    id: 'dialog-feedback-kelola',
+    titleId: 'dialog-feedback-title',
+    variant: isSuccess ? 'success' : 'reject',
+    title: feedback.title,
+    description: feedback.message,
+    actions: [
+      {
+        label: 'Kembali',
+        action: 'close-feedback-dialog',
+        variant: 'default',
+        className: 'w-full rounded-xl',
+      },
+    ],
+  });
 }
 
 /**
@@ -1007,67 +898,65 @@ export function renderTableSection(state = {}) {
   return html`
     <div id="kelola-table-container" class="space-y-4">
       <!-- Tabel Pembungkus Overflow 360px safe -->
-      <div class="overflow-hidden rounded-xl border border-border bg-background/50">
-        <div class="overflow-x-auto">
-          <table class="min-w-full border-collapse text-left text-sm">
-            <thead>
-              <tr class="border-b border-border bg-muted/40 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <th scope="col" class="px-3 py-3 w-12">No</th>
-                <th scope="col" class="px-3 py-3 min-w-[200px]">Nama Barang</th>
-                <th scope="col" class="px-3 py-3 min-w-[120px]">Kategori</th>
-                <th scope="col" class="px-3 py-3 min-w-[100px] text-right">Jumlah Unit</th>
-                <th scope="col" class="px-3 py-3 min-w-[120px]">Kondisi</th>
-                <th scope="col" class="px-3 py-3 min-w-[100px]">Status</th>
-                <th scope="col" class="px-3 py-3 min-w-[160px] text-center">Aksi</th>
+      <div class="w-full overflow-x-auto">
+        <table class="w-full min-w-full border-collapse text-left">
+          <thead>
+            <tr class="border-b border-slate-100 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <th scope="col" class="px-4 py-4 w-12 text-center">No</th>
+              <th scope="col" class="px-4 py-4 min-w-[200px]">Nama Barang</th>
+              <th scope="col" class="px-4 py-4 min-w-[120px]">Kategori</th>
+              <th scope="col" class="px-4 py-4 min-w-[100px] text-right">Jumlah Unit</th>
+              <th scope="col" class="px-4 py-4 min-w-[120px]">Kondisi</th>
+              <th scope="col" class="px-4 py-4 min-w-[100px]">Status</th>
+              <th scope="col" class="px-4 py-4 min-w-[160px] text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${loading ? renderTableSkeleton() : error ? html`
+              <tr class="border-b border-slate-100 last:border-0">
+                <td colspan="7" class="px-4 py-12 text-center">
+                  <div class="flex flex-col items-center justify-center gap-2">
+                    <span class="text-destructive font-semibold">Gagal memuat inventaris</span>
+                    <p class="text-xs text-muted-foreground">${error}</p>
+                    <button
+                      type="button"
+                      data-action="retry-load"
+                      class="${buttonClass({ variant: 'outline', size: 'sm', className: 'mt-2' })}"
+                    >
+                      Coba Lagi
+                    </button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody class="divide-y divide-border text-sm">
-              ${loading ? renderTableSkeleton() : error ? html`
-                <tr>
-                  <td colspan="7" class="px-4 py-12 text-center">
-                    <div class="flex flex-col items-center justify-center gap-2">
-                      <span class="text-destructive font-semibold">Gagal memuat inventaris</span>
-                      <p class="text-xs text-muted-foreground">${error}</p>
+            ` : items.length === 0 ? html`
+              <tr class="border-b border-slate-100 last:border-0">
+                <td colspan="7" class="px-4 py-12 text-center">
+                  <div class="flex flex-col items-center justify-center gap-2">
+                    <span class="text-base font-semibold text-foreground">
+                      ${adaFilter ? 'Tidak ada hasil yang cocok' : 'Belum ada inventaris'}
+                    </span>
+                    <p class="text-xs text-muted-foreground max-w-sm">
+                      ${adaFilter
+                        ? 'Coba ubah kata kunci pencarian atau setel ulang filter.'
+                        : "Anda belum memiliki barang inventaris. Klik 'Tambah Inventaris' untuk mulai."}
+                    </p>
+                    ${adaFilter ? html`
                       <button
                         type="button"
-                        data-action="retry-load"
+                        data-action="reset-filter-direct"
                         class="${buttonClass({ variant: 'outline', size: 'sm', className: 'mt-2' })}"
                       >
-                        Coba Lagi
+                        Setel Ulang Filter
                       </button>
-                    </div>
-                  </td>
-                </tr>
-              ` : items.length === 0 ? html`
-                <tr>
-                  <td colspan="7" class="px-4 py-12 text-center">
-                    <div class="flex flex-col items-center justify-center gap-2">
-                      <span class="text-base font-semibold text-foreground">
-                        ${adaFilter ? 'Tidak ada hasil yang cocok' : 'Belum ada inventaris'}
-                      </span>
-                      <p class="text-xs text-muted-foreground max-w-sm">
-                        ${adaFilter
-                          ? 'Coba ubah kata kunci pencarian atau setel ulang filter.'
-                          : "Anda belum memiliki barang inventaris. Klik 'Tambah Inventaris' untuk mulai."}
-                      </p>
-                      ${adaFilter ? html`
-                        <button
-                          type="button"
-                          data-action="reset-filter-direct"
-                          class="${buttonClass({ variant: 'outline', size: 'sm', className: 'mt-2' })}"
-                        >
-                          Setel Ulang Filter
-                        </button>
-                      ` : raw('')}
-                    </div>
-                  </td>
-                </tr>
-              ` : raw(
-                items.map((it, idx) => renderTableRow(it, idx, meta.page, meta.perPage).toString()).join('')
-              )}
-            </tbody>
-          </table>
-        </div>
+                    ` : raw('')}
+                  </div>
+                </td>
+              </tr>
+            ` : raw(
+              items.map((it, idx) => renderTableRow(it, idx, meta.page, meta.perPage).toString()).join('')
+            )}
+          </tbody>
+        </table>
       </div>
 
       <!-- Paginasi -->
@@ -1107,7 +996,7 @@ export function renderKelolaContent(state = {}) {
     <div class="space-y-6" id="kelola-inventaris-root">
       <!-- Header Halaman -->
       <div class="space-y-1">
-        <h1 class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Kelola Inventaris</h1>
+        <h1 class="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Kelola Inventaris</h1>
         <p class="text-sm text-muted-foreground">
           Kelola Inventaris OKI Anda.
         </p>
@@ -1117,7 +1006,7 @@ export function renderKelolaContent(state = {}) {
       ${renderKelolaTabs('inventaris')}
 
       <!-- Card List Barang Inventaris -->
-      <div class="rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm">
+      <div class="rounded-xl bg-white p-4 sm:p-6 shadow-[0_1px_4px_rgba(15,23,42,0.025)]">
         <!-- Toolbar Atas: Judul Card + Cari + Filter + Tambah -->
         <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
@@ -1126,52 +1015,30 @@ export function renderKelolaContent(state = {}) {
 
           <div class="flex flex-wrap items-center gap-2">
             <!-- Kolom Cari -->
-            <div id="kelola-search-wrapper" class="relative min-w-[200px] flex-1 sm:w-64 sm:flex-none">
-              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true">
-                ${renderIcon('Search', 'h-4 w-4')}
-              </span>
-              <input
-                type="search"
-                id="kelola-search-input"
-                placeholder="Cari barang inventaris"
-                value="${cari}"
-                class="${inputClass('pl-9 pr-8 h-10')}"
-                aria-label="Cari barang inventaris"
-              />
-              ${cari ? html`
-                <button
-                  type="button"
-                  data-action="clear-search"
-                  aria-label="Hapus kata kunci pencarian"
-                  class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground inline-flex h-5 w-5 items-center justify-center rounded"
-                >
-                  ${renderIcon('X', 'h-3.5 w-3.5')}
-                </button>
-              ` : raw('')}
-            </div>
+            ${raw(renderSearchInput({
+              id: 'kelola-search-input',
+              wrapperId: 'kelola-search-wrapper',
+              value: cari,
+              placeholder: 'Cari barang inventaris',
+              ariaLabel: 'Cari barang inventaris',
+              className: 'min-w-[200px] flex-1 sm:w-64 sm:flex-none',
+              clearable: true,
+              clearAction: 'clear-search',
+            }))}
 
             <!-- Tombol Filter -->
-            <button
-              type="button"
-              data-action="open-filter-dialog"
-              aria-label="Filter barang inventaris"
-              title="Filter barang inventaris"
-              class="relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-input bg-background text-foreground transition hover:bg-accent"
-            >
-              ${renderIcon('Funnel', 'h-4 w-4')}
-              <span
-                id="kelola-filter-badge-counter"
-                class="absolute -top-1.5 -right-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground border border-background ${nAktif > 0 ? '' : 'hidden'}"
-                aria-hidden="true"
-              >
-                ${nAktif > 9 ? '9+' : nAktif}
-              </span>
-            </button>
+            ${renderFilterButton({
+              id: 'kelola-filter-button',
+              action: 'open-filter-dialog',
+              title: 'Filter barang inventaris',
+              ariaLabel: 'Filter barang inventaris',
+              countActive: nAktif,
+            })}
 
             <!-- Tombol Tambah Inventaris (Link Halaman Terpisah) -->
             <a
               href="#/kelola/inventaris/tambah"
-              class="${buttonClass({ variant: 'default', size: 'default', className: 'h-10 gap-1.5' })}"
+              class="${buttonClass({ variant: 'default', size: 'default', className: 'h-11 rounded-full px-5 gap-1.5' })}"
             >
               ${renderIcon('Plus', 'h-4 w-4')}
               <span>Tambah Inventaris</span>
