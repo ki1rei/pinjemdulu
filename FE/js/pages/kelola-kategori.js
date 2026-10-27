@@ -13,6 +13,8 @@ import {
   skeletonClass,
 } from '../ui/classes.js';
 import { renderIcon } from '../ui/icons.js';
+import { renderSearchInput } from '../ui/search-input.js';
+import { renderPagination as renderSharedPagination } from '../ui/pagination.js';
 import {
   getKategoriDenganJumlah,
   createKategori,
@@ -62,35 +64,33 @@ export const HANDLED_KATEGORI_ACTIONS = [
 export function renderKategoriSkeleton() {
   return html`
     <div class="space-y-4 animate-pulse">
-      <div class="overflow-hidden rounded-xl border border-border bg-background/50">
-        <div class="overflow-x-auto">
-          <table class="min-w-full border-collapse text-left text-sm">
-            <thead>
-              <tr class="border-b border-border bg-muted/40 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <th scope="col" class="px-3 py-3 w-12 text-center">No</th>
-                <th scope="col" class="px-3 py-3 min-w-[200px]">Nama Kategori</th>
-                <th scope="col" class="px-3 py-3 min-w-[140px] text-center">Total Barang Per Kategori</th>
-                <th scope="col" class="px-3 py-3 min-w-[160px] text-center">Aksi</th>
+      <div class="w-full overflow-x-auto">
+        <table class="w-full min-w-full border-collapse text-left">
+          <thead>
+            <tr class="border-b border-slate-100 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <th scope="col" class="px-4 py-4 w-12 text-center">No</th>
+              <th scope="col" class="px-4 py-4 min-w-[200px]">Nama Kategori</th>
+              <th scope="col" class="px-4 py-4 min-w-[140px] text-center">Total Barang Per Kategori</th>
+              <th scope="col" class="px-4 py-4 min-w-[160px] text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${raw(
+              Array.from({ length: 5 })
+                .map(
+                  () => `
+              <tr class="border-b border-slate-100 last:border-0">
+                <td class="px-4 py-4"><div class="h-4 w-6 rounded bg-muted animate-pulse mx-auto"></div></td>
+                <td class="px-4 py-4"><div class="h-4 w-3/4 rounded bg-muted animate-pulse"></div></td>
+                <td class="px-4 py-4"><div class="h-4 w-12 rounded bg-muted animate-pulse mx-auto"></div></td>
+                <td class="px-4 py-4"><div class="h-8 w-16 rounded-xl bg-muted animate-pulse mx-auto"></div></td>
               </tr>
-            </thead>
-            <tbody class="divide-y divide-border text-sm">
-              ${raw(
-                Array.from({ length: 5 })
-                  .map(
-                    () => `
-                <tr>
-                  <td class="px-3 py-3"><div class="h-4 w-6 rounded bg-muted animate-pulse mx-auto"></div></td>
-                  <td class="px-3 py-3"><div class="h-4 w-3/4 rounded bg-muted animate-pulse"></div></td>
-                  <td class="px-3 py-3"><div class="h-4 w-12 rounded bg-muted animate-pulse mx-auto"></div></td>
-                  <td class="px-3 py-3"><div class="h-8 w-16 rounded-xl bg-muted animate-pulse mx-auto"></div></td>
-                </tr>
-              `
-                  )
-                  .join('')
-              )}
-            </tbody>
-          </table>
-        </div>
+            `
+                )
+                .join('')
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   `;
@@ -112,7 +112,7 @@ export function renderFormModal({ dialog, editItem, inputNama = '', inputError =
     <dialog
       id="dialog-form-kategori"
       aria-labelledby="dialog-form-kategori-title"
-      class="fixed inset-0 m-auto z-50 w-full max-w-md rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm"
+      class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 m-0 z-50 w-full max-w-md rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm"
       ${isOpen ? 'open' : ''}
     >
       <form id="form-kategori" class="p-6" onsubmit="return false;">
@@ -191,13 +191,13 @@ export function renderConfirmModal({ dialog, editItem, inputNama = '', isSubmitt
     <dialog
       id="dialog-confirm-kategori"
       aria-labelledby="dialog-confirm-kategori-title"
-      class="fixed inset-0 m-auto z-50 w-full max-w-md rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm"
+      class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 m-0 z-50 w-full max-w-md rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm"
       ${isOpen ? 'open' : ''}
     >
       <div class="flex flex-col p-6 text-center items-center">
         <!-- Icon Send / Pesawat Kertas -->
-        <div class="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-          ${renderIcon('Send', 'h-7 w-7')}
+        <div class="mb-4 inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 p-1">
+          <img src="assets/animations/modal-send.gif" alt="Send" class="h-full w-full object-contain select-none pointer-events-none drop-shadow-sm" loading="eager" />
         </div>
 
         <h2 id="dialog-confirm-kategori-title" class="text-lg font-bold text-foreground">${title}</h2>
@@ -245,13 +245,13 @@ export function renderDeleteModal(deleteItem, isSubmitting = false) {
     <dialog
       id="dialog-delete-kategori"
       aria-labelledby="dialog-delete-kategori-title"
-      class="fixed inset-0 m-auto z-50 w-full max-w-md rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm"
+      class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 m-0 z-50 w-full max-w-md rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm"
       ${isOpen ? 'open' : ''}
     >
       <div class="flex flex-col p-6 text-center items-center">
         <!-- Icon Trash Merah -->
-        <div class="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
-          ${renderIcon('Trash2', 'h-7 w-7')}
+        <div class="mb-4 inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 p-1">
+          <img src="assets/animations/modal-delete.gif" alt="Hapus" class="h-full w-full object-contain select-none pointer-events-none drop-shadow-sm" loading="eager" />
         </div>
 
         <h2 id="dialog-delete-kategori-title" class="text-lg font-bold text-foreground">Hapus kategori?</h2>
@@ -302,12 +302,14 @@ export function renderFeedbackModal(feedback) {
     <dialog
       id="dialog-feedback-kategori"
       aria-labelledby="dialog-feedback-kategori-title"
-      class="fixed inset-0 m-auto z-50 w-full max-w-md rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm"
+      class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 m-0 z-50 w-full max-w-md rounded-2xl border border-border bg-background p-0 shadow-2xl backdrop:bg-black/50 backdrop:backdrop-blur-sm"
       ${isOpen ? 'open' : ''}
     >
       <div class="flex flex-col p-6 text-center items-center">
-        <div class="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-2xl ${iconColor}">
-          ${renderIcon(iconName, 'h-7 w-7')}
+        <div class="mb-4 inline-flex h-20 w-20 items-center justify-center rounded-2xl ${iconColor} p-1">
+          ${isDipakai || isError
+            ? html`<img src="assets/animations/modal-reject.gif" alt="Galat" class="h-full w-full object-contain select-none pointer-events-none drop-shadow-sm" loading="eager" />`
+            : html`<img src="assets/animations/modal-success.gif" alt="Sukses" class="h-full w-full object-contain select-none pointer-events-none drop-shadow-sm" loading="eager" />`}
         </div>
 
         <h2 id="dialog-feedback-kategori-title" class="text-lg font-bold text-foreground">${title}</h2>
@@ -416,138 +418,90 @@ export function renderKategoriTableContent({
   return html`
     <div class="space-y-4">
       <!-- Tabel Pembungkus Overflow 360px safe -->
-      <div class="overflow-hidden rounded-xl border border-border bg-background/50">
-        <div class="overflow-x-auto">
-          <table class="min-w-full border-collapse text-left text-sm">
-            <thead>
-              <tr class="border-b border-border bg-muted/40 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <th scope="col" class="px-3 py-3 w-12 text-center">No</th>
-                <th scope="col" class="px-3 py-3 min-w-[200px]">Nama Kategori</th>
-                <th scope="col" class="px-3 py-3 min-w-[140px] text-center">Total Barang Per Kategori</th>
-                <th scope="col" class="px-3 py-3 min-w-[160px] text-center">Aksi</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-border text-sm">
-              ${items.map((kat, idx) => {
-                const no = startNo + idx + 1;
-                const totalBarang = Number(kat.totalBarang || 0);
-                const isDipakai = totalBarang > 0;
+      <div class="w-full overflow-x-auto">
+        <table class="w-full min-w-full border-collapse text-left">
+          <thead>
+            <tr class="border-b border-slate-100 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+              <th scope="col" class="px-4 py-4 w-12 text-center">No</th>
+              <th scope="col" class="px-4 py-4 min-w-[200px]">Nama Kategori</th>
+              <th scope="col" class="px-4 py-4 min-w-[140px] text-center">Total Barang Per Kategori</th>
+              <th scope="col" class="px-4 py-4 min-w-[160px] text-center">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map((kat, idx) => {
+              const no = startNo + idx + 1;
+              const totalBarang = Number(kat.totalBarang || 0);
+              const isDipakai = totalBarang > 0;
 
-                return html`
-                  <tr class="transition hover:bg-muted/20">
-                    <td class="px-3 py-3 text-center text-muted-foreground align-middle">${no}</td>
-                    <td class="px-3 py-3 font-medium text-foreground align-middle">${kat.namaKategori}</td>
-                    <td class="px-3 py-3 text-center align-middle">
-                      <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-foreground">
-                        ${totalBarang}
-                      </span>
-                    </td>
-                    <td class="px-3 py-3 align-middle">
-                      <div class="flex items-center justify-center gap-1" role="group" aria-label="Aksi kategori ${kat.namaKategori}">
-                        <button
-                          type="button"
-                          data-action="open-edit-dialog"
-                          data-id="${kat.idKategori}"
-                          data-nama="${kat.namaKategori}"
-                          aria-label="Ubah kategori ${kat.namaKategori}"
-                          title="Ubah ${kat.namaKategori}"
-                          class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          ${renderIcon('Pencil', 'h-4 w-4')}
-                        </button>
+              return html`
+                <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
+                  <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400 align-middle">${no}</td>
+                  <td class="min-w-[200px] px-4 py-4 font-medium text-slate-800 text-xs align-middle">${kat.namaKategori}</td>
+                  <td class="whitespace-nowrap px-4 py-4 text-center align-middle">
+                    <span class="inline-flex items-center justify-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">
+                      ${totalBarang}
+                    </span>
+                  </td>
+                  <td class="whitespace-nowrap px-4 py-4 align-middle">
+                    <div class="flex items-center justify-center gap-1" role="group" aria-label="Aksi kategori ${kat.namaKategori}">
+                      <button
+                        type="button"
+                        data-action="open-edit-dialog"
+                        data-id="${kat.idKategori}"
+                        data-nama="${kat.namaKategori}"
+                        aria-label="Ubah kategori ${kat.namaKategori}"
+                        title="Ubah ${kat.namaKategori}"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        ${renderIcon('Pencil', 'h-4 w-4')}
+                      </button>
 
-                        ${isDipakai
-                          ? html`
-                              <button
-                                type="button"
-                                disabled
-                                aria-disabled="true"
-                                aria-label="Hapus kategori ${kat.namaKategori} nonaktif karena masih digunakan"
-                                title="Kategori masih digunakan"
-                                class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-muted-foreground/40 cursor-not-allowed opacity-50"
-                              >
-                                ${renderIcon('Trash2', 'h-4 w-4')}
-                              </button>
-                              <span class="text-xs text-muted-foreground ml-1 whitespace-nowrap">Dipakai ${totalBarang} barang</span>
-                            `
-                          : html`
-                              <button
-                                type="button"
-                                data-action="open-delete-dialog"
-                                data-id="${kat.idKategori}"
-                                data-nama="${kat.namaKategori}"
-                                data-count="${totalBarang}"
-                                aria-label="Hapus kategori ${kat.namaKategori}"
-                                title="Hapus ${kat.namaKategori}"
-                                class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-destructive transition hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                              >
-                                ${renderIcon('Trash2', 'h-4 w-4')}
-                              </button>
-                            `}
-                      </div>
-                    </td>
-                  </tr>
-                `;
-              })}
-            </tbody>
-          </table>
-        </div>
+                      ${isDipakai
+                        ? html`
+                            <button
+                              type="button"
+                              disabled
+                              aria-disabled="true"
+                              aria-label="Hapus kategori ${kat.namaKategori} nonaktif karena masih digunakan"
+                              title="Kategori masih digunakan"
+                              class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-300 cursor-not-allowed opacity-50"
+                            >
+                              ${renderIcon('Trash2', 'h-4 w-4')}
+                            </button>
+                            <span class="text-xs text-slate-400 ml-1 whitespace-nowrap">Dipakai ${totalBarang} barang</span>
+                          `
+                        : html`
+                            <button
+                              type="button"
+                              data-action="open-delete-dialog"
+                              data-id="${kat.idKategori}"
+                              data-nama="${kat.namaKategori}"
+                              data-count="${totalBarang}"
+                              aria-label="Hapus kategori ${kat.namaKategori}"
+                              title="Hapus ${kat.namaKategori}"
+                              class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-red-600 transition hover:bg-red-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              ${renderIcon('Trash2', 'h-4 w-4')}
+                            </button>
+                          `}
+                    </div>
+                  </td>
+                </tr>
+              `;
+            })}
+          </tbody>
+        </table>
       </div>
 
       <!-- Footer Paginasi -->
-      ${totalPages > 1
-        ? html`
-            <nav class="mt-5 flex flex-wrap items-center justify-center gap-1.5 sm:justify-end" aria-label="Navigasi Halaman Kategori">
-              <button
-                type="button"
-                data-action="change-page"
-                data-page="${page - 1}"
-                ${page <= 1 ? raw('disabled aria-disabled="true"') : ''}
-                class="inline-flex h-9 items-center justify-center gap-1 rounded-xl border border-input bg-background px-3 text-xs font-medium transition hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
-                aria-label="Halaman sebelumnya"
-              >
-                ${renderIcon('ChevronLeft', 'h-4 w-4')}
-                <span>Sebelumnya</span>
-              </button>
-
-              <div class="flex items-center gap-1">
-                ${pageList.map((p) => {
-                  if (p === '…' || p === '...') {
-                    return html`<span class="inline-flex h-9 w-9 items-center justify-center text-xs text-muted-foreground">…</span>`;
-                  }
-                  const isCurrent = p === page;
-                  return html`
-                    <button
-                      type="button"
-                      data-action="change-page"
-                      data-page="${p}"
-                      aria-current="${isCurrent ? 'page' : 'false'}"
-                      class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-xs font-medium transition ${
-                        isCurrent
-                          ? 'bg-primary text-primary-foreground font-semibold shadow-sm'
-                          : 'border border-input bg-background text-foreground hover:bg-accent'
-                      }"
-                    >
-                      ${p}
-                    </button>
-                  `;
-                })}
-              </div>
-
-              <button
-                type="button"
-                data-action="change-page"
-                data-page="${page + 1}"
-                ${page >= totalPages ? raw('disabled aria-disabled="true"') : ''}
-                class="inline-flex h-9 items-center justify-center gap-1 rounded-xl border border-input bg-background px-3 text-xs font-medium transition hover:bg-accent disabled:pointer-events-none disabled:opacity-50"
-                aria-label="Halaman berikutnya"
-              >
-                <span>Berikutnya</span>
-                ${renderIcon('ChevronRight', 'h-4 w-4')}
-              </button>
-            </nav>
-          `
-        : ''}
+      <nav class="mt-5 flex flex-wrap items-center justify-center sm:justify-end" aria-label="Navigasi Halaman Kategori">
+        ${raw(renderSharedPagination({
+          currentPage: Math.max(1, page || 1),
+          totalPages: Math.max(1, totalPages || 1),
+          action: 'change-page',
+        }))}
+      </nav>
     </div>
   `;
 }
@@ -580,7 +534,7 @@ export function renderKelolaKategoriContent(state = {}) {
     <div class="space-y-6" id="kelola-kategori-root">
       <!-- Header Halaman -->
       <div class="space-y-1">
-        <h1 class="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Kelola Inventaris</h1>
+        <h1 class="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Kelola Inventaris</h1>
         <p class="text-sm text-muted-foreground">
           Kelola Kategori Inventaris OKI Anda.
         </p>
@@ -590,7 +544,7 @@ export function renderKelolaKategoriContent(state = {}) {
       ${renderTabs('kategori')}
 
       <!-- Card Kontainer List Kategori -->
-      <div class="rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm">
+      <div class="rounded-xl bg-white p-4 sm:p-6 shadow-[0_1px_4px_rgba(15,23,42,0.025)]">
         <!-- Toolbar Atas: Judul Card + Cari + Tambah -->
         <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
@@ -599,37 +553,22 @@ export function renderKelolaKategoriContent(state = {}) {
 
           <div class="flex flex-wrap items-center gap-2">
             <!-- Kolom Pencarian -->
-            <div id="kelola-search-wrapper" class="relative min-w-[200px] flex-1 sm:w-64 sm:flex-none">
-              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" aria-hidden="true">
-                ${renderIcon('Search', 'h-4 w-4')}
-              </span>
-              <input
-                id="input-cari-kategori"
-                type="search"
-                placeholder="Cari kategori"
-                value="${cari}"
-                class="${inputClass('pl-9 pr-8 h-10')}"
-                aria-label="Cari kategori"
-              />
-              ${cari
-                ? html`
-                    <button
-                      type="button"
-                      data-action="clear-search"
-                      aria-label="Bersihkan pencarian"
-                      class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground inline-flex h-5 w-5 items-center justify-center rounded"
-                    >
-                      ${renderIcon('X', 'h-3.5 w-3.5')}
-                    </button>
-                  `
-                : ''}
-            </div>
+            ${raw(renderSearchInput({
+              id: 'input-cari-kategori',
+              wrapperId: 'kelola-search-wrapper',
+              value: cari,
+              placeholder: 'Cari kategori',
+              ariaLabel: 'Cari kategori',
+              className: 'min-w-[200px] flex-1 sm:w-64 sm:flex-none',
+              clearable: true,
+              clearAction: 'clear-search',
+            }))}
 
             <!-- Tombol Tambah Kategori -->
             <button
               type="button"
               data-action="open-tambah-dialog"
-              class="${buttonClass({ variant: 'default', size: 'default', className: 'h-10 gap-1.5' })}"
+              class="${buttonClass({ variant: 'default', size: 'default', className: 'h-11 rounded-full px-5 gap-1.5' })}"
             >
               ${renderIcon('Plus', 'h-4 w-4')}
               <span>Tambah Kategori</span>
