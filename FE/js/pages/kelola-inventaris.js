@@ -986,7 +986,7 @@ export function renderKelolaContent(state = {}) {
   const adaFilter = nAktif > 0 || cari.trim().length > 0;
 
   return html`
-    <div class="space-y-6" id="kelola-inventaris-root">
+    <div class="w-full space-y-6 px-5 pb-8 pt-8 sm:px-6 lg:px-7" id="kelola-inventaris-root">
       <!-- Header Halaman -->
       <div class="space-y-1">
         <h1 class="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">Kelola Inventaris</h1>
