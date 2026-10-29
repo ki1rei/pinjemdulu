@@ -586,11 +586,17 @@ function renderContent() {
       <div class="w-full overflow-x-auto">
       <table class="w-full min-w-[790px] border-collapse text-left">
       <thead>
-        <tr class="border-b border-slate-100 text-sm font-semibold leading-[140%] tracking-normal text-slate-400">
-          <th class="px-4 py-3.5 text-center">No</th><th class="px-4 py-3.5">Nama Peminjam</th>
-          <th class="px-4 py-3.5">Barang Dipinjam</th><th class="px-4 py-3.5 text-center">Tanggal Mulai</th>
-          <th class="px-4 py-3.5 text-center">Tanggal Selesai</th><th class="px-4 py-3.5 text-center">Tanggal Kembali</th>
-          <th class="px-4 py-3.5 text-center">Status</th><th class="px-4 py-3.5 text-center">Aksi</th></tr></thead>
+        <tr class="border-b border-slate-100 text-sm leading-[140%] tracking-normal text-slate-400">
+          <th class="px-4 py-3.5 text-center font-semibold">No</th>
+          <th class="px-4 py-3.5 font-semibold">Nama Peminjam</th>
+          <th class="px-4 py-3.5 font-semibold">Barang Dipinjam</th>
+          <th class="px-4 py-3.5 text-center font-semibold">Tanggal Mulai</th>
+          <th class="px-4 py-3.5 text-center font-semibold">Tanggal Selesai</th>
+          <th class="px-4 py-3.5 text-center font-semibold">Tanggal Kembali</th>
+          <th class="px-4 py-3.5 text-center font-semibold">Status</th>
+          <th class="px-4 py-3.5 text-center font-semibold">Aksi</th>
+        </tr>
+      </thead>
         <tbody>
           ${renderTableRows()}
         </tbody>
