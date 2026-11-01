@@ -34,7 +34,6 @@ import {
 } from '../lib/inventaris-form.js';
 import { normalizeKondisi } from '../lib/kondisi.js';
 import { KONDISI_BARANG } from '../lib/constants.js';
-import { getInitials } from '../lib/navigation.js';
 
 export const HANDLED_FORM_ACTIONS = [
   'back-to-list',
@@ -298,7 +297,6 @@ export function renderFormPageContent(state = {}) {
     kategoriQuery = '',
     isKategoriDropdownOpen = false,
     isSubmitting = false,
-    namaOrganisasi = 'OKI Anda',
     loading = false,
     notFound = false,
     forbidden = false,
@@ -351,7 +349,6 @@ export function renderFormPageContent(state = {}) {
     : 'Isi detail informasi barang inventaris yang akan ditambahkan ke sistem.';
   const submitText = isSubmitting ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Tambah Barang';
   const minTotal = formData.minTotal || 1;
-  const initials = getInitials(namaOrganisasi).slice(0, 2);
 
   // Filter opsi kategori untuk combobox
   const filteredKategori = filterKategoriOptions(kategoriList, kategoriQuery);
@@ -556,28 +553,6 @@ export function renderFormPageContent(state = {}) {
                 ` : raw('')}
               </div>
 
-              <!-- Pemilik Inventaris hanya ditampilkan saat menambah barang -->
-              ${!isEdit ? html`
-                <div class="space-y-2">
-                  <label class="${labelClass()}">Pemilik Inventaris</label>
-                  <div
-                    class="flex h-11 w-full items-center justify-between rounded-xl border border-input bg-muted/40 px-3.5 py-2.5 text-sm text-foreground/80 cursor-not-allowed select-none"
-                    title="Pemilik inventaris otomatis ditetapkan sebagai OKI Anda"
-                  >
-                    <div class="flex items-center gap-2">
-                      <span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                        ${initials}
-                      </span>
-                      <span class="font-medium">${namaOrganisasi}</span>
-                    </div>
-                    ${renderIcon('Lock', 'h-4 w-4 text-muted-foreground opacity-60')}
-                  </div>
-                  <p class="text-xs text-muted-foreground">
-                    Otomatis ditetapkan sesuai organisasi kepengurusan Anda (hanya dapat mengelola barang OKI sendiri).
-                  </p>
-                </div>
-              ` : raw('')}
-
               <!-- Field 5: Kondisi Barang (Radio Horizontal) -->
               <div class="space-y-2.5">
                 <span class="${labelClass()}">
@@ -712,7 +687,7 @@ export function renderFormPageContent(state = {}) {
             <button
               type="button"
               data-action="submit-form"
-              class="${buttonClass({ variant: 'default', size: 'default' })}"
+              class="${buttonClass({ variant: 'default', size: 'default', className: 'transition-colors hover:brightness-110' })}"
               ${isSubmitting ? 'disabled' : ''}
             >
               ${submitText}
