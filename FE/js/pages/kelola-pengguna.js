@@ -146,8 +146,8 @@ function renderContent() {
       <h1 class="text-3xl font-semibold tracking-tight text-slate-900">Kelola Pengguna</h1>
       <p class="mt-1 text-sm text-slate-400">Pantau dan kelola akun pengguna, hak akses, dan perannya dalam sistem.</p>
     </div>
-    <div class="rounded-xl bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.025)] sm:p-5">
-      <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div class="rounded-xl bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.025)] sm:p-6">
+      <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 class="text-lg font-semibold text-slate-900">List Pengguna</h2>
         <div class="flex items-center justify-end gap-2.5">
           ${renderSearchInput({ id: 'search-users', value: searchTerm, placeholder: 'Cari nama pengguna', ariaLabel: 'Cari nama pengguna', className: 'w-full sm:w-64' })}

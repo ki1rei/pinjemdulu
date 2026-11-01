@@ -497,8 +497,8 @@ function renderContent() {
   const nAktif = countActiveFilters();
   return `<section class="w-full px-5 pb-8 pt-8 sm:px-6 lg:px-7">
     <div class="mb-9"><h1 class="text-3xl font-semibold tracking-tight text-slate-900">Kelola Peminjaman</h1><p class="mt-1 text-sm text-slate-400">Pantau dan kelola pengajuan peminjaman barang dari peminjam.</p></div>
-    <div class="rounded-xl bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.025)] sm:p-4">
-      <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div class="rounded-xl bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.025)] sm:p-6">
+      <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 class="text-lg font-semibold text-slate-900">List Peminjam</h2>
         <div class="flex items-center gap-3">
           ${renderSearchInput({ id: "search-peminjam", value: searchTerm, placeholder: "Cari nama peminjam", ariaLabel: "Cari nama peminjam", className: "w-full sm:w-[260px]" })}
