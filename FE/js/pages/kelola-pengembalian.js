@@ -197,7 +197,7 @@ function renderFormPengembalianPage() {
   const nim = personNim(row);
   const org = organizationName(row);
 
-  return `<section class="w-full px-5 pb-8 pt-6 sm:px-6 lg:px-7">
+  return `<section class="w-full px-5 pb-8 pt-8 sm:px-6 lg:px-7">
     <div class="w-full space-y-6">
       <div>
         <h1 class="text-3xl font-semibold tracking-tight text-slate-900">Form Pengembalian</h1>
@@ -563,14 +563,14 @@ function renderContent() {
 
   const count = visibleRows().length;
   const nAktif = countActiveFilters();
-  return `<section class="w-full px-5 pb-8 pt-6 sm:px-6 lg:px-7">
-    <div class="mb-6">
+  return `<section class="w-full px-5 pb-8 pt-8 sm:px-6 lg:px-7">
+    <div class="mb-9">
       <h1 class="text-3xl font-semibold tracking-tight text-slate-900">Kelola Pengembalian</h1>
       <p class="mt-1 text-sm text-slate-400">Pantau dan kelola proses pengembalian barang serta kondisi barang yang dikembalikan.</p>
     </div>
     <div class="rounded-xl bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.025)] sm:p-5">
       <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 class="text-base font-semibold text-slate-900">List Pengembalian</h2>
+        <h2 class="text-lg font-semibold text-slate-900">List Pengembalian</h2>
         <div class="flex items-center gap-2.5">
           ${renderSearchInput({ id: 'search-pengembalian', value: searchTerm, placeholder: 'Cari nama peminjam', ariaLabel: 'Cari nama peminjam', className: 'w-full sm:w-64' })}
           ${renderFilterButton({
