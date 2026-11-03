@@ -21,6 +21,7 @@ export const mockRequestPj = [
     tanggalPengajuan: '2026-10-09T13:30:00',
     status: STATUS_REQUEST_PJ.DISETUJUI,
     alasan: 'Membantu pencatatan dan pemeliharaan inventaris organisasi.',
+    lampiran: { nama: 'surat_rekomendasi_pj.pdf', ukuran: 204800 },
   },
   {
     id: 'req-pj-3',
@@ -30,6 +31,7 @@ export const mockRequestPj = [
     status: STATUS_REQUEST_PJ.DITOLAK,
     alasan: 'Pengajuan contoh untuk pengujian status.',
     alasanPenolakan: 'Data persetujuan organisasi belum lengkap.',
+    lampiran: { nama: 'surat_pengajuan_pj.pdf', ukuran: 184320 },
   },
   {
     id: 'req-pj-4',
