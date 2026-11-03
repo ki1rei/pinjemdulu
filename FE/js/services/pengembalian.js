@@ -34,10 +34,11 @@ export async function ajukanPengembalian(id) {
   if (user?.nim && ownerNim && String(user.nim) !== String(ownerNim) && !isDefaultMock) {
     throw buatGalat(403, 'BUKAN_PEMILIK', 'Anda tidak berhak mengajukan pengembalian ini.');
   }
-  if (row.status !== STATUS_PEMINJAMAN.DIPINJAM) {
+  if (row.status !== STATUS_PEMINJAMAN.DIPINJAM && row.status !== STATUS_PEMINJAMAN.DITOLAK) {
     throw buatGalat(409, 'BUKAN_SEDANG_DIPINJAM', 'Hanya barang yang sedang dipinjam yang dapat diajukan pengembaliannya.');
   }
   row.status = STATUS_PEMINJAMAN.MENUNGGU_KONFIRMASI_PENGEMBALIAN;
+  row.alasanPenolakan = null;
   if (!row.tanggalPengembalian) {
     row.tanggalPengembalian = new Date().toISOString().slice(0, 10);
   }
@@ -64,6 +65,8 @@ export async function updateMockPengembalianStatus(id, status, extra = {}) {
   if (status === STATUS_PEMINJAMAN.DIKEMBALIKAN || status === 'dikembalikan' || status === 'selesai') {
     row.tanggalPengembalian = extra.tanggalPengembalian || new Date().toISOString().slice(0, 10);
     if (extra.sanksi) row.sanksi = extra.sanksi;
+    if (extra.kondisiPengembalian) row.kondisiPengembalian = extra.kondisiPengembalian;
+    if (extra.fotoKondisi) row.fotoKondisi = extra.fotoKondisi;
   }
   if (status === STATUS_PEMINJAMAN.DITOLAK || status === 'ditolak') {
     if (extra.alasanPenolakan) row.alasanPenolakan = extra.alasanPenolakan;
