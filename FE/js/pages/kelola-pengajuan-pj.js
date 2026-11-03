@@ -19,6 +19,8 @@ let toastMessage = '';
 let toastType = 'success';
 let modalRow = null;
 let feedbackModal = null;
+let rejectionReason = '';
+let rejectionValidationCount = 0;
 
 function personName(row) { return row.pemohon?.nama || row.namaPemohon || 'Pemohon'; }
 function initials(name) { return String(name).trim().split(/\s+/).slice(0, 2).map((part) => part[0] || '').join('').toUpperCase() || 'P'; }
@@ -76,30 +78,67 @@ function renderPagination() {
   });
 }
 function renderModal() {
-  if (feedbackModal) {
+  if (feedbackModal?.stage === 'approve-confirm' || feedbackModal?.stage === 'reject-confirm') {
+    const approve = feedbackModal.stage === 'approve-confirm';
+    const title = approve ? 'Setujui permohonan role?' : 'Tolak permohonan role?';
+    const description = approve
+      ? 'Apakah anda yakin ingin menyetujui permohonan ini'
+      : 'Apakah anda yakin ingin menolak permohonan ini ?';
+    const actionLabel = approve ? 'Setujui' : 'Tolak';
+    const actionClass = approve
+      ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+      : 'bg-rose-600 text-white hover:bg-rose-700';
+    const gif = approve ? 'assets/animations/modal-approve.gif' : 'assets/animations/modal-cancel.gif';
+    const action = approve ? 'confirm-approve' : 'confirm-reject';
+    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" data-modal-backdrop>
+      <section role="dialog" aria-modal="true" aria-labelledby="request-pj-confirm-title" class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <div class="flex flex-col items-center text-center">
+          <img src="${gif}" alt="" class="mb-4 h-24 w-24 object-contain" />
+          <h2 id="request-pj-confirm-title" class="text-xl font-bold tracking-tight text-slate-900">${title}</h2>
+          <p class="mt-2 text-sm font-normal text-slate-400">${description}</p>
+          <div class="mt-6 flex w-full items-center gap-3">
+            <button type="button" data-action="back-confirm" class="h-12 flex-1 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 transition-colors hover:bg-secondary-hover hover:text-secondary-hover-foreground hover:border-secondary-hover">Kembali</button>
+            <button type="button" data-action="${action}" class="h-12 flex-1 rounded-xl ${actionClass} px-4 text-sm font-semibold transition-colors">${actionLabel}</button>
+          </div>
+        </div>
+      </section>
+    </div>`;
+  }
+  if (feedbackModal?.stage === 'reject-form') {
+    const showError = rejectionValidationCount > 0;
+    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" data-modal-backdrop>
+      <section role="dialog" aria-modal="true" aria-labelledby="request-pj-reject-title" class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+        <h2 id="request-pj-reject-title" class="text-xl font-bold tracking-tight text-slate-900">Permohonan Ditolak</h2>
+        <div class="mt-5 space-y-2">
+          <label for="rejection-reason" class="block text-sm font-semibold text-slate-900">Alasan Penolakan</label>
+          <textarea id="rejection-reason" rows="3" placeholder="Masukkan alasan penolakan" style="resize: none" class="w-full resize-none rounded-xl border ${showError ? 'border-red-300' : 'border-slate-200'} bg-white px-4 py-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-slate-300 focus:ring-2 focus:ring-slate-100">${escapeHtml(rejectionReason)}</textarea>
+          ${showError ? `<div id="rejection-reason-error" role="alert" class="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700 ${rejectionValidationCount > 0 ? 'validation-blink' : ''}">Alasan penolakan wajib diisi.</div>` : ''}
+        </div>
+        <div class="mt-6 flex items-center justify-end gap-3">
+          <button type="button" data-action="cancel-reject-form" class="h-12 rounded-xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-600 transition-colors hover:border-rose-700 hover:bg-rose-700 hover:text-white">Batal</button>
+          <button type="button" data-action="submit-rejection-reason" class="h-12 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:brightness-110">Kirim</button>
+        </div>
+      </section>
+    </div>`;
+  }
+  if (feedbackModal?.stage === 'result') {
     return renderModalComponent({
       id: 'modal-feedback-pj',
       title: feedbackModal.title,
       description: feedbackModal.message,
       variant: feedbackModal.type,
-      actions: [
-        { label: 'Tutup', action: 'close-feedback-modal', variant: 'default' }
-      ]
+      actions: [{ label: 'Tutup', action: 'close-feedback-modal', variant: 'default', className: 'w-full rounded-xl hover:brightness-110' }],
     });
   }
   if (!modalRow) return '';
   const row = modalRow;
   const status = statusInfo(row.status);
-  const details = [
-    ['Nama pemohon', personName(row)],
-    ['NIM', row.pemohon?.nim || '—'],
-    ['Organisasi', row.organisasi?.namaOrganisasi || row.pemohon?.organisasi?.namaOrganisasi || '—'],
-    ['Tanggal pengajuan', dateLabel(row.tanggalPengajuan)],
-    ['Status', status.label],
-    ['Alasan pengajuan', row.alasan || '—'],
-    ...(row.alasanPenolakan ? [['Alasan penolakan', row.alasanPenolakan]] : []),
-  ];
-  return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" data-modal-backdrop><section role="dialog" aria-modal="true" aria-labelledby="request-pj-detail-title" class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"><div class="mb-5 flex items-start justify-between"><div><p class="text-xs font-medium uppercase tracking-wide text-slate-400">Detail pengajuan</p><h2 id="request-pj-detail-title" class="mt-1 text-xl font-semibold text-slate-900">Pengajuan Penanggung Jawab</h2></div><button type="button" data-action="close-modal" aria-label="Tutup detail" class="rounded-lg p-2 text-slate-400 hover:bg-slate-100">${renderIcon('X', 'h-5 w-5')}</button></div><dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">${details.map(([label, value]) => `<div><dt class="text-xs text-slate-400">${escapeHtml(label)}</dt><dd class="mt-1 break-words text-sm font-medium text-slate-800">${escapeHtml(value)}</dd></div>`).join('')}</dl><div class="mt-6 flex justify-end"><button type="button" data-action="close-modal" class="rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground">Tutup</button></div></section></div>`;
+  const organization = row.organisasi?.namaOrganisasi || row.pemohon?.organisasi?.namaOrganisasi || '—';
+  const nim = row.pemohon?.nim || '—';
+  const attachment = row.lampiran?.nama || row.lampiran?.name || '';
+  const statusClass = status.label === 'Menunggu' ? 'bg-amber-50 text-amber-600' : status.label === 'Disetujui' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600';
+  const rejectionReasonText = row.alasanPenolakan || row.alasan_penolakan || '';
+  return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 sm:p-6" data-modal-backdrop><section role="dialog" aria-modal="true" aria-labelledby="request-pj-detail-title" class="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 sm:p-8 shadow-2xl"><div class="mb-6 flex items-center justify-between gap-4"><h2 id="request-pj-detail-title" class="text-2xl font-semibold tracking-tight text-slate-900">Informasi Pemohon</h2><button type="button" data-action="close-modal" aria-label="Tutup detail" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">${renderIcon('X', 'h-5 w-5')}</button></div><div class="space-y-5 text-sm"><div><p class="mb-2 font-semibold text-slate-900">Nama Pemohon</p><div class="flex min-h-[54px] items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white px-5 py-3"><span class="font-medium text-slate-800">${escapeHtml(personName(row))}</span><span class="flex shrink-0 items-center gap-2 text-sm font-medium text-slate-600"><span class="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-[9px] font-bold text-amber-700">${escapeHtml(initials(organization).slice(0, 1))}</span>${escapeHtml(organization)}</span></div></div><div><p class="mb-2 font-semibold text-slate-900">NIM</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 font-medium text-slate-800">${escapeHtml(nim)}</div></div><div><p class="mb-2 font-semibold text-slate-900">Tanggal Pengajuan</p><div class="px-5 py-2 font-medium text-slate-800">${escapeHtml(dateLabel(row.tanggalPengajuan || row.createdAt))}</div></div><div><p class="mb-3 font-semibold text-slate-900">Status</p><span class="inline-flex rounded-xl px-3 py-2 text-sm font-medium ${statusClass}">${escapeHtml(status.label)}</span></div>${status.label === 'Ditolak' ? `<div><p class="mb-2 font-semibold text-slate-900">Alasan Penolakan</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 font-medium text-slate-700">${escapeHtml(rejectionReasonText || '—')}</div></div>` : ''}<div><p class="mb-2 font-semibold text-slate-900">Lampiran Surat</p><div class="flex min-h-[62px] items-center gap-3 overflow-hidden rounded-2xl border border-slate-100 bg-white"><span class="flex h-14 w-16 shrink-0 items-center justify-center bg-slate-50 text-slate-400">${renderIcon('FileImage', 'h-5 w-5')}</span><span class="truncate text-base text-slate-800">${escapeHtml(attachment || 'Tidak ada lampiran surat')}</span></div></div></div><div class="mt-6 flex justify-end"><button type="button" data-action="close-modal" class="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-110">Tutup</button></div></section></div>`;
 }
 function renderContent() {
   const count = visibleRows().length;
@@ -141,6 +180,9 @@ export async function mount(root) {
   currentPage = 1;
   toastMessage = '';
   modalRow = null;
+  feedbackModal = null;
+  rejectionReason = '';
+  rejectionValidationCount = 0;
   rows = await getRequestPj();
   rootElement.innerHTML = renderContent();
   clickHandler = async (event) => {
@@ -151,38 +193,71 @@ export async function mount(root) {
     }
     const action = button.dataset.action;
     const id = button.dataset.id;
-    if (action === 'close-modal' || action === 'close-feedback-modal') { modalRow = null; feedbackModal = null; refresh(); return; }
-    if (action === 'detail') { modalRow = rows.find((row) => String(row.id) === String(id)) || null; refresh(); return; }
+    if (action === 'close-modal' || action === 'close-feedback-modal') { modalRow = null; feedbackModal = null; rejectionReason = ''; rejectionValidationCount = 0; refresh(); return; }
+    if (action === 'detail') { modalRow = rows.find((row) => String(row.id) === String(id)) || null; feedbackModal = null; refresh(); return; }
     if (action === 'tab') { activeTab = button.dataset.tab; currentPage = 1; toastMessage = ''; refresh(); return; }
     if (action === 'prev') { currentPage = Math.max(1, currentPage - 1); refresh(); return; }
     if (action === 'next') { currentPage = Math.min(Math.max(1, Math.ceil(visibleRows().length / PAGE_SIZE)), currentPage + 1); refresh(); return; }
     if (action === 'filter') { searchTerm = ''; currentPage = 1; refresh(); return; }
-    if (action === 'approve' || action === 'reject') {
+    if (action === 'approve') {
+      modalRow = rows.find((row) => String(row.id) === String(id)) || null;
+      feedbackModal = { stage: 'approve-confirm', requestId: id };
+      refresh(); return;
+    }
+    if (action === 'reject') {
+      modalRow = rows.find((row) => String(row.id) === String(id)) || null;
+      rejectionReason = '';
+      rejectionValidationCount = 0;
+      feedbackModal = { stage: 'reject-form', requestId: id };
+      refresh(); return;
+    }
+    if (action === 'back-confirm') {
+      if (feedbackModal?.stage === 'approve-confirm') feedbackModal = null;
+      else if (feedbackModal?.stage === 'reject-confirm') feedbackModal = { stage: 'reject-form', requestId: feedbackModal.requestId };
+      refresh(); return;
+    }
+    if (action === 'submit-rejection-reason') {
+      rejectionReason = rootElement.querySelector('#rejection-reason')?.value.trim() || '';
+      if (!rejectionReason) {
+        rejectionValidationCount += 1;
+        refresh();
+        return;
+      }
+      rejectionValidationCount = 0;
+      feedbackModal = { stage: 'reject-confirm', requestId: feedbackModal?.requestId };
+      refresh(); return;
+    }
+    if (action === 'cancel-reject-form') {
+      feedbackModal = null; modalRow = null; rejectionReason = ''; rejectionValidationCount = 0; refresh(); return;
+    }
+    if (action === 'confirm-approve' || action === 'confirm-reject') {
+      const requestId = feedbackModal?.requestId;
+      const isApprove = action === 'confirm-approve';
       try {
-        await updateMockRequestPjStatus(id, action === 'approve' ? STATUS_REQUEST_PJ.DISETUJUI : STATUS_REQUEST_PJ.DITOLAK);
+        await updateMockRequestPjStatus(requestId, isApprove ? STATUS_REQUEST_PJ.DISETUJUI : STATUS_REQUEST_PJ.DITOLAK, isApprove ? null : rejectionReason.trim());
         rows = await getRequestPj();
-        if (action === 'approve') {
-          feedbackModal = {
-            type: 'approve',
-            title: 'Pengajuan PJ Berhasil Disetujui!',
-            message: 'Pemohon kini resmi menjadi Penanggung Jawab inventaris.',
-          };
-        } else {
-          feedbackModal = {
-            type: 'reject',
-            title: 'Pengajuan PJ Ditolak',
-            message: 'Pengajuan penanggung jawab telah ditolak.',
-          };
-        }
-        toastType = 'success';
-        toastMessage = '';
+        modalRow = null;
+        // Persetujuan menampilkan modal hasil agar tombol Tutup dapat digunakan.
+        // Penolakan langsung kembali ke daftar setelah status berhasil diperbarui.
+        feedbackModal = isApprove ? {
+          stage: 'result',
+          type: 'approve',
+          title: 'Pengajuan PJ Berhasil Disetujui!',
+          message: 'Pemohon kini resmi menjadi Penanggung Jawab inventaris.',
+        } : null;
+        if (!isApprove) modalRow = null;
+        rejectionReason = '';
+        rejectionValidationCount = 0;
+        toastType = 'success'; toastMessage = '';
       } catch (error) {
+        feedbackModal = null;
         toastType = 'error'; toastMessage = error?.message || 'Status pengajuan gagal diperbarui.';
       }
       refresh();
     }
   };
   inputHandler = (event) => {
+    if (event.target.id === 'rejection-reason') { rejectionReason = event.target.value; return; }
     if (event.target.id !== 'search-pemohon-pj') return;
     searchTerm = event.target.value;
     currentPage = 1;
