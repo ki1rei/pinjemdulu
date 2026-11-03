@@ -656,9 +656,11 @@ export function renderFormPageContent(state = {}) {
                     formErrors.fotoFile ? 'border-rose-500 bg-rose-50/20' : ''
                   }"
                 >
-                  <div class="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 shadow-sm">
-                    ${renderIcon('Folder', 'h-7 w-7')}
-                  </div>
+                  <img
+                    src="assets/img/Image-Dropbox.png"
+                    alt=""
+                    class="mb-3 h-14 w-14 object-contain"
+                  />
                   <p class="text-sm text-foreground">
                     Seret file ke sini, atau <span class="font-semibold text-primary underline">Pilih File</span>
                   </p>
