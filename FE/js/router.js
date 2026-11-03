@@ -19,6 +19,8 @@ import * as PeminjamanPage from './pages/peminjaman.js';
 import * as PengembalianPage from './pages/pengembalian.js';
 import * as PengajuanPjPage from './pages/pengajuan-pj.js';
 import * as TataTertibPage from './pages/tata-tertib.js';
+import * as ProfilPage from './pages/profil.js';
+import * as ResetPasswordPage from './pages/reset-password.js';
 import * as PlaceholderPage from './pages/placeholder.js';
 import * as NotFoundPage from './pages/notfound.js';
 
@@ -33,6 +35,8 @@ const MODULES = {
   pengembalian: PengembalianPage,
   'pengajuan-pj': PengajuanPjPage,
   'tata-tertib': TataTertibPage,
+  profil: ProfilPage,
+  'reset-password': ResetPasswordPage,
   'kelola-inventaris': KelolaInventarisPage,
   'kelola-peminjaman': KelolaPeminjamanPage,
   'kelola-pengembalian': KelolaPengembalianPage,
