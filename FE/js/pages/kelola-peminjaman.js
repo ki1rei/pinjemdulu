@@ -381,7 +381,7 @@ function renderModal() {
       primaryAction: {
         label: "Tutup",
         action: "close-feedback-modal",
-        className: "w-full rounded-xl",
+        className: "w-full rounded-xl bg-primary text-white transition-colors hover:brightness-110",
       },
     });
   }
@@ -785,7 +785,11 @@ export async function mount(root) {
               title: "Pengajuan Disetujui",
               description: "Pengajuan peminjaman barang berhasil disetujui dan status telah diperbarui.",
             }
-          : null;
+          : {
+              variant: "reject",
+              title: "Pengajuan Berhasil Ditolak",
+              description: "Pengajuan peminjaman barang berhasil ditolak.",
+            };
       } catch (error) {
         toastType = "error";
         toastMessage = error?.message || "Status pengajuan gagal diperbarui.";
