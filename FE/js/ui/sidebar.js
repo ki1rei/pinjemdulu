@@ -9,6 +9,18 @@ import { getNavForRole, ROLE_LABEL, isActivePath, getInitials } from '../lib/nav
 import { ROLES } from '../lib/constants.js';
 
 export const STORAGE_KEY_SIDEBAR = 'pd:v1:sidebar-collapsed';
+export const STORAGE_KEY_SIDEBAR_GROUPS = 'pd:v1:sidebar-groups';
+
+function getStoredGroupOpen(groupKey) {
+  try {
+    const saved = window.localStorage.getItem(STORAGE_KEY_SIDEBAR_GROUPS);
+    if (!saved) return null;
+    const groups = JSON.parse(saved);
+    return typeof groups?.[groupKey] === 'boolean' ? groups[groupKey] : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Render Brand Header di Sidebar.
@@ -90,8 +102,11 @@ function renderSidebarNav(items, collapsed, currentHash, role = '', idPrefix = '
           role === ROLES.PEMINJAM &&
           item.key === 'nav-pengajuan-saya' &&
           isActivePath('#/dashboard-peminjam', currentHash);
-        const isOpen = hasActiveChild || isDashboardOpen;
-        const icon = item.icon ? renderIcon(item.icon, 'h-6 w-6 transition-colors') : '';
+        // Preferensi buka/tutup manual tetap dipertahankan saat berpindah halaman.
+        // Jika belum ada preferensi, buka otomatis ketika salah satu submenu aktif.
+        const storedOpen = getStoredGroupOpen(item.key);
+        const isOpen = storedOpen ?? (hasActiveChild || isDashboardOpen);
+        const icon = item.icon ? renderIcon(item.icon, 'h-6 w-6 text-zinc-400') : '';
         const chevron = isOpen ? renderIcon('ChevronUp', 'h-4 w-4 text-zinc-400') : renderIcon('ChevronDown', 'h-4 w-4 text-zinc-400');
         const tooltip = collapsed ? `title="${escapeHtml(item.label)}"` : '';
         const groupBadge = item.badge
@@ -109,7 +124,7 @@ function renderSidebarNav(items, collapsed, currentHash, role = '', idPrefix = '
                 aria-expanded="${isOpen}"
                 class="group flex w-full items-center justify-center rounded-2xl px-0 py-3 text-[15px] transition text-zinc-500 hover:bg-zinc-50/60 hover:text-zinc-900"
               >
-                <span class="sidebar-group-icon inline-flex h-6 w-6 shrink-0 items-center justify-center text-zinc-400 transition-colors duration-150">
+                <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center">
                   ${icon}
                 </span>
               </button>
@@ -158,7 +173,7 @@ function renderSidebarNav(items, collapsed, currentHash, role = '', idPrefix = '
               class="group flex w-full items-center justify-between rounded-2xl px-3 py-3 text-[15px] text-zinc-400 transition hover:bg-zinc-50/60 hover:text-zinc-900 font-medium"
             >
               <div class="flex items-center gap-3">
-                <span class="sidebar-group-icon inline-flex h-6 w-6 shrink-0 items-center justify-center text-zinc-400 transition-colors duration-150">
+                <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center">
                   ${icon}
                 </span>
                 <span class="leading-tight text-[15.5px]">${escapeHtml(item.label)}</span>
