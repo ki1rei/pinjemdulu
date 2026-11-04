@@ -73,7 +73,7 @@ function renderTabs() {
     const selected = activeTab === tab.key;
     return `
       <button type="button" data-tab="${tab.key}" aria-pressed="${selected}"
-        class="shrink-0 rounded-lg px-4 py-2.5 text-[12px] font-medium transition ${selected ? 'bg-info text-info-foreground' : 'text-zinc-600 hover:bg-zinc-50'}">
+        class="shrink-0 rounded-lg px-5 py-2.5 text-sm font-medium transition ${selected ? 'bg-info text-info-foreground' : 'text-zinc-600 hover:bg-zinc-50'}">
         ${tab.label}
       </button>`;
   }).join('');
@@ -97,14 +97,14 @@ function renderRows() {
     const id = String(row.id);
     return `
       <tr class="border-b border-zinc-100 last:border-0 hover:bg-zinc-50/60">
-        <td class="whitespace-nowrap px-4 py-4 text-center text-[11px] text-slate-500">${start + index + 1}</td>
+        <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-500">${start + index + 1}</td>
         <td class="px-4 py-4">
-          <div class="flex items-center gap-2 text-[11px] font-medium text-slate-700">
-            <span class="inline-block h-3 w-3 shrink-0 rounded-full ${orgDotClass(org)}" aria-hidden="true"></span>
+          <div class="flex items-center gap-2 text-xs font-medium text-slate-700">
+            <span class="inline-block h-3.5 w-3.5 shrink-0 rounded-full ${orgDotClass(org)}" aria-hidden="true"></span>
             <span>${escapeHtml(org)}</span>
           </div>
         </td>
-        <td class="whitespace-nowrap px-4 py-4 text-center text-[11px] text-slate-500">${escapeHtml(dateOnly(row.tanggalPengajuan))}</td>
+        <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-500">${escapeHtml(dateOnly(row.tanggalPengajuan))}</td>
         <td class="px-4 py-4 text-center">${renderStatusChip({ status: row.status })}</td>
         <td class="px-4 py-4 text-center">
           <button type="button" data-detail="${escapeHtml(id)}" aria-label="Lihat informasi pemohon ${escapeHtml(org)}" title="Lihat detail"
@@ -117,10 +117,15 @@ function renderRows() {
 }
 
 function renderPagination() {
+  const count = getFilteredRows().length;
+  const page = Math.min(currentPage, pageCount());
+  const from = count ? (page - 1) * PAGE_SIZE + 1 : 0;
+  const to = Math.min(page * PAGE_SIZE, count);
   return `
-    <div class="flex items-center justify-end border-t border-zinc-50 px-5 py-3">
+    <div class="mt-6 flex items-center justify-between gap-3">
+      <p class="text-xs text-slate-400">Menampilkan ${from}–${to} dari ${count} pengajuan</p>
       ${renderSharedPagination({
-        currentPage,
+        currentPage: page,
         totalPages: pageCount(),
         attrType: 'data-page',
         showNumbers: false,
@@ -333,40 +338,40 @@ async function confirmSend() {
 
 export function render() {
   return `
-    <section class="min-h-[calc(100vh-112px)] rounded-none bg-background -m-4 p-4 sm:-m-7 sm:p-7">
-      <div class="mb-6">
-        <h1 class="text-[22px] font-semibold leading-tight text-slate-900">Pengajuan PJ</h1>
-        <p class="mt-1 text-[11px] text-slate-400 sm:text-xs">Kelola dan pantau pengajuan penanggung jawab inventaris.</p>
+    <section class="w-full px-5 pb-8 pt-8 sm:px-6 lg:px-7">
+      <div class="mb-9">
+        <h1 class="text-3xl font-semibold tracking-tight text-slate-900">Pengajuan PJ</h1>
+        <p class="mt-1 text-sm text-slate-400">Kelola dan pantau pengajuan penanggung jawab inventaris.</p>
       </div>
 
-      <div class="mb-3 inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-white p-1.5" data-tabs role="tablist" aria-label="Filter status pengajuan PJ">
+      <div class="mb-4 inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-white p-1.5" data-tabs role="tablist" aria-label="Filter status pengajuan PJ">
         ${renderTabs()}
       </div>
 
-      <section class="overflow-hidden rounded-xl border border-zinc-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.02)]">
-        <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-          <h2 data-list-title class="text-[15px] font-semibold text-slate-900">List Pengajuan ${tabLabel()}</h2>
+      <div class="rounded-xl bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.025)] sm:p-6">
+        <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h2 data-list-title class="text-lg font-semibold text-slate-900">List Pengajuan ${tabLabel()}</h2>
           <button type="button" data-action="open-form"
-            class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:opacity-90">
+            class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90">
             ${renderIcon('Plus', 'h-4 w-4')}Tambah Pengajuan
           </button>
         </div>
-        <div class="overflow-x-auto">
+        <div class="w-full overflow-x-auto">
           <table class="w-full min-w-[560px] border-collapse text-left">
-            <thead class="bg-white text-[10px] font-semibold uppercase tracking-[0.02em] text-slate-400">
-              <tr class="border-b border-zinc-100">
-                <th class="px-4 py-3 text-center font-semibold">No</th>
-                <th class="px-4 py-3 font-semibold">Organisasi</th>
-                <th class="px-4 py-3 text-center font-semibold">Tanggal Pengajuan</th>
-                <th class="px-4 py-3 text-center font-semibold">Status</th>
-                <th class="px-4 py-3 text-center font-semibold">Aksi</th>
+            <thead>
+              <tr class="border-b border-zinc-100 text-sm leading-[140%] text-slate-400">
+                <th class="px-4 py-4 text-center font-semibold">No</th>
+                <th class="px-4 py-4 font-semibold">Organisasi</th>
+                <th class="px-4 py-4 text-center font-semibold">Tanggal Pengajuan</th>
+                <th class="px-4 py-4 text-center font-semibold">Status</th>
+                <th class="px-4 py-4 text-center font-semibold">Aksi</th>
               </tr>
             </thead>
             <tbody data-table-body class="divide-y divide-zinc-50">${renderRows()}</tbody>
           </table>
         </div>
         <div data-pagination>${renderPagination()}</div>
-      </section>
+      </div>
       <div data-dialog></div>
     </section>`;
 }
