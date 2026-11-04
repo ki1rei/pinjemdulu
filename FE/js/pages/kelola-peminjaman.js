@@ -289,7 +289,7 @@ function renderTableRows() {
       >${renderIcon("CircleX", "h-4 w-4")}</button>
     `
         : approved
-          ? `<button type="button" data-action="pickup" data-id="${escapeHtml(id)}" title="Konfirmasi pengambilan" aria-label="Konfirmasi pengambilan" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-primary transition hover:bg-blue-50">${renderIcon("HandCoins", "h-4 w-4")}</button>`
+          ? `<button type="button" data-action="pickup" data-id="${escapeHtml(id)}" title="Konfirmasi pengambilan" aria-label="Konfirmasi pengambilan" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700">${renderIcon("HandCoins", "h-4 w-4")}</button>`
           : ""
     }
   </div>
@@ -414,19 +414,19 @@ function renderModal() {
         </div>
         <div class="mt-6 space-y-6 text-sm">
           <div class="flex items-center justify-between gap-6">
-            <p class="text-base font-semibold text-slate-900">Nama Peminjam</p>
+            <p class="text-base font-medium text-slate-900">Nama Peminjam</p>
             <div class="text-right"><p class="text-base font-medium text-slate-800">${escapeHtml(borrowerName)}</p><p class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600"><span class="inline-block h-4 w-4 rounded-full bg-slate-400" aria-hidden="true"></span>${escapeHtml(org)}</p></div>
           </div>
-          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">NIM</p><p class="text-base font-medium text-slate-800">${escapeHtml(borrowerNim)}</p></div>
-          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Nama Barang</p><p class="text-base font-medium text-slate-800 text-right">${escapeHtml(name)}</p></div>
-          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Jumlah Unit</p><p class="text-base font-medium text-slate-800">${escapeHtml(row.jumlahPinjam ?? row.jumlahUnit ?? 1)}</p></div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base font-medium text-slate-900">NIM</p><p class="text-base font-medium text-slate-800">${escapeHtml(borrowerNim)}</p></div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base font-medium text-slate-900">Nama Barang</p><p class="text-base font-medium text-slate-800 text-right">${escapeHtml(name)}</p></div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base font-medium text-slate-900">Jumlah Unit</p><p class="text-base font-medium text-slate-800">${escapeHtml(row.jumlahPinjam ?? row.jumlahUnit ?? 1)}</p></div>
           <div class="grid grid-cols-1 gap-4 ${dateColumns.length === 4 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} sm:gap-0 sm:divide-x sm:divide-slate-300">
-            ${dateColumns.map((date, index) => `<div class="text-center ${index === 0 ? 'sm:px-2' : 'sm:px-4'}"><p class="text-base font-semibold text-slate-900">${date.label}</p><p class="mt-3 text-base font-medium text-slate-800">${escapeHtml(date.value)}</p></div>`).join("")}
+            ${dateColumns.map((date, index) => `<div class="text-center ${index === 0 ? 'sm:px-2' : 'sm:px-4'}"><p class="text-base font-medium text-slate-900">${date.label}</p><p class="mt-3 text-base font-medium text-slate-800">${escapeHtml(date.value)}</p></div>`).join("")}
           </div>
-          ${isDipinjam && row.fotoPengambilan ? `<div><p class="text-sm font-semibold text-slate-900">Foto Barang Saat Diambil</p><img src="${escapeHtml(row.fotoPengambilan)}" alt="Foto barang saat diambil" class="mt-2 max-h-48 rounded-xl object-contain"></div>` : ""}
-          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Status</p><div class="flex items-center gap-2">${renderStatusChip({ status: row.status })}${isTerlambat ? `<span class="relative inline-flex items-center text-rose-600" title="Waktu Terlambat: ${daysLate} Hari">${renderIcon("AlertCircle", "h-5 w-5")}</span>` : ""}</div></div>
-          ${isDitolak ? `<div><p class="mb-2 text-base font-semibold text-slate-900">Alasan Penolakan</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-700">${escapeHtml(row.alasanPenolakan || "Peminjaman tidak dapat diproses karena alasan operasional")}</div></div>` : ""}
-          <div><p class="mb-2 text-base font-semibold text-slate-900">Keperluan Peminjaman Barang</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-800">${escapeHtml(row.keperluan || "Seminar BEM")}</div></div>
+          ${isDipinjam && row.fotoPengambilan ? `<div><p class="text-sm font-medium text-slate-900">Foto Barang Saat Diambil</p><img src="${escapeHtml(row.fotoPengambilan)}" alt="Foto barang saat diambil" class="mt-2 max-h-48 rounded-xl object-contain"></div>` : ""}
+          <div class="flex items-center justify-between gap-6"><p class="text-base font-medium text-slate-900">Status</p><div class="flex items-center gap-2">${renderStatusChip({ status: row.status })}${isTerlambat ? `<span class="relative inline-flex items-center text-rose-600" title="Waktu Terlambat: ${daysLate} Hari">${renderIcon("AlertCircle", "h-5 w-5")}</span>` : ""}</div></div>
+          ${isDitolak ? `<div><p class="mb-2 text-base font-medium text-slate-900">Alasan Penolakan</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-700">${escapeHtml(row.alasanPenolakan || "Peminjaman tidak dapat diproses karena alasan operasional")}</div></div>` : ""}
+          <div><p class="mb-2 text-base font-medium text-slate-900">Keperluan Peminjaman Barang</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-800">${escapeHtml(row.keperluan || "Seminar BEM")}</div></div>
         </div>
         <div class="mt-6 flex justify-end"><button type="button" data-action="close-modal" class="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-110">Tutup</button></div>
       </section>
