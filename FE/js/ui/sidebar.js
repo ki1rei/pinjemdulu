@@ -91,7 +91,7 @@ function renderSidebarNav(items, collapsed, currentHash, role = '', idPrefix = '
           item.key === 'nav-pengajuan-saya' &&
           isActivePath('#/dashboard-peminjam', currentHash);
         const isOpen = hasActiveChild || isDashboardOpen;
-        const icon = item.icon ? renderIcon(item.icon, 'h-6 w-6 text-zinc-400') : '';
+        const icon = item.icon ? renderIcon(item.icon, 'h-6 w-6 transition-colors') : '';
         const chevron = isOpen ? renderIcon('ChevronUp', 'h-4 w-4 text-zinc-400') : renderIcon('ChevronDown', 'h-4 w-4 text-zinc-400');
         const tooltip = collapsed ? `title="${escapeHtml(item.label)}"` : '';
         const groupBadge = item.badge
@@ -109,7 +109,7 @@ function renderSidebarNav(items, collapsed, currentHash, role = '', idPrefix = '
                 aria-expanded="${isOpen}"
                 class="group flex w-full items-center justify-center rounded-2xl px-0 py-3 text-[15px] transition text-zinc-500 hover:bg-zinc-50/60 hover:text-zinc-900"
               >
-                <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center">
+                <span class="sidebar-group-icon inline-flex h-6 w-6 shrink-0 items-center justify-center text-zinc-400 transition-colors duration-150">
                   ${icon}
                 </span>
               </button>
@@ -158,7 +158,7 @@ function renderSidebarNav(items, collapsed, currentHash, role = '', idPrefix = '
               class="group flex w-full items-center justify-between rounded-2xl px-3 py-3 text-[15px] text-zinc-400 transition hover:bg-zinc-50/60 hover:text-zinc-900 font-medium"
             >
               <div class="flex items-center gap-3">
-                <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center">
+                <span class="sidebar-group-icon inline-flex h-6 w-6 shrink-0 items-center justify-center text-zinc-400 transition-colors duration-150">
                   ${icon}
                 </span>
                 <span class="leading-tight text-[15.5px]">${escapeHtml(item.label)}</span>
