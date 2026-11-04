@@ -139,7 +139,7 @@ function renderModal() {
   const attachment = row.lampiran?.nama || row.lampiran?.name || '';
   const statusClass = status.label === 'Menunggu' ? 'bg-amber-50 text-amber-600' : status.label === 'Disetujui' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600';
   const rejectionReasonText = row.alasanPenolakan || row.alasan_penolakan || '';
-  return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 sm:p-6" data-modal-backdrop><section role="dialog" aria-modal="true" aria-labelledby="request-pj-detail-title" class="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 sm:p-8 shadow-2xl"><div class="mb-6 flex items-center justify-between gap-4"><h2 id="request-pj-detail-title" class="text-2xl font-semibold tracking-tight text-slate-900">Informasi Pemohon</h2><button type="button" data-action="close-modal" aria-label="Tutup detail" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">${renderIcon('X', 'h-5 w-5')}</button></div><div class="space-y-5 text-sm"><div><p class="mb-2 font-medium text-slate-900">Nama Pemohon</p><div class="flex min-h-[54px] items-center justify-between gap-3 rounded-2xl border border-slate-100 bg-white px-5 py-3"><span class="font-medium text-slate-800">${escapeHtml(personName(row))}</span><span class="flex shrink-0 items-center gap-2 text-sm font-medium text-slate-600"><span class="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-[9px] font-bold text-amber-700">${escapeHtml(initials(organization).slice(0, 1))}</span>${escapeHtml(organization)}</span></div></div><div><p class="mb-2 font-medium text-slate-900">NIM</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 font-medium text-slate-800">${escapeHtml(nim)}</div></div><div><p class="mb-2 font-medium text-slate-900">Tanggal Pengajuan</p><div class="px-5 py-2 font-medium text-slate-800">${escapeHtml(dateLabel(row.tanggalPengajuan || row.createdAt))}</div></div><div><p class="mb-3 font-medium text-slate-900">Status</p><span class="inline-flex rounded-xl px-3 py-2 text-sm font-medium ${statusClass}">${escapeHtml(status.label)}</span></div>${status.label === 'Ditolak' ? `<div><p class="mb-2 font-medium text-slate-900">Alasan Penolakan</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 font-medium text-slate-700">${escapeHtml(rejectionReasonText || '—')}</div></div>` : ''}<div><p class="mb-2 font-medium text-slate-900">Lampiran Surat</p><div class="flex min-h-[62px] items-center gap-3 overflow-hidden rounded-2xl border border-slate-100 bg-white"><span class="flex h-14 w-16 shrink-0 items-center justify-center bg-slate-50 text-slate-400">${renderIcon('FileImage', 'h-5 w-5')}</span><span class="truncate text-base font-medium text-slate-800">${escapeHtml(attachment || 'Tidak ada lampiran surat')}</span></div></div></div><div class="mt-6 flex justify-end"><button type="button" data-action="close-modal" class="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-110">Tutup</button></div></section></div>`;
+  return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4 sm:p-6" data-modal-backdrop><section role="dialog" aria-modal="true" aria-labelledby="request-pj-detail-title" class="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl"><div class="flex items-center justify-between border-b border-slate-200 px-6 py-4"><h2 id="request-pj-detail-title" class="text-lg font-semibold text-slate-900">Informasi Pemohon</h2><button type="button" data-action="close-modal" aria-label="Tutup detail" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">${renderIcon('X', 'h-5 w-5')}</button></div><div class="px-6 py-4"><dl class="divide-y divide-slate-200 text-sm"><div class="grid grid-cols-1 gap-2 py-3 sm:grid-cols-3"><dt class="flex items-center font-medium text-slate-500">Nama Pemohon</dt><dd class="flex flex-wrap items-center gap-2 font-medium text-slate-900 sm:col-span-2"><span>${escapeHtml(personName(row))}</span><span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600"><span class="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-[9px] font-bold text-amber-700">${escapeHtml(initials(organization).slice(0, 1))}</span>${escapeHtml(organization)}</span></dd></div><div class="grid grid-cols-1 gap-2 py-3 sm:grid-cols-3"><dt class="flex items-center font-medium text-slate-500">NIM</dt><dd class="break-all font-medium text-slate-900 sm:col-span-2">${escapeHtml(nim)}</dd></div><div class="grid grid-cols-1 gap-2 py-3 sm:grid-cols-3"><dt class="flex items-center font-medium text-slate-500">Tanggal Pengajuan</dt><dd class="font-medium text-slate-900 sm:col-span-2">${escapeHtml(dateLabel(row.tanggalPengajuan || row.createdAt))}</dd></div><div class="grid grid-cols-1 gap-2 py-3 sm:grid-cols-3"><dt class="flex items-center font-medium text-slate-500">Status</dt><dd class="sm:col-span-2"><span class="inline-flex rounded-xl px-3 py-1.5 text-xs font-medium ${statusClass}">${escapeHtml(status.label)}</span></dd></div>${status.label === 'Ditolak' ? `<div class="grid grid-cols-1 gap-2 py-3 sm:grid-cols-3"><dt class="font-medium text-slate-500">Alasan Penolakan</dt><dd class="whitespace-pre-line font-medium text-slate-900 sm:col-span-2">${escapeHtml(rejectionReasonText || '—')}</dd></div>` : ''}<div class="grid grid-cols-1 gap-2 py-3 sm:grid-cols-3"><dt class="flex items-center font-medium text-slate-500">Lampiran Surat</dt><dd class="sm:col-span-2"><div class="flex min-h-[62px] items-center gap-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/60"><span class="flex h-14 w-16 shrink-0 items-center justify-center bg-slate-100 text-slate-400">${renderIcon('FileImage', 'h-5 w-5')}</span><span class="truncate text-sm font-medium text-slate-900">${escapeHtml(attachment || 'Tidak ada lampiran surat')}</span></div></dd></div></dl></div><div class="flex justify-end border-t border-slate-200 px-6 py-4"><button type="button" data-action="close-modal" class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-110">Tutup</button></div></section></div>`;
 }
 function renderContent() {
   const count = visibleRows().length;
@@ -215,7 +215,7 @@ export async function mount(root) {
       refresh(); return;
     }
     if (action === 'back-confirm') {
-      if (feedbackModal?.stage === 'approve-confirm') feedbackModal = null;
+      if (feedbackModal?.stage === 'approve-confirm') { feedbackModal = null; modalRow = null; }
       else if (feedbackModal?.stage === 'reject-confirm') feedbackModal = { stage: 'reject-form', requestId: feedbackModal.requestId };
       refresh(); return;
     }
@@ -264,6 +264,30 @@ export async function mount(root) {
     }
   };
   inputHandler = (event) => {
+    if (event.target.id === 'rejection-reason') {
+      rejectionReason = event.target.value;
+      if (rejectionValidationCount > 0) {
+        const textarea = event.target;
+        const error = rootElement.querySelector('#rejection-reason-error');
+        if (rejectionReason.trim()) {
+          error?.remove();
+          textarea.classList.remove('border-red-300');
+          textarea.classList.add('border-slate-200');
+        } else {
+          textarea.classList.remove('border-slate-200');
+          textarea.classList.add('border-red-300');
+          if (!error) {
+            const errorElement = document.createElement('div');
+            errorElement.id = 'rejection-reason-error';
+            errorElement.setAttribute('role', 'alert');
+            errorElement.className = 'rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700 validation-blink';
+            errorElement.textContent = 'Alasan penolakan wajib diisi.';
+            textarea.insertAdjacentElement('afterend', errorElement);
+          }
+        }
+      }
+      return;
+    }
     if (event.target.id === 'rejection-reason') { rejectionReason = event.target.value; return; }
     if (event.target.id !== 'search-pemohon-pj') return;
     searchTerm = event.target.value;
