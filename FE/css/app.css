@@ -4218,3 +4218,16 @@ select option:hover {
 .\[\&_svg\]\:shrink-0 svg {
     flex-shrink: 0
 }
+/* Hover ikon untuk menu grup pada sidebar (Pengelolaan dan Pengajuan). */
+button[data-action="toggle-group"] .sidebar-group-icon {
+  color: #a1a1aa;
+  transition: color 150ms ease;
+}
+button[data-action="toggle-group"] .sidebar-group-icon svg {
+  color: inherit;
+  stroke: currentColor;
+}
+button[data-action="toggle-group"]:hover .sidebar-group-icon,
+button[data-action="toggle-group"]:focus-visible .sidebar-group-icon {
+  color: #18181b;
+}
