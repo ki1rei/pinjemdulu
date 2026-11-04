@@ -17,6 +17,7 @@ let clickHandler = null;
 let inputHandler = null;
 let toastMessage = '';
 let toastType = 'success';
+let toastTimeout = null;
 let modalRow = null;
 let feedbackModal = null;
 let rejectionReason = '';
@@ -88,7 +89,7 @@ function renderModal() {
     const actionClass = approve
       ? 'bg-emerald-600 text-white hover:bg-emerald-700'
       : 'bg-rose-600 text-white hover:bg-rose-700';
-    const gif = approve ? 'assets/animations/modal-approve.gif' : 'assets/animations/modal-cancel.gif';
+    const gif = approve ? 'assets/animations/modal-approve.gif' : 'assets/animations/modal-reject.gif';
     const action = approve ? 'confirm-approve' : 'confirm-reject';
     return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" data-modal-backdrop>
       <section role="dialog" aria-modal="true" aria-labelledby="request-pj-confirm-title" class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
@@ -179,6 +180,8 @@ export async function mount(root) {
   searchTerm = '';
   currentPage = 1;
   toastMessage = '';
+  if (toastTimeout) clearTimeout(toastTimeout);
+  toastTimeout = null;
   modalRow = null;
   feedbackModal = null;
   rejectionReason = '';
@@ -237,23 +240,27 @@ export async function mount(root) {
         await updateMockRequestPjStatus(requestId, isApprove ? STATUS_REQUEST_PJ.DISETUJUI : STATUS_REQUEST_PJ.DITOLAK, isApprove ? null : rejectionReason.trim());
         rows = await getRequestPj();
         modalRow = null;
-        // Persetujuan menampilkan modal hasil agar tombol Tutup dapat digunakan.
-        // Penolakan langsung kembali ke daftar setelah status berhasil diperbarui.
-        feedbackModal = isApprove ? {
-          stage: 'result',
-          type: 'approve',
-          title: 'Pengajuan PJ Berhasil Disetujui!',
-          message: 'Pemohon kini resmi menjadi Penanggung Jawab inventaris.',
-        } : null;
-        if (!isApprove) modalRow = null;
+        // Setelah status diperbarui, tampilkan notifikasi pada daftar selama 3 detik.
+        feedbackModal = null;
+        modalRow = null;
         rejectionReason = '';
         rejectionValidationCount = 0;
-        toastType = 'success'; toastMessage = '';
+        toastType = 'success';
+        toastMessage = isApprove ? 'Pengajuan PJ berhasil disetujui.' : 'Pengajuan PJ berhasil ditolak.';
       } catch (error) {
         feedbackModal = null;
-        toastType = 'error'; toastMessage = error?.message || 'Status pengajuan gagal diperbarui.';
+        toastType = 'error';
+        toastMessage = error?.message || 'Status pengajuan gagal diperbarui.';
       }
+      if (toastTimeout) clearTimeout(toastTimeout);
       refresh();
+      if (toastMessage) {
+        toastTimeout = setTimeout(() => {
+          toastMessage = '';
+          toastTimeout = null;
+          refresh();
+        }, 3000);
+      }
     }
   };
   inputHandler = (event) => {
@@ -272,5 +279,7 @@ export async function mount(root) {
 export function unmount() {
   if (rootElement && clickHandler) rootElement.removeEventListener('click', clickHandler);
   if (rootElement && inputHandler) rootElement.removeEventListener('input', inputHandler);
+  if (toastTimeout) clearTimeout(toastTimeout);
+  toastTimeout = null;
   rootElement = null; clickHandler = null; inputHandler = null; rows = []; modalRow = null;
 }
