@@ -4,7 +4,7 @@
  */
 
 import { getUser, logout } from './state/session.js';
-import { renderSidebar, renderMobileDrawer, STORAGE_KEY_SIDEBAR } from './ui/sidebar.js';
+import { renderSidebar, renderMobileDrawer, STORAGE_KEY_SIDEBAR, STORAGE_KEY_SIDEBAR_GROUPS } from './ui/sidebar.js';
 import { renderNavbar } from './ui/navbar.js';
 import { renderFooter } from './ui/footer.js';
 import { handleRouteChange, navigate } from './router.js';
@@ -73,7 +73,25 @@ function initApp() {
     }
   }
 
+  function persistSidebarGroupState() {
+    if (!sidebarContainer) return;
+    const groups = {};
+    sidebarContainer.querySelectorAll('[data-action="toggle-group"][data-group]').forEach((button) => {
+      const key = button.getAttribute('data-group');
+      if (key) groups[key] = button.getAttribute('aria-expanded') === 'true';
+    });
+    if (Object.keys(groups).length === 0) return;
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY_SIDEBAR_GROUPS) || '{}');
+      window.localStorage.setItem(STORAGE_KEY_SIDEBAR_GROUPS, JSON.stringify({ ...saved, ...groups }));
+    } catch {
+      /* abaikan jika localStorage tidak tersedia */
+    }
+  }
+
   async function route() {
+    // Simpan status submenu sebelum shell dirender ulang karena perubahan route.
+    persistSidebarGroupState();
     if (drawerOpen) {
       drawerOpen = false;
     }
@@ -131,6 +149,7 @@ function initApp() {
         sub.classList.toggle('hidden', !isHidden);
         actionEl.setAttribute('aria-expanded', String(isHidden));
         const chevron = actionEl.querySelector('[data-chevron]');
+        persistSidebarGroupState();
         if (chevron) {
           chevron.innerHTML = isHidden
             ? '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m18 15-6-6-6 6"/></svg>'
