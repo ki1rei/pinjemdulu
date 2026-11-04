@@ -802,6 +802,32 @@ export async function mount(root) {
   };
 
   inputHandler = (event) => {
+    if (event.target.id === "form-alasan-penolakan-peminjaman") {
+      rejectReason = event.target.value;
+      if (rejectReasonValidationCount > 0) {
+        const textarea = event.target;
+        const error = rootElement.querySelector("#reject-loan-reason-error");
+        if (rejectReason.trim()) {
+          rejectReasonError = "";
+          error?.remove();
+          textarea.classList.remove("border-red-300");
+          textarea.classList.add("border-slate-200");
+        } else {
+          rejectReasonError = "Alasan penolakan wajib diisi.";
+          textarea.classList.remove("border-slate-200");
+          textarea.classList.add("border-red-300");
+          if (!error) {
+            const errorElement = document.createElement("div");
+            errorElement.id = "reject-loan-reason-error";
+            errorElement.setAttribute("role", "alert");
+            errorElement.className = "rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700 validation-blink";
+            errorElement.textContent = "Alasan penolakan wajib diisi.";
+            textarea.insertAdjacentElement("afterend", errorElement);
+          }
+        }
+      }
+      return;
+    }
     if (event.target.id !== "search-peminjam") return;
     searchTerm = event.target.value;
     currentPage = 1;
