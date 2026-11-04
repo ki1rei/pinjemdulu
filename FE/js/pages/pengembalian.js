@@ -50,7 +50,7 @@ function renderTabs() {
   return TABS.map((tab) => {
     const selected = activeTab === tab.key;
     return `<button type="button" data-tab="${tab.key}" role="tab" aria-selected="${selected}"
-      class="shrink-0 rounded-lg px-4 py-2.5 text-[12px] font-medium transition ${selected ? 'bg-info text-info-foreground' : 'text-slate-600 hover:bg-zinc-50'}">${tab.label}</button>`;
+      class="shrink-0 rounded-lg px-5 py-2.5 text-sm font-medium transition ${selected ? 'bg-info text-info-foreground' : 'text-slate-600 hover:bg-zinc-50'}">${tab.label}</button>`;
   }).join('');
 }
 
@@ -65,18 +65,18 @@ function renderRows() {
   }
   return visible.map((row, index) => `
     <tr class="border-b border-zinc-100 last:border-0 hover:bg-zinc-50/60">
-      <td class="whitespace-nowrap px-4 py-4 text-center text-[11px] text-slate-500">${start + index + 1}</td>
+      <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-500">${start + index + 1}</td>
       <td class="min-w-[180px] px-4 py-3">
-        <div class="max-w-[220px] truncate text-[11px] font-medium text-slate-500" title="${escapeHtml(row.namaBarang)}">${escapeHtml(row.namaBarang)}</div>
-        <div class="mt-1.5 flex items-center gap-2 text-[11px] font-medium text-slate-700">
-          <span class="inline-flex h-3 w-3 items-center justify-center rounded-full bg-slate-100 text-[7px] font-bold text-slate-700">${escapeHtml(row.organisasi.slice(0, 1))}</span>
+        <div class="max-w-[220px] truncate text-xs font-medium text-slate-500" title="${escapeHtml(row.namaBarang)}">${escapeHtml(row.namaBarang)}</div>
+        <div class="mt-1.5 flex items-center gap-2 text-xs font-medium text-slate-700">
+          <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-100 text-[9px] font-bold text-slate-700">${escapeHtml(row.organisasi.slice(0, 1))}</span>
           <span>${escapeHtml(row.organisasi)}</span>
         </div>
       </td>
-      <td class="whitespace-nowrap px-4 py-4 text-center text-[11px] text-slate-500">${escapeHtml(dateLabel(row.tanggalMulai))}</td>
-      <td class="whitespace-nowrap px-4 py-4 text-center text-[11px] text-slate-500">${escapeHtml(dateLabel(row.tanggalSelesai))}</td>
-      <td class="whitespace-nowrap px-4 py-4 text-center text-[11px] text-slate-500">${escapeHtml(dateLabel(row.tanggalDikembalikan))}</td>
-      <td class="px-4 py-4 text-center text-[11px] text-slate-600">${row.jumlahUnit}</td>
+      <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-500">${escapeHtml(dateLabel(row.tanggalMulai))}</td>
+      <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-500">${escapeHtml(dateLabel(row.tanggalSelesai))}</td>
+      <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-500">${escapeHtml(dateLabel(row.tanggalDikembalikan))}</td>
+      <td class="px-4 py-4 text-center text-xs text-slate-600">${row.jumlahUnit}</td>
       <td class="px-4 py-4 text-center">${renderStatusChip({ status: row.status })}</td>
       <td class="px-4 py-4 text-center">${row.status === 'ditolak' ? `<button type="button" data-return-again="${escapeHtml(row.id)}" aria-label="Ajukan kembali pengembalian" title="Ajukan kembali pengembalian" class="mr-1 inline-flex h-8 w-8 items-center justify-center rounded-full text-emerald-600 transition hover:bg-emerald-50">${renderIcon('CircleCheck', 'h-[18px] w-[18px]')}</button>` : ''}<button type="button" data-detail="${escapeHtml(row.id)}" aria-label="Lihat detail ${escapeHtml(row.namaBarang)}" title="Lihat detail" class="inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-blue-50 hover:text-blue-700">${renderIcon('Info', 'h-[17px] w-[17px]')}</button></td>
     </tr>`).join('');
@@ -85,10 +85,15 @@ function renderRows() {
 import { renderPagination as renderSharedPagination } from '../ui/pagination.js';
 
 function renderPagination() {
-  const pages = Math.max(1, Math.ceil(getFilteredRows().length / PAGE_SIZE));
-  return `<div class="flex items-center justify-end px-5 py-3">
+  const count = getFilteredRows().length;
+  const pages = Math.max(1, Math.ceil(count / PAGE_SIZE));
+  const page = Math.min(currentPage, pages);
+  const from = count ? (page - 1) * PAGE_SIZE + 1 : 0;
+  const to = Math.min(page * PAGE_SIZE, count);
+  return `<div class="mt-6 flex items-center justify-between gap-3">
+    <p class="text-xs text-slate-400">Menampilkan ${from}–${to} dari ${count} pengajuan</p>
     ${renderSharedPagination({
-      currentPage,
+      currentPage: page,
       totalPages: pages,
       attrType: 'data-page',
       showNumbers: false,
@@ -223,14 +228,39 @@ function refreshPage() {
 }
 
 export function render() {
-  return `<section class="min-h-[calc(100vh-112px)] rounded-none bg-background -m-4 p-4 sm:-m-7 sm:p-7">
-    <div class="mb-6"><h1 class="text-[22px] font-semibold leading-tight text-slate-900">Pengembalian</h1><p class="mt-1 text-[11px] text-slate-400 sm:text-xs">Pantau status pengembalian dan riwayat pengembalian barangmu.</p></div>
-    <div class="mb-3 inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-white p-1.5" data-tabs role="tablist" aria-label="Filter status pengembalian">${renderTabs()}</div>
-    <section class="overflow-hidden rounded-xl border border-zinc-100/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,0.02)]">
-      <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"><h2 data-list-title class="text-[15px] font-semibold text-slate-900">List Barang Menunggu</h2>${renderSearchInput({ dataSearch: true, value: searchTerm, placeholder: 'Cari barang inventaris', ariaLabel: 'Cari barang inventaris', className: 'w-full sm:w-64' })}</div>
-      <div class="overflow-x-auto"><table class="w-full min-w-[900px] border-collapse text-left"><thead class="bg-white text-[10px] font-semibold uppercase tracking-[0.02em] text-slate-400"><tr class="border-b border-zinc-100"><th class="px-4 py-3 text-center font-semibold">No</th><th class="px-4 py-3 font-semibold">Nama Barang</th><th class="px-4 py-3 text-center font-semibold">Tanggal Mulai</th><th class="px-4 py-3 text-center font-semibold">Tanggal Selesai</th><th class="px-4 py-3 text-center font-semibold">Tanggal Dikembalikan</th><th class="px-4 py-3 text-center font-semibold">Jumlah Unit</th><th class="px-4 py-3 text-center font-semibold">Status</th><th class="px-4 py-4 text-center font-semibold">Aksi</th></tr></thead><tbody data-table-body class="divide-y divide-zinc-50">${renderRows()}</tbody></table></div>
+  return `<section class="w-full px-5 pb-8 pt-8 sm:px-6 lg:px-7">
+    <div class="mb-9">
+      <h1 class="text-3xl font-semibold tracking-tight text-slate-900">Pengembalian</h1>
+      <p class="mt-1 text-sm text-slate-400">Pantau status pengembalian dan riwayat pengembalian barangmu.</p>
+    </div>
+
+    <div class="mb-4 inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-white p-1.5" data-tabs role="tablist" aria-label="Filter status pengembalian">${renderTabs()}</div>
+
+    <div class="rounded-xl bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.025)] sm:p-6">
+      <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 data-list-title class="text-lg font-semibold text-slate-900">List Barang ${TABS.find((tab) => tab.key === activeTab)?.label || 'Pengembalian'}</h2>
+        ${renderSearchInput({ dataSearch: true, value: searchTerm, placeholder: 'Cari barang inventaris', ariaLabel: 'Cari barang inventaris', className: 'w-full sm:w-[260px]' })}
+      </div>
+      <div class="w-full overflow-x-auto">
+        <table class="w-full min-w-[900px] border-collapse text-left">
+          <thead>
+            <tr class="border-b border-zinc-100 text-sm leading-[140%] text-slate-400">
+              <th class="px-4 py-4 text-center font-semibold">No</th>
+              <th class="px-4 py-4 font-semibold">Nama Barang</th>
+              <th class="px-4 py-4 text-center font-semibold">Tanggal Mulai</th>
+              <th class="px-4 py-4 text-center font-semibold">Tanggal Selesai</th>
+              <th class="px-4 py-4 text-center font-semibold">Tanggal Dikembalikan</th>
+              <th class="px-4 py-4 text-center font-semibold">Jumlah Unit</th>
+              <th class="px-4 py-4 text-center font-semibold">Status</th>
+              <th class="px-4 py-4 text-center font-semibold">Aksi</th>
+            </tr>
+          </thead>
+          <tbody data-table-body class="divide-y divide-zinc-50">${renderRows()}</tbody>
+        </table>
+      </div>
       <div data-pagination>${renderPagination()}</div>
-    </section><div data-detail-modal></div>${renderActionDialog()}
+    </div>
+    <div data-detail-modal></div>${renderActionDialog()}
   </section>`;
 }
 
