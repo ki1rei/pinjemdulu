@@ -56,6 +56,14 @@ function getDaysLate(row) {
   return diffDays > 0 ? diffDays : 3;
 }
 
+function renderPengembalianStatusChip(status) {
+  const normalized = String(status || '').toLowerCase().trim();
+  if (normalized === STATUS_PEMINJAMAN.DITOLAK || normalized === 'ditolak') {
+    return `<span style="display:inline-flex;align-items:center;border-radius:9999px;background-color:#fca5a5;color:#7f1d1d;padding:4px 14px;font-size:12px;font-weight:500;line-height:1.5;white-space:nowrap;">Ditolak</span>`;
+  }
+  return renderStatusChip(status);
+}
+
 function statusInfo(status) {
   const s = String(status || '').toLowerCase();
   if (s === STATUS_PEMINJAMAN.MENUNGGU_KONFIRMASI_PENGEMBALIAN || s === 'menunggu_pengembalian' || s === 'menunggu') {
@@ -68,7 +76,7 @@ function statusInfo(status) {
     return { label: 'Dikembalikan', cls: statusChipClass(status) };
   }
   if (s === STATUS_PEMINJAMAN.DITOLAK || s === 'ditolak') {
-    return { label: 'Ditolak', cls: statusChipClass(status) };
+    return { label: 'Ditolak', cls: 'inline-flex items-center rounded-full bg-red-300 px-3.5 py-1 text-xs font-medium text-red-900' };
   }
   return { label: status || '—', cls: statusChipClass(status) };
 }
@@ -178,7 +186,7 @@ function renderTableRows() {
       <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(dateLabel(row.startDate || row.mulai || row.tanggalMulai))}</td>
       <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(dateLabel(row.endDate || row.selesai || row.tanggalSelesai))}</td>
       <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(dateLabel(row.tanggalPengembalian))}</td>
-      <td class="px-4 py-4 text-center">${renderStatusChip(row.status)}</td>
+      <td class="px-4 py-4 text-center">${renderPengembalianStatusChip(row.status)}</td>
       <td class="whitespace-nowrap px-4 py-4"><div class="flex items-center justify-center gap-0"><button type="button" data-action="detail" data-id="${escapeHtml(id)}" title="Lihat detail" aria-label="Lihat detail" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100">${renderIcon('Info', 'h-4 w-4')}</button>${pending ? `<button type="button" data-action="confirm" data-id="${escapeHtml(id)}" title="Setujui pengembalian" aria-label="Setujui pengembalian" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-green-600 hover:bg-green-50">${renderIcon('CircleCheck', 'h-4 w-4')}</button><button type="button" data-action="late" data-id="${escapeHtml(id)}" title="Tolak pengembalian" aria-label="Tolak pengembalian" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-red-600 hover:bg-red-50">${renderIcon('CircleX', 'h-4 w-4')}</button>` : ''}</div></td>
     </tr>`;
   }).join('');
@@ -368,7 +376,7 @@ function renderModal() {
                   </div>
                 </div>
               ` : ''}
-              ${renderStatusChip(row.status)}
+              ${renderPengembalianStatusChip(row.status)}
             </div>
           </div>
 
