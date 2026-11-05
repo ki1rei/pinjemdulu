@@ -106,8 +106,8 @@ function renderSidebarNav(items, collapsed, currentHash, role = '', idPrefix = '
         // Jika belum ada preferensi, buka otomatis ketika salah satu submenu aktif.
         const storedOpen = getStoredGroupOpen(item.key);
         const isOpen = storedOpen ?? (hasActiveChild || isDashboardOpen);
-        const icon = item.icon ? renderIcon(item.icon, 'h-6 w-6 text-zinc-400') : '';
-        const chevron = isOpen ? renderIcon('ChevronUp', 'h-4 w-4 text-zinc-400') : renderIcon('ChevronDown', 'h-4 w-4 text-zinc-400');
+        const icon = item.icon ? renderIcon(item.icon, 'h-6 w-6 text-zinc-400 transition-colors sidebar-nav-group-icon-svg') : '';
+        const chevron = isOpen ? renderIcon('ChevronUp', 'h-4 w-4 text-zinc-400 transition-colors sidebar-nav-group-chevron-svg') : renderIcon('ChevronDown', 'h-4 w-4 text-zinc-400 transition-colors sidebar-nav-group-chevron-svg');
         const tooltip = collapsed ? `title="${escapeHtml(item.label)}"` : '';
         const groupBadge = item.badge
           ? `<span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-white">${escapeHtml(String(item.badge))}</span>`
@@ -170,7 +170,7 @@ function renderSidebarNav(items, collapsed, currentHash, role = '', idPrefix = '
               data-group="${escapeHtml(item.key)}"
               aria-expanded="${isOpen}"
               aria-controls="${escapeHtml(subId)}"
-              class="group flex w-full items-center justify-between rounded-2xl px-3 py-3 text-[15px] text-zinc-400 transition hover:bg-zinc-50/60 hover:text-zinc-900 font-medium"
+              class="group sidebar-nav-group flex w-full items-center justify-between rounded-2xl px-3 py-3 text-[15px] text-zinc-400 transition hover:bg-zinc-50/60 hover:text-zinc-900 font-medium"
             >
               <div class="flex items-center gap-3">
                 <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center">
