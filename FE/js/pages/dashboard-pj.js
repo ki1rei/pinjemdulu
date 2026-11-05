@@ -280,14 +280,15 @@ function renderManagementTable() {
     STATUS_PEMINJAMAN.MENUNGGU_KONFIRMASI_PENGEMBALIAN,
     STATUS_PEMINJAMAN.TERLAMBAT,
     STATUS_PEMINJAMAN.DIKEMBALIKAN,
-    'menunggu_pengembalian', 'menunggu', 'terlambat', 'dikembalikan', 'selesai',
+    STATUS_PEMINJAMAN.DITOLAK,
+    'menunggu_pengembalian', 'menunggu', 'terlambat', 'dikembalikan', 'selesai', 'ditolak',
   ].map((value) => String(value).toLowerCase());
   const rows = (isReturn
     ? allRows.filter((row) => returnStatuses.includes(String(row.status).toLowerCase()))
     : allRows).slice(0, 5);
   const pendingValues = ['diajukan', 'menunggu_persetujuan'];
   const approvedValues = ['disetujui'];
-  const returnPendingValues = [String(STATUS_PEMINJAMAN.MENUNGGU_KONFIRMASI_PENGEMBALIAN).toLowerCase(), 'menunggu_pengembalian', 'menunggu', 'terlambat'];
+  const returnPendingValues = [String(STATUS_PEMINJAMAN.MENUNGGU_KONFIRMASI_PENGEMBALIAN).toLowerCase(), 'menunggu_pengembalian', 'menunggu'];
   const body = rows.length ? rows.map((row, index) => {
     const status = String(row.status || '').toLowerCase();
     const pending = pendingValues.includes(status);
@@ -498,7 +499,7 @@ function renderManagementModal() {
   const status = getStatusBadge(row.status);
   const close = { label: 'Kembali', action: 'management-close', variant: 'outline', className: 'w-1/2 rounded-xl' };
   const action = (label, name, variant, className = 'w-1/2 rounded-xl') => ({ label, action: name, dataId: id, variant, className });
-  const shell = (title, content, buttons = '') => `<div class="fixed inset-0 z-[9999] isolate flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-management-modal-backdrop><section role="dialog" aria-modal="true" class="relative z-10 isolate max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"><div class="mb-5 flex items-center justify-between gap-4"><h2 class="text-xl font-bold tracking-tight text-slate-900">${title}</h2><button type="button" data-action="management-close" aria-label="Tutup" class="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100">${renderIcon('X','h-5 w-5')}</button></div>${content}${buttons ? `<div class="mt-6 flex justify-end gap-3">${buttons}</div>` : ''}</section></div>`;
+  const shell = (title, content, buttons = '', widthClass = 'max-w-lg') => `<div class="fixed inset-0 z-[9999] isolate flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-management-modal-backdrop><section role="dialog" aria-modal="true" class="relative z-10 isolate max-h-[90vh] w-full ${widthClass} overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"><div class="mb-5 flex items-center justify-between gap-4"><h2 class="text-xl font-bold tracking-tight text-slate-900">${title}</h2><button type="button" data-action="management-close" aria-label="Tutup" class="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100">${renderIcon('X','h-5 w-5')}</button></div>${content}${buttons ? `<div class="mt-6 flex justify-end gap-3">${buttons}</div>` : ''}</section></div>`;
   const primary = (actionName, label, color = 'bg-primary text-white') => `<button type="button" data-action="${actionName}" data-id="${escapeHtml(id)}" class="rounded-xl ${color} px-5 py-2.5 text-sm font-semibold transition hover:brightness-110">${label}</button>`;
 
   if (managementModal === 'detail-loan' || managementModal === 'detail-return') {
@@ -508,10 +509,11 @@ function renderManagementModal() {
     const dateColumns = [
       ...(!isReturn ? [{ label: 'Tanggal Pengajuan', value: formatDateEnOrId(row.tanggalPengajuan || row.createdAt) }] : []),
       { label: 'Tanggal Mulai', value: formatDateEnOrId(start) },
-      ...(String(row.status || '').toLowerCase() === 'dipinjam' ? [{ label: 'Tanggal Pengambilan', value: formatDateEnOrId(row.tanggalPengambilan) }] : []),
+      ...(isReturn || String(row.status || '').toLowerCase() === 'dipinjam' ? [{ label: 'Tanggal Pengambilan', value: formatDateEnOrId(row.tanggalPengambilan || row.tanggalAmbil || row.pickupDate || start) }] : []),
       { label: 'Tanggal Selesai', value: formatDateEnOrId(end) },
+      ...(isReturn ? [{ label: 'Tanggal Pengembalian', value: formatDateEnOrId(row.tanggalPengembalian) }] : []),
     ];
-    const dateGrid = `<div class="grid grid-cols-1 gap-4 ${dateColumns.length === 4 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} sm:gap-0 sm:divide-x sm:divide-slate-300">${dateColumns.map((date, index) => `<div class="text-center ${index === 0 ? 'sm:px-2' : 'sm:px-4'}"><p class="text-base font-medium text-slate-900">${date.label}</p><p class="mt-3 text-base font-medium text-slate-800">${escapeHtml(date.value)}</p></div>`).join('')}</div>`;
+    const dateGrid = `<div class="grid grid-cols-1 gap-4 ${dateColumns.length === 5 ? 'sm:grid-cols-5' : dateColumns.length === 4 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} sm:gap-0 sm:divide-x sm:divide-slate-300">${dateColumns.map((date, index) => `<div class="text-center ${index === 0 ? 'sm:px-2' : 'sm:px-4'}"><p class="text-base font-medium text-slate-900">${date.label}</p><p class="mt-3 text-base font-medium text-slate-800">${escapeHtml(date.value)}</p></div>`).join('')}</div>`;
     return `<div class="fixed inset-0 z-[9999] isolate flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-management-modal-backdrop>
       <section role="dialog" aria-modal="true" aria-labelledby="management-detail-title" class="relative z-10 isolate max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl sm:p-8">
         <div class="flex items-start justify-between gap-4"><h2 id="management-detail-title" class="text-2xl font-semibold tracking-tight text-slate-900">${isReturn ? 'Detail Pengembalian' : 'Detail Peminjaman'}</h2><button type="button" data-action="management-close" aria-label="Tutup detail" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">${renderIcon('X','h-5 w-5')}</button></div>
@@ -522,7 +524,7 @@ function renderManagementModal() {
           <div class="flex items-center justify-between gap-6"><p class="text-base font-medium text-slate-900">Jumlah Unit</p><p class="text-base font-medium text-slate-800">${escapeHtml(row.jumlahPinjam ?? row.jumlahUnit ?? 1)}</p></div>
           ${dateGrid}
           <div class="flex items-center justify-between gap-6"><p class="text-base font-medium text-slate-900">Status</p><div class="flex items-center gap-2">${renderStatusChip({status: row.status})}${isLate ? `<span class="text-xs font-medium text-rose-600">Waktu Terlambat: ${escapeHtml(row.waktuTerlambat || 3)} Hari</span>` : ''}</div></div>
-          ${isRejected && row.alasanPenolakan ? `<div><p class="mb-2 text-base font-medium text-slate-900">Alasan Penolakan</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-700">${escapeHtml(row.alasanPenolakan)}</div></div>` : ''}
+          ${isRejected ? `<div><p class="mb-2 text-base font-medium text-slate-900">Alasan Penolakan</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-700">${escapeHtml(row.alasanPenolakan || 'Pengembalian ditolak oleh pengelola.')}</div></div>` : ''}
           <div><p class="mb-2 text-base font-medium text-slate-900">Keperluan Peminjaman Barang</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-800">${escapeHtml(row.keperluan || 'Seminar BEM')}</div></div>
           ${isReturn && row.kondisiPengembalian ? `<div><p class="mb-2 text-base font-medium text-slate-900">Kondisi Barang Saat Dikembalikan</p><p class="text-base text-slate-800">${escapeHtml(row.kondisiPengembalian)}</p></div>` : ''}
           ${isReturn && row.fotoKondisi ? `<div><p class="mb-2 text-base font-medium text-slate-900">Foto Kondisi Barang Saat Dikembalikan</p><img src="${escapeHtml(row.fotoKondisi)}" alt="Foto kondisi barang saat dikembalikan" class="max-h-48 rounded-xl object-contain"></div>` : ''}
@@ -547,32 +549,55 @@ function renderManagementModal() {
     <div><p class="mb-2 text-sm font-semibold text-slate-900">Foto Barang</p><button type="button" data-action="management-choose-pickup-photo" class="flex min-h-[150px] w-full flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center transition-colors hover:bg-slate-100">${managementPickupPhoto ? `<img src="${escapeHtml(managementPickupPhoto)}" alt="Foto barang" class="max-h-32 rounded-lg object-contain">` : `<img src="assets/img/Image-Dropbox.png" alt="" class="mb-2 h-10 w-10 object-contain"><span class="text-xs font-semibold text-slate-700">Seret foto ke sini, atau Pilih File</span><span class="mt-1 text-[10px] text-slate-400">File harus berformat JPG atau PNG dengan ukuran maksimal 2 MB.</span>`}</button><input id="dashboard-pickup-photo" type="file" accept="image/jpeg,image/png,image/jpg" class="sr-only">${managementPickupPhotoError ? `<p class="mt-1 text-xs text-rose-600">${escapeHtml(managementPickupPhotoError)}</p>` : ''}</div>
     ${managementError ? `<p role="alert" class="text-xs text-red-600">${escapeHtml(managementError)}</p>` : ''}</div>`, `${primary('management-close','Batal','border border-slate-200 bg-white text-slate-600 hover:border-rose-700 hover:bg-rose-700 hover:text-white')}${primary('management-submit-pickup','Kirim')}`);
 
-  if (managementModal === 'confirm-approve-return') return renderModalComponent({ variant: 'approve', title: 'Setujui pengajuan pengembalian?', description: 'Jika setuju, lanjutkan ke form konfirmasi pengembalian', actions: [close, action('Setujui','management-open-form-approve-return','default','w-1/2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700')] });
-  if (managementModal === 'form-approve-return') return shell('Konfirmasi Pengembalian', `<div class="space-y-4 text-left">
-    <div><label class="mb-1.5 block text-xs font-semibold text-slate-700">Nama Peminjam</label><input readonly value="${escapeHtml(name)}" class="w-full rounded-xl border-0 bg-slate-100/80 px-3.5 py-2.5 text-sm text-slate-700"></div>
-    <div><label class="mb-1.5 block text-xs font-semibold text-slate-700">Barang Dipinjam</label><input readonly value="${escapeHtml(item)}" class="w-full rounded-xl border-0 bg-slate-100/80 px-3.5 py-2.5 text-sm text-slate-700"></div>
-    <div><label class="mb-1.5 block text-xs font-semibold text-slate-700">Jumlah Unit</label><input readonly value="${escapeHtml(row.jumlahPinjam ?? row.jumlahUnit ?? 1)}" class="w-full rounded-xl border-0 bg-slate-100/80 px-3.5 py-2.5 text-sm text-slate-700"></div>
-    <div><label for="dashboard-return-date" class="mb-1.5 block text-xs font-semibold text-slate-700">Tanggal Pengembalian</label><input id="dashboard-return-date" type="date" value="${escapeHtml(managementReturnDate)}" class="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"></div>
-    <div><label for="dashboard-return-sanction" class="mb-1.5 block text-xs font-semibold text-slate-700">Sanksi</label><input id="dashboard-return-sanction" value="${escapeHtml(managementReturnSanksi)}" placeholder="Catatan sanksi atau kondisi jika ada" class="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm"></div>
-    <div><p class="mb-2 text-xs font-semibold text-slate-700">Kondisi Barang</p><div class="flex gap-5 text-sm text-slate-700"><label class="inline-flex items-center gap-2"><input type="radio" name="dashboard-return-condition" value="baik" ${managementReturnCondition === 'baik' ? 'checked' : ''}>Baik</label><label class="inline-flex items-center gap-2"><input type="radio" name="dashboard-return-condition" value="rusak" ${managementReturnCondition === 'rusak' ? 'checked' : ''}>Rusak</label></div></div>
-    <div><p class="mb-1.5 text-xs font-semibold text-slate-700">Foto Kondisi Barang</p><button type="button" data-action="management-choose-return-photo" class="flex min-h-[110px] w-full flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4">${managementReturnPhoto ? `<img src="${escapeHtml(managementReturnPhoto)}" alt="Foto kondisi barang" class="max-h-24 rounded-lg object-contain">` : `<img src="assets/img/Image-Dropbox.png" alt="" class="mb-2 h-8 w-8 object-contain"><span class="text-xs font-semibold text-slate-700">Pilih foto kondisi barang</span>`}</button><input id="dashboard-return-photo" type="file" accept="image/jpeg,image/png,image/jpg" class="sr-only">${managementReturnPhotoError ? `<p class="mt-1 text-xs text-rose-600">${escapeHtml(managementReturnPhotoError)}</p>` : ''}</div>
-    ${managementError ? `<p role="alert" class="validation-blink text-xs text-rose-600">${escapeHtml(managementError)}</p>` : ''}
-  </div>`, `${primary('management-cancel-return-form','Batal','border border-slate-200 bg-white text-slate-600')}${primary('management-submit-return-form','Kirim')}`);
-  if (managementModal === 'confirm-submit-return') return renderModalComponent({ variant: 'send', title: 'Kirim Form Pengembalian?', description: 'Periksa kembali data pengajuan yang akan anda kirim', actions: [ {label:'Kembali',action:'management-back-to-return-form',variant:'outline',className:'w-1/2 rounded-xl'}, action('Kirim','management-execute-approve-return','default','w-1/2 rounded-xl bg-primary text-white hover:bg-primary/90') ] });
-  if (managementModal === 'confirm-cancel-return-form') return renderModalComponent({ variant: 'cancel', title: 'Batal Kirim Form?', description: 'Apakah anda yakin ingin batal menyetujui pengembalian?', actions: [{label:'Kembali',action:'management-back-to-return-form',variant:'outline',className:'w-1/2 rounded-xl'},action('Batalkan','management-cancel-return-confirmed','default','w-1/2 rounded-xl bg-primary text-white hover:bg-primary/90')] });
-  if (managementModal === 'success-approve-return') return renderModalComponent({ variant: 'success', title: 'Pengembalian Berhasil!', description: 'Persetujuan pengembalian dan data berhasil disimpan.', primaryAction: {label:'Kembali',action:'management-close',className:'w-full rounded-xl bg-primary text-white hover:bg-primary/90'} });
-  if (managementModal === 'confirm-reject-return') return renderModalComponent({ variant: 'reject', title: 'Tolak pengajuan pengembalian?', description: 'Periksa kembali data pengajuan yang akan anda tolak', actions: [{label:'Kembali',action:'management-close',variant:'outline',className:'w-1/2 rounded-xl'}, action('Tolak','management-open-form-reject-return','default','w-1/2 rounded-xl bg-rose-600 text-white hover:bg-rose-700')] });
+  if (managementModal === 'confirm-approve-return') return '';
+  if (managementModal === 'form-approve-return') return '';
+    if (managementModal === 'confirm-submit-return') return renderModalComponent({ variant: 'send', title: 'Kirim Form Pengembalian?', description: 'Periksa kembali data pengajuan yang akan anda kirim', actions: [ {label:'Kembali',action:'management-back-to-return-form',variant:'outline',className:'w-1/2 rounded-xl'}, action('Kirim','management-execute-approve-return','default','w-1/2 rounded-xl bg-primary text-white transition-colors hover:brightness-110') ] });
+  if (managementModal === 'confirm-cancel-return-form') return renderModalComponent({ variant: 'cancel', title: 'Batal Kirim Form?', description: 'Apakah anda yakin ingin batal menyetujui pengembalian?', actions: [{label:'Kembali',action:'management-back-to-return-form',variant:'outline',className:'w-1/2 rounded-xl'},action('Batalkan','management-cancel-return-confirmed','default','w-1/2 rounded-xl bg-primary text-white transition-colors hover:brightness-110')] });
+  if (managementModal === 'success-approve-return') return renderModalComponent({ variant: 'success', title: 'Pengembalian Berhasil!', description: 'Persetujuan pengembalian dan data berhasil disimpan.', primaryAction: {label:'Kembali',action:'management-close',className:'w-full rounded-xl bg-primary text-white transition-colors hover:brightness-110'} });
+  if (managementModal === 'confirm-reject-return') return renderModalComponent({ variant: 'reject', title: 'Tolak pengajuan pengembalian?', description: 'Periksa kembali data pengajuan yang akan anda tolak', actions: [{label:'Kembali',action:'management-back-reject-return',variant:'outline',className:'w-1/2 rounded-xl'}, action('Tolak','management-execute-reject-return','default','w-1/2 rounded-xl bg-rose-600 text-white transition-colors hover:brightness-110')] });
   if (managementModal === 'reject-return') return `<div class="fixed inset-0 z-[9999] isolate flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-management-modal-backdrop>
     <section role="dialog" aria-modal="true" aria-labelledby="dashboard-return-reject-title" class="relative z-10 isolate w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-      <h2 id="dashboard-return-reject-title" class="text-xl font-bold tracking-tight text-slate-900">Pengembalian Ditolak</h2>
+      <h2 id="dashboard-return-reject-title" class="text-xl font-bold tracking-tight text-slate-900">Permohonan Ditolak</h2>
       <div class="mt-5 space-y-2"><label for="dashboard-return-reason" class="block text-sm font-semibold text-slate-900">Alasan Penolakan</label><textarea id="dashboard-return-reason" rows="3" placeholder="Masukkan alasan penolakan" style="resize:none" class="w-full resize-none rounded-xl border ${managementError ? 'border-red-300' : 'border-slate-200'} bg-white px-4 py-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-slate-300 focus:ring-2 focus:ring-slate-100">${escapeHtml(managementReturnReason)}</textarea>${managementError ? `<div role="alert" class="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700 validation-blink">${escapeHtml(managementError)}</div>` : ''}</div>
       <div class="mt-6 flex items-center justify-end gap-3"><button type="button" data-action="management-close" class="h-12 rounded-xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-600 transition-colors hover:border-rose-700 hover:bg-rose-700 hover:text-white">Batal</button><button type="button" data-action="management-submit-reject-return" class="h-12 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:brightness-110">Kirim</button></div>
     </section></div>`;
-  if (managementModal === 'success-reject-return') return renderModalComponent({ variant: 'reject', title: 'Pengembalian Berhasil Ditolak!', description: 'Persetujuan pengembalian dan data berhasil ditolak.', primaryAction: {label:'Kembali',action:'management-close',className:'w-full rounded-xl bg-primary text-white hover:bg-primary/90'} });
+  if (managementModal === 'success-reject-return') return renderModalComponent({ variant: 'reject', title: 'Pengembalian Berhasil Ditolak!', description: 'Persetujuan pengembalian dan data berhasil ditolak.', primaryAction: {label:'Kembali',action:'management-close',className:'w-full rounded-xl bg-primary text-white transition-colors hover:brightness-110'} });
   return '';
 }
 
+function renderDashboardReturnFormPage() {
+  if (!managementModalRow) return '';
+  const row = managementModalRow;
+  const name = row.peminjam?.nama || row.pengguna?.nama || row.namaPeminjam || 'Peminjam';
+  const nim = row.peminjam?.nim || row.pengguna?.nim || row.nim || '—';
+  const org = row.inventaris?.namaOrganisasi || row.barang?.namaOrganisasi || row.barang?.organisasi || row.inventaris?.organisasi || '—';
+  const item = row.inventaris?.namaBarang || row.barang?.namaBarang || row.namaBarang || 'Barang inventaris';
+  const readonlyClass = 'w-full rounded-xl border border-transparent bg-slate-50 px-4 py-3 text-sm text-slate-700 cursor-not-allowed';
+  const fieldClass = 'w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-800 transition-colors placeholder:text-slate-400 hover:border-slate-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15';
+  return `<section class="w-full px-5 pb-8 pt-8 sm:px-6 lg:px-7">
+    <div class="mb-6"><h1 class="text-2xl font-semibold tracking-tight text-slate-900">Form Pengembalian</h1><p class="mt-1 text-sm text-slate-400">Lengkapi informasi pengembalian dan kondisi barang.</p></div>
+    <div class="w-full rounded-2xl border border-slate-100 bg-white p-5 shadow-sm sm:p-7">
+      <div class="grid grid-cols-1 gap-4">
+        <div class="space-y-1.5"><label class="block text-sm font-medium text-slate-700">Nama Peminjam</label><input type="text" readonly value="${escapeHtml(name)}" class="${readonlyClass}"></div>
+        <div class="space-y-1.5"><label class="block text-sm font-medium text-slate-700">NIM</label><input type="text" readonly value="${escapeHtml(nim)}" class="${readonlyClass}"></div>
+        <div class="space-y-1.5"><label class="block text-sm font-medium text-slate-700">OKI Peminjam</label><input type="text" readonly value="${escapeHtml(org)}" class="${readonlyClass}"></div>
+        <div class="space-y-1.5"><label class="block text-sm font-medium text-slate-700">Barang Dipinjam</label><input type="text" readonly value="${escapeHtml(item)}" class="${readonlyClass}"></div>
+        <div class="space-y-1.5"><label class="block text-sm font-medium text-slate-700">Keperluan Peminjaman Barang</label><input type="text" readonly value="${escapeHtml(row.keperluan || 'Kebutuhan kegiatan')}" class="${readonlyClass}"></div>
+        <div class="space-y-1.5"><label class="block text-sm font-medium text-slate-700">Jumlah Unit</label><input type="text" readonly value="${escapeHtml(row.jumlahPinjam ?? row.jumlahUnit ?? 1)}" class="${readonlyClass}"></div>
+        <div class="space-y-1.5"><label for="dashboard-return-date" class="block text-sm font-medium text-slate-700">Tanggal Pengembalian</label><div class="relative"><input type="date" id="dashboard-return-date" value="${escapeHtml(managementReturnDate)}" class="${fieldClass} pr-11"><span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">${renderIcon('CalendarDays','h-4 w-4')}</span></div></div>
+        <div class="space-y-1.5"><label for="dashboard-return-sanction" class="block text-sm font-medium text-slate-700">Sanksi / Catatan</label><textarea id="dashboard-return-sanction" rows="3" placeholder="Masukkan sanksi atau catatan jika ada" class="${fieldClass} resize-y">${escapeHtml(managementReturnSanksi)}</textarea></div>
+        <div class="space-y-2"><p class="text-sm font-medium text-slate-700">Kondisi Barang Saat Dikembalikan</p><div class="flex flex-wrap gap-5 text-sm text-slate-700"><label class="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-primary"><input class="accent-[var(--color-primary)]" type="radio" name="dashboard-return-condition" value="baik" ${managementReturnCondition === 'baik' ? 'checked' : ''}>Baik</label><label class="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-primary"><input class="accent-[var(--color-primary)]" type="radio" name="dashboard-return-condition" value="rusak" ${managementReturnCondition === 'rusak' ? 'checked' : ''}>Rusak</label></div></div>
+        <div class="space-y-1.5"><label class="block text-sm font-medium text-slate-700">Foto Kondisi Barang Saat Dikembalikan</label><button type="button" data-action="management-choose-return-photo" class="flex min-h-[140px] w-full flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 transition-colors hover:border-primary hover:bg-slate-50/70 focus:outline-none focus:ring-2 focus:ring-primary/20">${managementReturnPhoto ? `<img src="${escapeHtml(managementReturnPhoto)}" alt="Foto kondisi barang" class="max-h-40 rounded-lg object-contain">` : `<img src="assets/img/Image-Dropbox.png" alt="" class="mb-2 h-9 w-9 object-contain"><span class="text-sm font-medium text-slate-700">Pilih foto kondisi barang</span><span class="mt-1 text-xs text-slate-400">Format JPG atau PNG</span>`}</button><input id="dashboard-return-photo" type="file" accept="image/jpeg,image/png,image/jpg" class="sr-only">${managementReturnPhotoError ? `<p class="text-sm text-rose-600">${escapeHtml(managementReturnPhotoError)}</p>` : ''}</div>
+      </div>
+      ${managementError ? `<p role="alert" class="mt-3 text-sm text-rose-600">${escapeHtml(managementError)}</p>` : ''}
+      <div class="mt-7 flex items-center justify-end gap-3 border-t border-slate-100 pt-5"><button type="button" data-action="management-cancel-return-form" class="h-12 min-w-[112px] rounded-xl border border-slate-200 bg-white px-6 py-2.5 text-sm font-semibold text-slate-600 transition-colors hover:border-rose-700 hover:bg-rose-700 hover:text-white">Batal</button><button type="button" data-action="management-submit-return-form" class="h-12 min-w-[112px] rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:brightness-110 focus:outline-none focus:ring-2 focus:ring-primary/30">Kirim</button></div>
+    </div>
+  </section>`;
+}
+
+
 function renderDashboardContent(ctx = {}) {
+  if (managementModal === 'form-approve-return') return renderDashboardReturnFormPage() + renderManagementModal();
   const user = ctx.user || currentUser;
   const userName = user?.nama || 'Maitri Sakti';
   const seeAllHref = activeTab === 'pengembalian' ? '#/pengajuan-saya/pengembalian' : '#/pengajuan-saya/peminjaman';
@@ -735,7 +760,7 @@ export async function mount(root, ctx = {}) {
       catch (error) { managementError = error?.message || 'Pengambilan gagal dikonfirmasi.'; refreshDashboard(); }
       return;
     }
-    if (action === 'management-approve-return') { managementReturnDate = new Date().toISOString().slice(0,10); managementReturnCondition = 'baik'; managementReturnPhoto = ''; managementReturnSanksi = ''; managementReturnPhotoError = ''; setManagementModal('confirm-approve-return'); return; }
+    if (action === 'management-approve-return') { managementReturnDate = new Date().toISOString().slice(0,10); managementReturnCondition = 'baik'; managementReturnPhoto = ''; managementReturnSanksi = ''; managementReturnPhotoError = ''; managementError = ''; setManagementModal('form-approve-return'); return; }
     if (action === 'management-open-form-approve-return') { managementReturnDate = new Date().toISOString().slice(0,10); managementModal = 'form-approve-return'; managementError = ''; refreshDashboard(); return; }
     if (action === 'management-submit-return-form') {
       managementReturnDate = rootElement.querySelector('#dashboard-return-date')?.value || '';
@@ -757,19 +782,20 @@ export async function mount(root, ctx = {}) {
       } catch (error) { managementError = error?.message || 'Pengembalian gagal dikonfirmasi.'; managementModal = 'form-approve-return'; refreshDashboard(); }
       return;
     }
-    if (action === 'management-reject-return') { managementReturnReason = ''; setManagementModal('confirm-reject-return'); return; }
+    if (action === 'management-reject-return') { managementReturnReason = ''; managementError = ''; setManagementModal('reject-return'); return; }
     if (action === 'management-open-form-reject-return') { managementReturnReason = ''; managementError = ''; managementModal = 'reject-return'; refreshDashboard(); return; }
     if (action === 'management-submit-reject-return') {
       managementReturnReason = rootElement.querySelector('#dashboard-return-reason')?.value.trim() || '';
       if (!managementReturnReason) { managementError = 'Alasan penolakan wajib diisi.'; refreshDashboard(); return; }
-      try { await updateMockPengembalianStatus(managementModalRow?.id || managementModalRow?.idPeminjaman, STATUS_PEMINJAMAN.DITOLAK, { alasanPenolakan: managementReturnReason }); livePeminjaman = await getPeminjaman(); managementModal = 'success-reject-return'; managementError = ''; refreshDashboard(); }
-      catch (error) { managementError = error?.message || 'Pengembalian gagal ditolak.'; refreshDashboard(); }
+      managementError = '';
+      managementModal = 'confirm-reject-return';
+      refreshDashboard();
       return;
     }
     if (action === 'management-back-reject-return') { managementModal = 'reject-return'; managementError = ''; refreshDashboard(); return; }
     if (action === 'management-execute-reject-return') {
       try { await updateMockPengembalianStatus(managementModalRow?.id || managementModalRow?.idPeminjaman, STATUS_PEMINJAMAN.DITOLAK, { alasanPenolakan: managementReturnReason }); livePeminjaman = await getPeminjaman(); managementModal = 'success-reject-return'; managementError = ''; refreshDashboard(); }
-      catch (error) { managementError = error?.message || 'Pengembalian gagal ditolak.'; refreshDashboard(); }
+      catch (error) { managementError = error?.message || 'Pengembalian gagal ditolak.'; managementModal = 'confirm-reject-return'; refreshDashboard(); }
       return;
     }
     if (action === 'switch-management-tab') {
@@ -832,9 +858,24 @@ export async function mount(root, ctx = {}) {
     }
     if (event.target.id === 'dashboard-return-reason') {
       managementReturnReason = event.target.value;
-      if (managementError && managementReturnReason.trim()) {
-        managementError = '';
-        rootElement.querySelector('[role="alert"]')?.remove();
+      const message = 'Alasan penolakan wajib diisi.';
+      const error = event.target.parentElement?.querySelector('[role="alert"]');
+      if (managementReturnReason.trim()) {
+        if (managementError === message) managementError = '';
+        error?.remove();
+        event.target.classList.remove('border-red-300');
+        event.target.classList.add('border-slate-200');
+      } else if (managementError === message || managementReturnReason.length === 0) {
+        managementError = message;
+        event.target.classList.remove('border-slate-200');
+        event.target.classList.add('border-red-300');
+        if (!error) {
+          const node = document.createElement('div');
+          node.setAttribute('role', 'alert');
+          node.className = 'rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700 validation-blink';
+          node.textContent = message;
+          event.target.insertAdjacentElement('afterend', node);
+        }
       }
     }
   };
