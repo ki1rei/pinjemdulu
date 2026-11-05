@@ -122,12 +122,20 @@ let rootElement = null;
 let clickHandler = null;
 let managementModal = null;
 let managementModalRow = null;
+let managementLateTooltipVisible = false;
+let managementLateTooltipHovered = false;
+let managementLateTooltipTimeout = null;
+let managementLateTooltipPointerOverHandler = null;
+let managementLateTooltipPointerOutHandler = null;
+let managementLateTooltipScrollHandler = null;
 let managementRejectReason = '';
 let managementRejectReasonValidationActive = false;
 let managementPickupDate = '';
 let managementPickupPhoto = '';
 let managementPickupPhotoError = '';
 let managementReturnDate = '';
+let managementReturnDateError = '';
+let managementReturnSanksiError = '';
 let managementReturnReason = '';
 let managementReturnCondition = 'baik';
 let managementReturnPhoto = '';
@@ -140,6 +148,62 @@ function formatDateEnOrId(isoStr) {
   if (!isoStr) return '-';
   const formatted = formatTanggal(String(isoStr).slice(0, 10));
   return formatted || '-';
+}
+
+// Tooltip keterlambatan menggunakan posisi fixed agar tidak terpotong area scroll modal.
+function updateManagementLateTooltipPosition(anchor = null) {
+  if (!rootElement || !managementLateTooltipVisible) return;
+  const tooltip = rootElement.querySelector('#dashboard-late-tooltip');
+  const trigger = anchor || rootElement.querySelector('[data-action="management-show-late-tooltip"]');
+  if (!tooltip || !trigger) return;
+
+  const rect = trigger.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  if (rect.bottom < 0 || rect.top > viewportHeight) {
+    tooltip.style.display = 'none';
+    return;
+  }
+
+  tooltip.style.display = 'block';
+  const tooltipWidth = tooltip.getBoundingClientRect().width;
+  const left = Math.max(8, rect.left - 12 - tooltipWidth);
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${rect.top + rect.height / 2}px`;
+  tooltip.style.transform = 'translateY(-50%)';
+}
+
+function showManagementLateTooltip(anchor = null, keepForThreeSeconds = false) {
+  const tooltip = rootElement?.querySelector('#dashboard-late-tooltip');
+  if (!tooltip) return;
+  managementLateTooltipVisible = true;
+  tooltip.style.display = 'block';
+  updateManagementLateTooltipPosition(anchor);
+
+  if (keepForThreeSeconds) {
+    if (managementLateTooltipTimeout) clearTimeout(managementLateTooltipTimeout);
+    managementLateTooltipTimeout = setTimeout(() => {
+      managementLateTooltipTimeout = null;
+      // Hover tetap mempertahankan tooltip setelah durasi klik berakhir.
+      if (!managementLateTooltipHovered) hideManagementLateTooltip();
+    }, 3000);
+  }
+}
+
+function hideManagementLateTooltip() {
+  if (managementLateTooltipTimeout) {
+    clearTimeout(managementLateTooltipTimeout);
+    managementLateTooltipTimeout = null;
+  }
+  managementLateTooltipVisible = false;
+  managementLateTooltipHovered = false;
+  const tooltip = rootElement?.querySelector('#dashboard-late-tooltip');
+  if (tooltip) tooltip.style.display = 'none';
+}
+
+function todayIsoDate() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
 }
 
 function getOrgBadgeClass(org) {
@@ -326,7 +390,7 @@ function renderManagementTable() {
         <thead><tr class="border-b border-slate-100 text-sm leading-[140%] tracking-normal text-slate-400">${headers}</tr></thead><tbody>${body}</tbody>
       </table></div>
     </section>
-    <div class="mt-3 flex justify-end"><a href="${targetRoute}" class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-800 transition hover:text-primary">Lihat Semua ${renderIcon('ChevronRight','h-3.5 w-3.5')}</a></div>`;
+    <div class="mt-3 flex justify-end"><a href="${targetRoute}" class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold text-slate-800 transition hover:text-primary hover:underline">Lihat Semua ${renderIcon('ChevronRight','h-3.5 w-3.5')}</a></div>`;
 }
 
 function renderTable() {
@@ -513,24 +577,24 @@ function renderManagementModal() {
       { label: 'Tanggal Selesai', value: formatDateEnOrId(end) },
       ...(isReturn ? [{ label: 'Tanggal Pengembalian', value: formatDateEnOrId(row.tanggalPengembalian) }] : []),
     ];
-    const dateGrid = `<div class="grid grid-cols-1 gap-4 ${dateColumns.length === 5 ? 'sm:grid-cols-5' : dateColumns.length === 4 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} sm:gap-0 sm:divide-x sm:divide-slate-300">${dateColumns.map((date, index) => `<div class="text-center ${index === 0 ? 'sm:px-2' : 'sm:px-4'}"><p class="text-base font-medium text-slate-900">${date.label}</p><p class="mt-3 text-base font-medium text-slate-800">${escapeHtml(date.value)}</p></div>`).join('')}</div>`;
+    const dateGrid = `<div class="grid grid-cols-1 gap-4 ${dateColumns.length === 5 ? 'sm:grid-cols-5' : dateColumns.length === 4 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} sm:gap-0 sm:divide-x sm:divide-slate-300">${dateColumns.map((date, index) => `<div class="text-center ${index === 0 ? 'sm:px-2' : 'sm:px-4'}"><p class="text-sm font-semibold text-slate-900 sm:text-base">${date.label}</p><p class="mt-3 text-sm font-medium text-slate-800 sm:text-base">${escapeHtml(date.value)}</p></div>`).join('')}</div>`;
     return `<div class="fixed inset-0 z-[9999] isolate flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-management-modal-backdrop>
       <section role="dialog" aria-modal="true" aria-labelledby="management-detail-title" class="relative z-10 isolate max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl sm:p-8">
         <div class="flex items-start justify-between gap-4"><h2 id="management-detail-title" class="text-2xl font-semibold tracking-tight text-slate-900">${isReturn ? 'Detail Pengembalian' : 'Detail Peminjaman'}</h2><button type="button" data-action="management-close" aria-label="Tutup detail" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">${renderIcon('X','h-5 w-5')}</button></div>
         <div class="mt-6 space-y-6 text-sm">
-          <div class="flex items-center justify-between gap-6"><p class="text-base font-medium text-slate-900">Nama Peminjam</p><div class="text-right"><p class="text-base font-medium text-slate-800">${escapeHtml(name)}</p><p class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600"><span class="inline-block h-4 w-4 rounded-full bg-slate-400" aria-hidden="true"></span>${escapeHtml(org)}</p></div></div>
-          <div class="flex items-center justify-between gap-6"><p class="text-base font-medium text-slate-900">NIM</p><p class="text-base font-medium text-slate-800">${escapeHtml(nim)}</p></div>
-          <div class="flex items-center justify-between gap-6"><p class="text-base font-medium text-slate-900">${isReturn ? 'Barang Dipinjam' : 'Nama Barang'}</p><p class="text-right text-base font-medium text-slate-800">${escapeHtml(item)}</p></div>
-          <div class="flex items-center justify-between gap-6"><p class="text-base font-medium text-slate-900">Jumlah Unit</p><p class="text-base font-medium text-slate-800">${escapeHtml(row.jumlahPinjam ?? row.jumlahUnit ?? 1)}</p></div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Nama Peminjam</p><div class="text-right"><p class="text-base font-medium text-slate-800">${escapeHtml(name)}</p><p class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600"><span class="inline-block h-4 w-4 rounded-full bg-slate-400" aria-hidden="true"></span>${escapeHtml(org)}</p></div></div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">NIM</p><p class="text-base font-medium text-slate-800">${escapeHtml(nim)}</p></div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">${isReturn ? 'Barang Dipinjam' : 'Nama Barang'}</p><p class="text-right text-base font-medium text-slate-800">${escapeHtml(item)}</p></div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Jumlah Unit</p><p class="text-base font-medium text-slate-800">${escapeHtml(row.jumlahPinjam ?? row.jumlahUnit ?? 1)}</p></div>
           ${dateGrid}
-          <div class="flex items-center justify-between gap-6"><p class="text-base font-medium text-slate-900">Status</p><div class="flex items-center gap-2">${renderStatusChip({status: row.status})}${isLate ? `<span class="text-xs font-medium text-rose-600">Waktu Terlambat: ${escapeHtml(row.waktuTerlambat || 3)} Hari</span>` : ''}</div></div>
-          ${isRejected ? `<div><p class="mb-2 text-base font-medium text-slate-900">Alasan Penolakan</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-700">${escapeHtml(row.alasanPenolakan || 'Pengembalian ditolak oleh pengelola.')}</div></div>` : ''}
-          <div><p class="mb-2 text-base font-medium text-slate-900">Keperluan Peminjaman Barang</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-800">${escapeHtml(row.keperluan || 'Seminar BEM')}</div></div>
-          ${isReturn && row.kondisiPengembalian ? `<div><p class="mb-2 text-base font-medium text-slate-900">Kondisi Barang Saat Dikembalikan</p><p class="text-base text-slate-800">${escapeHtml(row.kondisiPengembalian)}</p></div>` : ''}
-          ${isReturn && row.fotoKondisi ? `<div><p class="mb-2 text-base font-medium text-slate-900">Foto Kondisi Barang Saat Dikembalikan</p><img src="${escapeHtml(row.fotoKondisi)}" alt="Foto kondisi barang saat dikembalikan" class="max-h-48 rounded-xl object-contain"></div>` : ''}
-          ${isReturn && row.sanksi ? `<div><p class="mb-2 text-base font-medium text-slate-900">Sanksi</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base text-slate-700">${escapeHtml(row.sanksi)}</div></div>` : ''}
+          <div class="flex items-center justify-between gap-6"><p class="text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Status</p><div class="flex items-center gap-2">${isLate ? `<button type="button" data-action="management-show-late-tooltip" aria-label="Lihat waktu keterlambatan" aria-describedby="dashboard-late-tooltip" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-rose-700 transition-colors hover:bg-rose-50 hover:text-rose-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300">${renderIcon('AlertCircle', 'h-6 w-6')}</button>` : ''}${renderStatusChip({status: row.status})}</div></div>
+          ${isRejected ? `<div><p class="mb-2 text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Alasan Penolakan</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-700">${escapeHtml(row.alasanPenolakan || 'Pengembalian ditolak oleh pengelola.')}</div></div>` : ''}
+          <div><p class="mb-2 text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Keperluan Peminjaman Barang</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-800">${escapeHtml(row.keperluan || 'Seminar BEM')}</div></div>
+          ${isReturn && row.kondisiPengembalian ? `<div><p class="mb-2 text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Kondisi Barang Saat Dikembalikan</p><p class="text-base text-slate-800">${escapeHtml(row.kondisiPengembalian)}</p></div>` : ''}
+          ${isReturn && row.fotoKondisi ? `<div><p class="mb-2 text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Foto Kondisi Barang Saat Dikembalikan</p><img src="${escapeHtml(row.fotoKondisi)}" alt="Foto kondisi barang saat dikembalikan" class="max-h-48 rounded-xl object-contain"></div>` : ''}
+          ${isReturn && row.sanksi ? `<div><p class="mb-2 text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Sanksi</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base text-slate-700">${escapeHtml(row.sanksi)}</div></div>` : ''}
         </div><div class="mt-6 flex justify-end"><button type="button" data-action="management-close" class="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-110">Tutup</button></div>
-      </section></div>`;
+      </section>${isLate ? `<div id="dashboard-late-tooltip" role="tooltip" class="pointer-events-none whitespace-nowrap rounded-xl bg-white px-4 py-3 text-sm font-medium text-slate-900" style="display:none;position:fixed;z-index:100000;filter:drop-shadow(0 5px 12px rgba(15,23,42,0.22))">Waktu Terlambat: ${escapeHtml(row.waktuTerlambat || 3)} Hari<span aria-hidden="true" style="position:absolute;right:-5px;top:50%;width:10px;height:10px;background:#fff;border-radius:2px;transform:translateY(-50%) rotate(45deg)"></span></div>` : ''}</div>`;
   }
 
   if (managementModal === 'confirm-approve-loan') return renderModalComponent({ variant: 'approve', title: 'Setujui pengajuan peminjaman?', description: 'Saya yakin ingin menyetujui peminjaman ini', actions: [close, action('Setujui','management-execute-approve-loan','default','w-1/2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700')] });
@@ -584,9 +648,9 @@ function renderDashboardReturnFormPage() {
         <div class="space-y-1.5"><label class="block text-sm font-medium text-slate-700">Barang Dipinjam</label><input type="text" readonly value="${escapeHtml(item)}" class="${readonlyClass}"></div>
         <div class="space-y-1.5"><label class="block text-sm font-medium text-slate-700">Keperluan Peminjaman Barang</label><input type="text" readonly value="${escapeHtml(row.keperluan || 'Kebutuhan kegiatan')}" class="${readonlyClass}"></div>
         <div class="space-y-1.5"><label class="block text-sm font-medium text-slate-700">Jumlah Unit</label><input type="text" readonly value="${escapeHtml(row.jumlahPinjam ?? row.jumlahUnit ?? 1)}" class="${readonlyClass}"></div>
-        <div class="space-y-1.5"><label for="dashboard-return-date" class="block text-sm font-medium text-slate-700">Tanggal Pengembalian</label><div class="relative"><input type="date" id="dashboard-return-date" value="${escapeHtml(managementReturnDate)}" class="${fieldClass} pr-11"><span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">${renderIcon('CalendarDays','h-4 w-4')}</span></div></div>
-        <div class="space-y-1.5"><label for="dashboard-return-sanction" class="block text-sm font-medium text-slate-700">Sanksi / Catatan</label><textarea id="dashboard-return-sanction" rows="3" placeholder="Masukkan sanksi atau catatan jika ada" class="${fieldClass} resize-y">${escapeHtml(managementReturnSanksi)}</textarea></div>
-        <div class="space-y-2"><p class="text-sm font-medium text-slate-700">Kondisi Barang Saat Dikembalikan</p><div class="flex flex-wrap gap-5 text-sm text-slate-700"><label class="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-primary"><input class="accent-[var(--color-primary)]" type="radio" name="dashboard-return-condition" value="baik" ${managementReturnCondition === 'baik' ? 'checked' : ''}>Baik</label><label class="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-primary"><input class="accent-[var(--color-primary)]" type="radio" name="dashboard-return-condition" value="rusak" ${managementReturnCondition === 'rusak' ? 'checked' : ''}>Rusak</label></div></div>
+        <div class="space-y-1.5"><label for="dashboard-return-date" class="block text-sm font-medium text-slate-700">Tanggal Pengembalian</label><div data-action="management-open-return-date" class="relative flex min-h-[46px] w-full cursor-pointer items-center rounded-xl border ${managementReturnDateError ? 'border-rose-400' : 'border-slate-200'} bg-white px-4 py-3 transition-colors hover:border-slate-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15"><span id="dashboard-return-date-display" class="pointer-events-none flex-1 text-sm ${managementReturnDate ? 'text-slate-800' : 'text-slate-400'}">${managementReturnDate ? escapeHtml(formatDateEnOrId(managementReturnDate)) : 'Pilih Tanggal'}</span><span class="pointer-events-none ml-3 text-slate-400">${renderIcon('CalendarDays', 'h-5 w-5 text-slate-400')}</span><input type="date" id="dashboard-return-date" aria-label="Pilih tanggal pengembalian" min="${todayIsoDate()}" value="${escapeHtml(managementReturnDate)}" class="absolute inset-0 h-full w-full cursor-pointer opacity-0" style="color-scheme:light"></div>${managementReturnDateError ? `<p id="dashboard-return-date-error" role="alert" class="text-xs text-rose-600">${escapeHtml(managementReturnDateError)}</p>` : ''}</div>
+        <div class="space-y-1.5"><label for="dashboard-return-sanction" class="block text-sm font-medium text-slate-700">Sanksi / Catatan</label><textarea id="dashboard-return-sanction" rows="3" placeholder="Masukkan sanksi atau catatan" class="${fieldClass} resize-none ${managementReturnSanksiError ? 'border-rose-400' : ''}">${escapeHtml(managementReturnSanksi)}</textarea>${managementReturnSanksiError ? `<p id="dashboard-return-sanction-error" role="alert" class="text-xs text-rose-600">${escapeHtml(managementReturnSanksiError)}</p>` : ''}</div>
+        <div class="space-y-2"><p class="text-sm font-medium text-slate-700">Kondisi Barang Saat Dikembalikan</p><div class="flex flex-col items-start gap-3 text-sm text-slate-700"><label class="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-primary"><input class="accent-[var(--color-primary)]" type="radio" name="dashboard-return-condition" value="baik" ${managementReturnCondition === 'baik' ? 'checked' : ''}>Baik</label><label class="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-primary"><input class="accent-[var(--color-primary)]" type="radio" name="dashboard-return-condition" value="rusak" ${managementReturnCondition === 'rusak' ? 'checked' : ''}>Rusak</label></div></div>
         <div class="space-y-1.5"><label class="block text-sm font-medium text-slate-700">Foto Kondisi Barang Saat Dikembalikan</label><button type="button" data-action="management-choose-return-photo" class="flex min-h-[140px] w-full flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 transition-colors hover:border-primary hover:bg-slate-50/70 focus:outline-none focus:ring-2 focus:ring-primary/20">${managementReturnPhoto ? `<img src="${escapeHtml(managementReturnPhoto)}" alt="Foto kondisi barang" class="max-h-40 rounded-lg object-contain">` : `<img src="assets/img/Image-Dropbox.png" alt="" class="mb-2 h-9 w-9 object-contain"><span class="text-sm font-medium text-slate-700">Pilih foto kondisi barang</span><span class="mt-1 text-xs text-slate-400">Format JPG atau PNG</span>`}</button><input id="dashboard-return-photo" type="file" accept="image/jpeg,image/png,image/jpg" class="sr-only">${managementReturnPhotoError ? `<p class="text-sm text-rose-600">${escapeHtml(managementReturnPhotoError)}</p>` : ''}</div>
       </div>
       ${managementError ? `<p role="alert" class="mt-3 text-sm text-rose-600">${escapeHtml(managementError)}</p>` : ''}
@@ -665,7 +729,7 @@ function renderDashboardContent(ctx = {}) {
         <div class="mt-3 flex justify-end">
           <a
             href="${seeAllHref}"
-            class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-slate-800 transition hover:text-primary"
+            class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-slate-800 transition hover:text-primary hover:underline"
           >
             <span>Lihat Semua</span>
             ${renderIcon('ChevronRight', 'h-3.5 w-3.5')}
@@ -687,11 +751,14 @@ export function render(ctx = {}) {
 export async function mount(root, ctx = {}) {
   rootElement = root;
   currentUser = ctx.user || null;
-  activeTab = 'peminjaman';
-  managementTab = 'peminjaman';
+  // Pertahankan tab terakhir saat pengguna kembali ke Dashboard PJ.
   detailRow = null;
   managementModal = null;
   managementModalRow = null;
+  managementLateTooltipVisible = false;
+  managementLateTooltipHovered = false;
+  if (managementLateTooltipTimeout) clearTimeout(managementLateTooltipTimeout);
+  managementLateTooltipTimeout = null;
   managementError = '';
   managementReturnCondition = 'baik';
   managementReturnPhoto = '';
@@ -718,11 +785,16 @@ export async function mount(root, ctx = {}) {
     const actionEl = event.target.closest('[data-action]');
     if (!actionEl) {
       if (event.target.matches('[data-modal-overlay]')) { detailRow = null; refreshDashboard(); }
-      if (event.target.matches('[data-management-modal-backdrop]')) { managementModal = null; managementModalRow = null; managementError = ''; refreshDashboard(); }
+      if (event.target.matches('[data-management-modal-backdrop]')) { hideManagementLateTooltip(); managementModal = null; managementModalRow = null; managementError = ''; refreshDashboard(); }
       return;
     }
 
     const action = actionEl.dataset.action;
+    if (action === 'management-open-return-date') {
+      const dateInput = rootElement.querySelector('#dashboard-return-date');
+      try { dateInput?.showPicker?.(); } catch { dateInput?.focus(); }
+      return;
+    }
     const findManagementRow = (id) => livePeminjaman.find((row) => String(row.id || row.idPeminjaman) === String(id)) || null;
     const setManagementModal = (name, id = actionEl.dataset.id) => {
       managementModalRow = findManagementRow(id);
@@ -731,7 +803,12 @@ export async function mount(root, ctx = {}) {
       refreshDashboard();
     };
     if (action === 'management-close') {
+      hideManagementLateTooltip();
       managementModal = null; managementModalRow = null; managementError = ''; refreshDashboard(); return;
+    }
+    if (action === 'management-show-late-tooltip') {
+      showManagementLateTooltip(actionEl, true);
+      return;
     }
     if (action === 'management-detail-loan') { setManagementModal('detail-loan'); return; }
     if (action === 'management-detail-return') { setManagementModal('detail-return'); return; }
@@ -760,16 +837,18 @@ export async function mount(root, ctx = {}) {
       catch (error) { managementError = error?.message || 'Pengambilan gagal dikonfirmasi.'; refreshDashboard(); }
       return;
     }
-    if (action === 'management-approve-return') { managementReturnDate = new Date().toISOString().slice(0,10); managementReturnCondition = 'baik'; managementReturnPhoto = ''; managementReturnSanksi = ''; managementReturnPhotoError = ''; managementError = ''; setManagementModal('form-approve-return'); return; }
-    if (action === 'management-open-form-approve-return') { managementReturnDate = new Date().toISOString().slice(0,10); managementModal = 'form-approve-return'; managementError = ''; refreshDashboard(); return; }
+    if (action === 'management-approve-return') { managementReturnDate = ''; managementReturnCondition = 'baik'; managementReturnPhoto = ''; managementReturnSanksi = ''; managementReturnPhotoError = ''; managementError = ''; managementReturnDateError = ''; managementReturnSanksiError = ''; setManagementModal('form-approve-return'); return; }
+    if (action === 'management-open-form-approve-return') { managementReturnDate = ''; managementModal = 'form-approve-return'; managementError = ''; managementReturnDateError = ''; managementReturnSanksiError = ''; refreshDashboard(); return; }
     if (action === 'management-submit-return-form') {
       managementReturnDate = rootElement.querySelector('#dashboard-return-date')?.value || '';
       managementReturnSanksi = rootElement.querySelector('#dashboard-return-sanction')?.value || '';
       managementReturnCondition = rootElement.querySelector('input[name="dashboard-return-condition"]:checked')?.value || managementReturnCondition;
-      if (!managementReturnDate) { managementError = 'Tanggal pengembalian wajib diisi.'; refreshDashboard(); return; }
+      managementReturnDateError = managementReturnDate ? '' : 'Tanggal pengembalian wajib diisi.';
+      managementReturnSanksiError = managementReturnSanksi.trim() ? '' : 'Sanksi / catatan wajib diisi.';
+      if (managementReturnDateError || managementReturnSanksiError) { refreshDashboard(); return; }
       managementModal = 'confirm-submit-return'; managementError = ''; refreshDashboard(); return;
     }
-    if (action === 'management-back-to-return-form') { managementModal = 'form-approve-return'; managementError = ''; refreshDashboard(); return; }
+    if (action === 'management-back-to-return-form') { managementModal = 'form-approve-return'; managementError = ''; managementReturnDateError = ''; managementReturnSanksiError = ''; refreshDashboard(); return; }
     if (action === 'management-cancel-return-form') { managementModal = 'confirm-cancel-return-form'; managementError = ''; refreshDashboard(); return; }
     if (action === 'management-cancel-return-confirmed') { managementModal = null; managementModalRow = null; managementError = ''; refreshDashboard(); return; }
     if (action === 'management-choose-return-photo') { rootElement.querySelector('#dashboard-return-photo')?.click(); return; }
@@ -832,6 +911,18 @@ export async function mount(root, ctx = {}) {
   };
 
   const managementInputHandler = (event) => {
+    if (event.target.id === 'dashboard-return-date') {
+      managementReturnDate = event.target.value;
+      const dateDisplay = rootElement.querySelector('#dashboard-return-date-display');
+      if (dateDisplay) { dateDisplay.textContent = managementReturnDate ? formatDateEnOrId(managementReturnDate) : 'Pilih Tanggal'; dateDisplay.classList.toggle('text-slate-400', !managementReturnDate); dateDisplay.classList.toggle('text-slate-800', !!managementReturnDate); }
+      if (managementReturnDate) { managementReturnDateError = ''; rootElement.querySelector('#dashboard-return-date-error')?.remove(); event.target.classList.remove('border-rose-400'); }
+      return;
+    }
+    if (event.target.id === 'dashboard-return-sanction') {
+      managementReturnSanksi = event.target.value;
+      if (managementReturnSanksi.trim()) { managementReturnSanksiError = ''; rootElement.querySelector('#dashboard-return-sanction-error')?.remove(); event.target.classList.remove('border-rose-400'); }
+      return;
+    }
     if (event.target.id === 'dashboard-reject-reason') {
       managementRejectReason = event.target.value;
       if (managementRejectReasonValidationActive) {
@@ -905,9 +996,30 @@ export async function mount(root, ctx = {}) {
     }
   };
   const refreshDashboardForPhoto = () => { if (rootElement) rootElement.innerHTML = renderDashboardContent(ctx); };
+  managementLateTooltipPointerOverHandler = (event) => {
+    const trigger = event.target?.closest?.('[data-action="management-show-late-tooltip"]');
+    if (!trigger || trigger.contains(event.relatedTarget)) return;
+    managementLateTooltipHovered = true;
+    showManagementLateTooltip(trigger);
+  };
+  managementLateTooltipPointerOutHandler = (event) => {
+    const trigger = event.target?.closest?.('[data-action="management-show-late-tooltip"]');
+    if (!trigger || trigger.contains(event.relatedTarget)) return;
+    managementLateTooltipHovered = false;
+    // Klik mempertahankan tooltip sampai timer 3 detik selesai.
+    if (managementLateTooltipTimeout) return;
+    hideManagementLateTooltip();
+  };
+  managementLateTooltipScrollHandler = () => {
+    if (managementLateTooltipVisible) updateManagementLateTooltipPosition();
+  };
   root.addEventListener('click', clickHandler);
   root.addEventListener('input', managementInputHandler);
   root.addEventListener('change', returnPhotoChangeHandler);
+  root.addEventListener('pointerover', managementLateTooltipPointerOverHandler);
+  root.addEventListener('pointerout', managementLateTooltipPointerOutHandler);
+  root.addEventListener('scroll', managementLateTooltipScrollHandler, true);
+  window.addEventListener('resize', managementLateTooltipScrollHandler);
   root.__dashboardReturnPhotoChangeHandler = returnPhotoChangeHandler;
   root.__dashboardManagementInputHandler = managementInputHandler;
 }
@@ -917,6 +1029,14 @@ export function unmount(root) {
   if (target && clickHandler) target.removeEventListener('click', clickHandler);
   if (target?.__dashboardReturnPhotoChangeHandler) target.removeEventListener('change', target.__dashboardReturnPhotoChangeHandler);
   if (target?.__dashboardManagementInputHandler) target.removeEventListener('input', target.__dashboardManagementInputHandler);
+  if (target && managementLateTooltipPointerOverHandler) target.removeEventListener('pointerover', managementLateTooltipPointerOverHandler);
+  if (target && managementLateTooltipPointerOutHandler) target.removeEventListener('pointerout', managementLateTooltipPointerOutHandler);
+  if (target && managementLateTooltipScrollHandler) target.removeEventListener('scroll', managementLateTooltipScrollHandler, true);
+  if (managementLateTooltipScrollHandler && typeof window !== 'undefined') window.removeEventListener('resize', managementLateTooltipScrollHandler);
+  hideManagementLateTooltip();
+  managementLateTooltipPointerOverHandler = null;
+  managementLateTooltipPointerOutHandler = null;
+  managementLateTooltipScrollHandler = null;
   rootElement = null;
   clickHandler = null;
   detailRow = null;
