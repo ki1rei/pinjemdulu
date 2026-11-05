@@ -27,13 +27,18 @@ let rootElement = null;
 let clickHandler = null;
 let inputHandler = null;
 let changeHandler = null;
+let pointerOverHandler = null;
+let pointerOutHandler = null;
+let tooltipScrollHandler = null;
 let toastMessage = '';
 let toastType = 'success';
 let lateTooltipVisible = false;
-let lateTooltipTimeout = null;
+let lateTooltipHovered = false;
+let lateTooltipClickTimeout = null;
 let modalRow = null;
 let activeDialog = null; // 'detail' | 'confirm-approve' | 'form-approve' | 'confirm-submit-form' | 'confirm-cancel-form' | 'success-approve' | 'confirm-reject' | 'form-reject' | 'success-reject'
 let rejectionValidationCount = 0;
+let returnFormValidationCount = 0;
 let formData = {
   tanggalPengembalian: '',
   sanksi: '',
@@ -46,6 +51,65 @@ let formData = {
 function dateLabel(value) {
   if (!value) return '–';
   try { return formatTanggal(String(value).slice(0, 10)); } catch { return String(value).slice(0, 10); }
+}
+
+// Tooltip dibuat sebagai elemen fixed di dalam backdrop modal agar tidak terpotong
+// oleh area scroll. Posisinya selalu dihitung ulang dari tombol warning yang aktif.
+function updateLateTooltipPosition(anchor = null) {
+  if (!rootElement || !lateTooltipVisible) return;
+  const tooltip = rootElement.querySelector('#return-late-tooltip');
+  const trigger = anchor || rootElement.querySelector('[data-action="show-late-tooltip"]');
+  if (!tooltip || !trigger) return;
+
+  const rect = trigger.getBoundingClientRect();
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+  if (rect.bottom < 0 || rect.top > viewportHeight) {
+    tooltip.style.display = 'none';
+    return;
+  }
+
+  // Ukur setelah ditampilkan, lalu letakkan di kiri icon dengan panah mengarah ke icon.
+  tooltip.style.display = 'block';
+  const tooltipWidth = tooltip.getBoundingClientRect().width;
+  const left = Math.max(8, rect.left - 12 - tooltipWidth);
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${rect.top + rect.height / 2}px`;
+  // Top mengacu ke tengah icon, jadi tooltip perlu digeser setengah tinggi ke atas.
+  tooltip.style.transform = 'translateY(-50%)';
+}
+
+function showLateTooltip(anchor = null, keepForThreeSeconds = false) {
+  const tooltip = rootElement?.querySelector('#return-late-tooltip');
+  if (!tooltip) return;
+  lateTooltipVisible = true;
+  tooltip.style.display = 'block';
+  updateLateTooltipPosition(anchor);
+
+  if (keepForThreeSeconds) {
+    if (lateTooltipClickTimeout) clearTimeout(lateTooltipClickTimeout);
+    lateTooltipClickTimeout = setTimeout(() => {
+      lateTooltipClickTimeout = null;
+      // Jika pointer masih di atas icon, tooltip tetap tampil karena hover.
+      if (!lateTooltipHovered) hideLateTooltip();
+    }, 3000);
+  }
+}
+
+function hideLateTooltip() {
+  if (lateTooltipClickTimeout) {
+    clearTimeout(lateTooltipClickTimeout);
+    lateTooltipClickTimeout = null;
+  }
+  lateTooltipVisible = false;
+  lateTooltipHovered = false;
+  const tooltip = rootElement?.querySelector('#return-late-tooltip');
+  if (tooltip) tooltip.style.display = 'none';
+}
+
+function todayIsoDate() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
 }
 
 function pickupDateValue(row) {
@@ -246,18 +310,21 @@ function renderFormPengembalianPage() {
         </div>
         <div class="space-y-1.5">
           <label for="form-tanggal-pengembalian" class="block text-sm font-medium text-slate-700">Tanggal Pengembalian</label>
-          <div class="relative">
-            <input type="date" id="form-tanggal-pengembalian" value="${escapeHtml(formData.tanggalPengembalian)}" class="${fieldClass} pr-11">
-            <span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400">${renderIcon('CalendarDays', 'h-4 w-4')}</span>
+          <div data-action="open-return-date" class="relative flex min-h-[46px] w-full cursor-pointer items-center rounded-xl border ${returnFormValidationCount && !formData.tanggalPengembalian ? 'border-rose-400' : 'border-slate-200'} bg-white px-4 py-3 transition-colors hover:border-slate-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15">
+            <span id="return-date-display" class="pointer-events-none flex-1 text-sm ${formData.tanggalPengembalian ? 'text-slate-800' : 'text-slate-400'}">${formData.tanggalPengembalian ? escapeHtml(dateLabel(formData.tanggalPengembalian)) : 'Pilih Tanggal'}</span>
+            <span class="pointer-events-none ml-3 text-slate-400">${renderIcon('CalendarDays', 'h-5 w-5 text-slate-400')}</span>
+            <input type="date" id="form-tanggal-pengembalian" aria-label="Pilih tanggal pengembalian" min="${todayIsoDate()}" value="${escapeHtml(formData.tanggalPengembalian)}" class="absolute inset-0 h-full w-full cursor-pointer opacity-0" style="color-scheme:light">
           </div>
+          ${returnFormValidationCount && !formData.tanggalPengembalian ? '<p id="return-date-error" role="alert" class="text-xs text-rose-600">Tanggal pengembalian wajib diisi.</p>' : ''}
         </div>
         <div class="space-y-1.5">
           <label for="form-sanksi" class="block text-sm font-medium text-slate-700">Sanksi / Catatan</label>
-          <textarea id="form-sanksi" rows="3" placeholder="Masukkan sanksi atau catatan jika ada" class="${fieldClass} resize-y">${escapeHtml(formData.sanksi)}</textarea>
+          <textarea id="form-sanksi" rows="3" placeholder="Masukkan sanksi atau catatan" class="${fieldClass} resize-none ${returnFormValidationCount && !formData.sanksi.trim() ? 'border-rose-400' : ''}">${escapeHtml(formData.sanksi)}</textarea>
+          ${returnFormValidationCount && !formData.sanksi.trim() ? '<p id="return-sanction-error" role="alert" class="text-xs text-rose-600">Sanksi / catatan wajib diisi.</p>' : ''}
         </div>
         <div class="space-y-2">
           <p class="text-sm font-medium text-slate-700">Kondisi Barang Saat Dikembalikan</p>
-          <div class="flex flex-wrap gap-5 text-sm text-slate-700">
+          <div class="flex flex-col items-start gap-3 text-sm text-slate-700">
             <label class="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-primary"><input class="accent-[var(--color-primary)]" type="radio" name="kondisi-pengembalian" value="baik" ${formData.kondisiPengembalian === 'baik' ? 'checked' : ''}>Baik</label>
             <label class="inline-flex cursor-pointer items-center gap-2 transition-colors hover:text-primary"><input class="accent-[var(--color-primary)]" type="radio" name="kondisi-pengembalian" value="rusak" ${formData.kondisiPengembalian === 'rusak' ? 'checked' : ''}>Rusak</label>
           </div>
@@ -318,7 +385,7 @@ function renderModal() {
             ${dateColumns.map((date, index) => `<div class="text-center ${index === 0 ? 'sm:px-2' : 'sm:px-4'}"><p class="text-sm font-semibold text-slate-900 sm:text-base">${date.label}</p><p class="mt-3 text-sm font-medium text-slate-800 sm:text-base">${escapeHtml(date.value)}</p></div>`).join('')}
           </div>
 
-          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Status</p><div class="flex items-center gap-2">${isTerlambat ? `${lateTooltipVisible ? `<span role="status" class="rounded-2xl bg-white px-4 py-3 text-sm text-slate-900 shadow-[0_8px_28px_rgba(15,23,42,0.14)]">Waktu Terlambat: ${daysLate} Hari</span>` : ''}<button type="button" data-action="show-late-tooltip" aria-label="Lihat waktu keterlambatan" class="inline-flex h-8 w-8 items-center justify-center rounded-full text-rose-700 transition-colors hover:bg-rose-50 hover:text-rose-800">${renderIcon('AlertCircle', 'h-6 w-6')}</button>` : ''}${renderStatusChip(row.status)}</div></div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Status</p><div class="flex items-center gap-2">${isTerlambat ? `<button type="button" data-action="show-late-tooltip" aria-label="Lihat waktu keterlambatan" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-rose-700 transition-colors hover:bg-rose-50 hover:text-rose-800">${renderIcon('AlertCircle', 'h-6 w-6')}</button>` : ''}${renderStatusChip(row.status)}</div></div>
 
           ${isDikembalikan ? `<div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Diproses Oleh</p><p class="text-base font-medium text-slate-800">${escapeHtml(row.diprosesOleh || row.namaPeminjam || name)}</p></div>` : ''}
           ${isDikembalikan && row.kondisiPengembalian ? `<div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Kondisi Barang Saat Dikembalikan</p><span class="rounded-lg px-3 py-1.5 text-sm font-medium ${String(row.kondisiPengembalian).toLowerCase() === 'rusak' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-50 text-emerald-700'}">${escapeHtml(row.kondisiPengembalian)}</span></div>` : ''}
@@ -330,6 +397,7 @@ function renderModal() {
 
         <div class="mt-6 flex justify-end"><button type="button" data-action="close-modal" class="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-110">Tutup</button></div>
       </section>
+      ${isTerlambat ? `<div id="return-late-tooltip" role="tooltip" class="pointer-events-none whitespace-nowrap rounded-xl bg-white px-4 py-3 text-sm font-medium text-slate-900" style="display:none;position:fixed;z-index:100000;filter:drop-shadow(0 5px 12px rgba(15,23,42,0.22))">Waktu Terlambat: ${daysLate} Hari<span aria-hidden="true" style="position:absolute;right:-5px;top:50%;width:10px;height:10px;background:#fff;border-radius:2px;transform:translateY(-50%) rotate(45deg)"></span></div>` : ''}
     </div>`;
   }
 
@@ -617,8 +685,6 @@ export async function mount(root) {
   currentPage = 1;
   toastMessage = '';
   lateTooltipVisible = false;
-  if (lateTooltipTimeout) clearTimeout(lateTooltipTimeout);
-  lateTooltipTimeout = null;
   modalRow = null;
   activeDialog = null;
   formData = {
@@ -646,12 +712,15 @@ export async function mount(root) {
       return;
     }
     const action = button.dataset.action;
+    if (action === 'open-return-date') {
+      const dateInput = rootElement.querySelector('#form-tanggal-pengembalian');
+      try { dateInput?.showPicker?.(); } catch { dateInput?.focus(); }
+      return;
+    }
     const id = button.dataset.id;
 
     if (action === 'close-modal') {
-      lateTooltipVisible = false;
-      if (lateTooltipTimeout) clearTimeout(lateTooltipTimeout);
-      lateTooltipTimeout = null;
+      hideLateTooltip();
       modalRow = null;
       activeDialog = null;
       refresh();
@@ -659,14 +728,8 @@ export async function mount(root) {
     }
 
     if (action === 'show-late-tooltip') {
-      lateTooltipVisible = true;
-      if (lateTooltipTimeout) clearTimeout(lateTooltipTimeout);
-      refresh();
-      lateTooltipTimeout = setTimeout(() => {
-        lateTooltipVisible = false;
-        lateTooltipTimeout = null;
-        refresh();
-      }, 3000);
+      // Klik menahan tooltip selama 3 detik, meskipun pointer meninggalkan icon.
+      showLateTooltip(button, true);
       return;
     }
 
@@ -727,7 +790,8 @@ export async function mount(root) {
     // Alur Persetujuan (Approval)
     if (action === 'confirm' || action === 'approve') {
       modalRow = rows.find((row) => String(row.id || row.idPeminjaman) === String(id)) || null;
-      formData.tanggalPengembalian = new Date().toISOString().slice(0, 10);
+      formData.tanggalPengembalian = '';
+      returnFormValidationCount = 0;
       formData.sanksi = '';
       formData.kondisiPengembalian = 'baik';
       formData.fotoKondisi = '';
@@ -738,7 +802,8 @@ export async function mount(root) {
     }
 
     if (action === 'open-form-approve') {
-      formData.tanggalPengembalian = new Date().toISOString().slice(0, 10);
+      formData.tanggalPengembalian = '';
+      returnFormValidationCount = 0;
       formData.sanksi = '';
       activeDialog = 'form-approve';
       refresh();
@@ -749,9 +814,12 @@ export async function mount(root) {
       const tgl = rootElement.querySelector('#form-tanggal-pengembalian')?.value;
       const sanksi = rootElement.querySelector('#form-sanksi')?.value;
       const kondisi = rootElement.querySelector('input[name="kondisi-pengembalian"]:checked')?.value;
-      if (tgl) formData.tanggalPengembalian = tgl;
-      if (sanksi !== undefined) formData.sanksi = sanksi;
+      formData.tanggalPengembalian = tgl || '';
+      formData.sanksi = sanksi || '';
       if (kondisi) formData.kondisiPengembalian = kondisi;
+      returnFormValidationCount += 1;
+      if (!formData.tanggalPengembalian || !formData.sanksi.trim()) { refresh(); return; }
+      returnFormValidationCount = 0;
       activeDialog = 'confirm-submit-form';
       refresh();
       return;
@@ -870,6 +938,18 @@ export async function mount(root) {
   };
 
   inputHandler = (event) => {
+    if (event.target.id === 'form-tanggal-pengembalian') {
+      formData.tanggalPengembalian = event.target.value;
+      const dateDisplay = rootElement.querySelector('#return-date-display');
+      if (dateDisplay) { dateDisplay.textContent = formData.tanggalPengembalian ? dateLabel(formData.tanggalPengembalian) : 'Pilih Tanggal'; dateDisplay.classList.toggle('text-slate-400', !formData.tanggalPengembalian); dateDisplay.classList.toggle('text-slate-800', !!formData.tanggalPengembalian); }
+      if (formData.tanggalPengembalian) { rootElement.querySelector('#return-date-error')?.remove(); event.target.classList.remove('border-rose-400'); }
+      return;
+    }
+    if (event.target.id === 'form-sanksi') {
+      formData.sanksi = event.target.value;
+      if (formData.sanksi.trim()) { rootElement.querySelector('#return-sanction-error')?.remove(); event.target.classList.remove('border-rose-400'); }
+      return;
+    }
     if (event.target.id === 'form-alasan-penolakan') {
       formData.alasanPenolakan = event.target.value;
       if (rejectionValidationCount > 0) {
@@ -929,25 +1009,61 @@ export async function mount(root) {
     }
   };
 
+  pointerOverHandler = (event) => {
+    const trigger = event.target?.closest?.('[data-action="show-late-tooltip"]');
+    if (!trigger || trigger.contains(event.relatedTarget)) return;
+    lateTooltipHovered = true;
+    showLateTooltip(trigger);
+  };
+
+  pointerOutHandler = (event) => {
+    const trigger = event.target?.closest?.('[data-action="show-late-tooltip"]');
+    if (!trigger || trigger.contains(event.relatedTarget)) return;
+    lateTooltipHovered = false;
+    // Jangan tutup akibat hover-out selama timer klik 3 detik masih berjalan.
+    if (lateTooltipClickTimeout) return;
+    hideLateTooltip();
+  };
+
+  tooltipScrollHandler = () => {
+    if (lateTooltipVisible) updateLateTooltipPosition();
+  };
+
   rootElement.addEventListener('click', clickHandler);
   rootElement.addEventListener('input', inputHandler);
   rootElement.addEventListener('change', changeHandler);
+  rootElement.addEventListener('pointerover', pointerOverHandler);
+  rootElement.addEventListener('pointerout', pointerOutHandler);
+  // Capture diperlukan karena event scroll dari elemen modal tidak bubbling.
+  rootElement.addEventListener('scroll', tooltipScrollHandler, true);
+  window.addEventListener('resize', tooltipScrollHandler);
 }
 
 export function unmount() {
   if (rootElement && clickHandler) rootElement.removeEventListener('click', clickHandler);
   if (rootElement && inputHandler) rootElement.removeEventListener('input', inputHandler);
   if (rootElement && changeHandler) rootElement.removeEventListener('change', changeHandler);
+  if (rootElement && pointerOverHandler) rootElement.removeEventListener('pointerover', pointerOverHandler);
+  if (rootElement && pointerOutHandler) rootElement.removeEventListener('pointerout', pointerOutHandler);
+  if (rootElement && tooltipScrollHandler) rootElement.removeEventListener('scroll', tooltipScrollHandler, true);
+  if (tooltipScrollHandler && typeof window !== 'undefined') window.removeEventListener('resize', tooltipScrollHandler);
+  hideLateTooltip();
   rootElement = null;
   clickHandler = null;
   inputHandler = null;
   changeHandler = null;
+  pointerOverHandler = null;
+  pointerOutHandler = null;
+  tooltipScrollHandler = null;
   rows = [];
   modalRow = null;
   activeDialog = null;
   lateTooltipVisible = false;
-  if (lateTooltipTimeout) clearTimeout(lateTooltipTimeout);
-  lateTooltipTimeout = null;
+  lateTooltipHovered = false;
+  if (lateTooltipClickTimeout) {
+    clearTimeout(lateTooltipClickTimeout);
+    lateTooltipClickTimeout = null;
+  }
   formData = {
     tanggalPengembalian: '',
     sanksi: '',
