@@ -4249,3 +4249,9 @@ select option:hover {
 .\[\&_svg\]\:shrink-0 svg {
     flex-shrink: 0
 }
+
+/* Hover warna ikon dan chevron pada menu grup sidebar. */
+.sidebar-nav-group:hover .sidebar-nav-group-icon-svg,
+.sidebar-nav-group:hover .sidebar-nav-group-chevron-svg {
+  color: #18181b !important;
+}
