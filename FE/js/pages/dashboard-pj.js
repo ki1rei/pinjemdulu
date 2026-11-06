@@ -379,7 +379,7 @@ function renderManagementTable() {
     : '<th class="px-4 py-4 text-center font-semibold">No</th><th class="px-4 py-4 font-semibold">Nama Peminjam</th><th class="px-4 py-4 font-semibold">Barang Dipinjam</th><th class="px-4 py-4 text-center font-semibold">Tanggal Mulai</th><th class="px-4 py-4 text-center font-semibold">Tanggal Pengambilan</th><th class="px-4 py-4 text-center font-semibold">Tanggal Selesai</th><th class="px-4 py-4 text-center font-semibold">Jumlah Unit</th><th class="px-4 py-4 text-center font-semibold">Status</th><th class="px-4 py-4 text-center font-semibold">Aksi</th>';
   return `
     <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <h2 class="text-[14px] font-semibold text-slate-900">Pengelolaan</h2>
+      <h2 class="text-[20px] font-semibold text-slate-900">Pengelolaan</h2>
       <div class="inline-flex self-start items-center gap-1 rounded-xl bg-white p-1.5 sm:self-auto" role="tablist" aria-label="Jenis pengelolaan">
         <button type="button" role="tab" data-action="switch-management-tab" data-tab="peminjaman" aria-selected="${!isReturn}" class="rounded-lg px-4 py-2 text-[11px] font-medium transition cursor-pointer select-none ${!isReturn ? 'bg-blue-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}">Kelola Peminjaman</button>
         <button type="button" role="tab" data-action="switch-management-tab" data-tab="pengembalian" aria-selected="${isReturn}" class="rounded-lg px-4 py-2 text-[11px] font-medium transition cursor-pointer select-none ${isReturn ? 'bg-blue-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}">Kelola Pengembalian</button>
@@ -693,7 +693,7 @@ function renderDashboardContent(ctx = {}) {
 
       <div class="mt-7">
         <div class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h2 class="text-[14px] font-semibold text-slate-900">Pengajuan Saya</h2>
+          <h2 class="text-[20px] font-semibold text-slate-900">Pengajuan Saya</h2>
           <div class="inline-flex self-start items-center gap-1 rounded-xl bg-white p-1.5 sm:self-auto" role="tablist" aria-label="Kategori Pengajuan Saya">
             <button
               type="button"
