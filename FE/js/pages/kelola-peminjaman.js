@@ -50,7 +50,7 @@ let rejectReason = "";
 let rejectReasonError = "";
 let rejectReasonValidationCount = 0;
 let pickupModal = null;
-let pickupData = { tanggalPengambilan: "", fotoPengambilan: "", error: "" };
+let pickupData = { tanggalPengambilan: "", fotoPengambilan: "", error: "", tanggalError: "", fotoError: "" };
 let changeHandler = null;
 
 function dateLabel(value) {
@@ -60,6 +60,12 @@ function dateLabel(value) {
   } catch {
     return String(value).slice(0, 10);
   }
+}
+
+function todayIsoDate() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 10);
 }
 
 function statusInfo(status) {
@@ -320,10 +326,18 @@ function renderModal() {
       <section role="dialog" aria-modal="true" aria-labelledby="pickup-title" class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
         <h2 id="pickup-title" class="text-2xl font-semibold tracking-tight text-slate-900">Pengambilan Barang</h2>
         <div class="mt-5 space-y-4 text-sm">
-          <div><label for="tanggal-pengambilan" class="mb-2 block text-sm font-semibold text-slate-900">Tanggal Pengambilan</label><div class="relative"><input id="tanggal-pengambilan" type="date" value="${escapeHtml(pickupData.tanggalPengambilan)}" class="h-12 w-full rounded-2xl border border-slate-100 bg-white px-4 text-sm font-medium ${pickupData.tanggalPengambilan ? 'text-slate-800' : 'text-transparent'} outline-none transition focus:border-slate-300 focus:ring-2 focus:ring-slate-100">${pickupData.tanggalPengambilan ? '' : '<span data-date-placeholder class="pointer-events-none absolute inset-y-0 left-4 flex items-center text-sm font-medium text-slate-400">Pilih tanggal</span>'}</div></div>
-          <div><p class="mb-2 text-sm font-semibold text-slate-900">Foto Barang</p><button type="button" data-action="choose-pickup-photo" class="flex min-h-[150px] w-full flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center transition-colors hover:bg-slate-100">${pickupData.fotoPengambilan ? `<img src="${escapeHtml(pickupData.fotoPengambilan)}" alt="Foto barang" class="max-h-32 rounded-lg object-contain">` : `<img src="assets/img/Image-Dropbox.png" alt="" class="mb-2 h-10 w-10 object-contain"><span class="text-xs font-semibold text-slate-700">Seret foto ke sini, atau Pilih File</span><span class="mt-1 text-[10px] text-slate-400">File harus berformat JPG atau PNG dengan ukuran maksimal 2 MB.</span>`}</button><input id="pickup-photo" type="file" accept="image/jpeg,image/png,image/jpg" class="sr-only">${pickupData.error ? `<p class="mt-1 text-xs text-rose-600">${escapeHtml(pickupData.error)}</p>` : ""}</div>
+          <div>
+            <label for="tanggal-pengambilan" class="mb-2 block text-sm font-semibold text-slate-900">Tanggal Pengambilan</label>
+            <div data-action="open-pickup-date" class="relative flex h-12 w-full cursor-pointer items-center rounded-xl border ${pickupData.tanggalError ? 'border-rose-400' : 'border-slate-200'} bg-white px-4 transition-colors hover:border-slate-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15">
+              <span id="pickup-date-display" class="pointer-events-none flex-1 text-sm ${pickupData.tanggalPengambilan ? 'text-slate-800' : 'text-slate-400'}">${pickupData.tanggalPengambilan ? escapeHtml(dateLabel(pickupData.tanggalPengambilan)) : 'Pilih Tanggal'}</span>
+              <span class="pointer-events-none ml-3 text-slate-400">${renderIcon('CalendarDays', 'h-5 w-5 text-slate-400')}</span>
+              <input type="date" id="tanggal-pengambilan" aria-label="Pilih tanggal pengambilan" min="${todayIsoDate()}" value="${escapeHtml(pickupData.tanggalPengambilan)}" class="pointer-events-none absolute inset-0 h-full w-full cursor-pointer opacity-0" style="color-scheme:light">
+            </div>
+            ${pickupData.tanggalError ? `<p id="pickup-date-error" role="alert" class="mt-1 text-xs text-rose-600">${escapeHtml(pickupData.tanggalError)}</p>` : ''}
+          </div>
+          <div><p class="mb-2 text-sm font-semibold text-slate-900">Foto Barang</p><button type="button" data-action="choose-pickup-photo" class="flex min-h-[150px] w-full flex-col items-center justify-center rounded-2xl border border-dashed ${pickupData.fotoError ? 'border-rose-400' : 'border-slate-300'} bg-slate-50 p-4 text-center transition-colors hover:bg-slate-100">${pickupData.fotoPengambilan ? `<img src="${escapeHtml(pickupData.fotoPengambilan)}" alt="Foto barang" class="max-h-32 rounded-lg object-contain">` : `<img src="assets/img/Image-Dropbox.png" alt="" class="mb-2 h-10 w-10 object-contain"><span class="text-xs font-semibold text-slate-700">Seret foto ke sini, atau Pilih File</span><span class="mt-1 text-[10px] text-slate-400">File harus berformat JPG atau PNG dengan ukuran maksimal 2 MB.</span>`}</button><input id="pickup-photo" type="file" accept="image/jpeg,image/png,image/jpg" class="sr-only">${pickupData.error ? `<p class="mt-1 text-xs text-rose-600">${escapeHtml(pickupData.error)}</p>` : ""}${pickupData.fotoError ? `<p role="alert" class="mt-1 text-xs text-rose-600">${escapeHtml(pickupData.fotoError)}</p>` : ""}</div>
         </div>
-        <div class="mt-6 flex justify-end gap-3"><button type="button" data-action="close-pickup" class="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 transition-colors hover:bg-rose-50 hover:text-rose-600">Batal</button><button type="button" data-action="submit-pickup" class="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:brightness-110">Kirim</button></div>
+        <div class="mt-6 flex justify-end gap-3"><button type="button" data-action="close-pickup" class="rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 transition-colors hover:border-rose-700 hover:bg-rose-700 hover:text-white">Batal</button><button type="button" data-action="submit-pickup" class="rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:brightness-110">Kirim</button></div>
       </section>
     </div>`;
   }
@@ -651,7 +665,7 @@ export async function mount(root) {
     }
     if (action === "pickup") {
       pickupModal = { id };
-      pickupData = { tanggalPengambilan: "", fotoPengambilan: "", error: "" };
+      pickupData = { tanggalPengambilan: "", fotoPengambilan: "", error: "", tanggalError: "", fotoError: "" };
       refresh();
       return;
     }
@@ -660,16 +674,41 @@ export async function mount(root) {
       refresh();
       return;
     }
+    if (action === "open-pickup-date") {
+      const dateInput = rootElement.querySelector("#tanggal-pengambilan");
+      if (dateInput) {
+        if (typeof dateInput.showPicker === "function") dateInput.showPicker();
+        else {
+          dateInput.focus();
+          dateInput.click();
+        }
+      }
+      return;
+    }
     if (action === "choose-pickup-photo") {
       rootElement.querySelector("#pickup-photo")?.click();
       return;
     }
     if (action === "submit-pickup") {
+      // Validasi kedua field dalam satu kali submit agar semua peringatan tampil bersamaan.
+      pickupData.tanggalError = "";
+      pickupData.fotoError = "";
+
       if (!pickupData.tanggalPengambilan) {
-        pickupData.error = "Tanggal pengambilan wajib diisi.";
+        pickupData.tanggalError = "Tanggal pengambilan wajib diisi.";
+      } else if (pickupData.tanggalPengambilan < todayIsoDate()) {
+        pickupData.tanggalError = "Tanggal pengambilan tidak boleh sebelum hari ini.";
+      }
+
+      if (!pickupData.fotoPengambilan) {
+        pickupData.fotoError = "Foto barang wajib diisi.";
+      }
+
+      if (pickupData.tanggalError || pickupData.fotoError) {
         refresh();
         return;
       }
+
       try {
         await updateMockPeminjamanPickup(pickupModal.id, pickupData);
         rows = await loadRows();
@@ -856,6 +895,17 @@ export async function mount(root) {
   changeHandler = async (event) => {
     if (event.target.id === "tanggal-pengambilan") {
       pickupData.tanggalPengambilan = event.target.value;
+      pickupData.tanggalError = "";
+      const dateDisplay = rootElement.querySelector("#pickup-date-display");
+      if (dateDisplay) {
+        dateDisplay.textContent = pickupData.tanggalPengambilan
+          ? dateLabel(pickupData.tanggalPengambilan)
+          : "Pilih Tanggal";
+        dateDisplay.classList.toggle("text-slate-400", !pickupData.tanggalPengambilan);
+        dateDisplay.classList.toggle("text-slate-800", !!pickupData.tanggalPengambilan);
+      }
+      rootElement.querySelector("#pickup-date-error")?.remove();
+      event.target.parentElement?.classList.remove("border-rose-400");
       return;
     }
     if (event.target.id !== "pickup-photo") return;
@@ -870,6 +920,7 @@ export async function mount(root) {
     try {
       pickupData.fotoPengambilan = await compressImageToDataUrl(file);
       pickupData.error = "";
+      pickupData.fotoError = "";
       refresh();
     } catch {
       pickupData.error = "Gagal memproses foto barang.";
