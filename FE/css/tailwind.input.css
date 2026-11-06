@@ -13,6 +13,20 @@
     @apply bg-background text-foreground;
     font-family: 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   }
+  h1,
+  h1.font-bold,
+  h1.font-extrabold {
+    font-weight: 600 !important;
+    letter-spacing: -0.02em;
+  }
+  h2,
+  h2.font-bold {
+    font-weight: 600 !important;
+  }
+  h3,
+  h3.font-bold {
+    font-weight: 600 !important;
+  }
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
@@ -22,4 +36,57 @@
   dialog::backdrop {
     @apply bg-zinc-950/40 backdrop-blur-sm;
   }
+
+  dialog[open],
+  dialog {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+  }
+
+  /* Dropdown item hover global: background biru primary (biru tua), teks putih */
+  [role="listbox"] [role="option"]:hover,
+  .dropdown-item:hover,
+  [data-dropdown-item]:hover {
+    background-color: var(--primary) !important;
+    color: var(--primary-foreground) !important;
+  }
+
+  select option:hover,
+  select option:focus,
+  select option:checked {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+  }
 }
+/* Tombol Batal pada form inventaris: hover merah, mengalahkan style outline/primary. */
+.cancel-form-button:hover:not(:disabled) { background-color: rgb(225, 29, 72) !important; color: rgb(255, 255, 255) !important; border-color: rgb(225, 29, 72) !important; }
+
+/* Efek hover tombol aksi: perubahan warna saja, tanpa pergeseran atau perubahan ukuran. */
+.button-hover-soft-red {
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.button-hover-soft-red:hover:not(:disabled) {
+  background-color: rgb(201, 43, 43) !important;
+}
+.button-hover-soft-red:active:not(:disabled) {
+  background-color: rgb(185, 28, 28) !important;
+}
+
+.button-hover-soft-primary {
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.button-hover-soft-primary:hover:not(:disabled) {
+  background-color: rgb(29, 59, 107) !important;
+}
+.button-hover-soft-primary:active:not(:disabled) {
+  background-color: rgb(25, 52, 94) !important;
+}
+
+@keyframes validation-blink {
+  0%, 100% { background-color: rgb(254 242 242); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+  50% { background-color: rgb(254 202 202); box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18); }
+}
+.validation-blink { animation: validation-blink 0.45s ease-in-out 1; }

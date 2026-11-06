@@ -10,9 +10,82 @@ import { getCaptcha, login } from '../services/auth.js';
 import { mockUsers } from '../data/users.js';
 import { login as setSession } from '../state/session.js';
 import { navigate } from '../router.js';
+import { renderModal as renderModalComponent } from '../ui/modal.js';
 
 let currentCaptchaId = '';
 let currentCaptchaText = '';
+let authView = 'login';
+let forgotModal = null;
+let forgotError = '';
+
+function renderForgotPasswordPage() {
+  let modal = '';
+  if (forgotModal === 'confirm') {
+    modal = renderModalComponent({
+      id: 'modal-forgot-password-confirm',
+      title: 'Kirim Data Ubah Password?',
+      description: 'Pastikan No. WhatsApp Anda aktif dan dapat dihubungi.',
+      variant: 'send',
+      actions: [
+        { label: 'Kembali', action: 'forgot-back-form', variant: 'outline' },
+        { label: 'Kirim', action: 'forgot-submit-confirm' },
+      ],
+    }).toString();
+  } else if (forgotModal === 'success') {
+    modal = renderModalComponent({
+      id: 'modal-forgot-password-success',
+      title: 'Data Ubah Password Berhasil Dikirim!',
+      description: 'Permintaan ubah password Anda berhasil dikirim. Silakan periksa WhatsApp Anda secara berkala untuk mendapatkan informasi dan melanjutkan ke tahap berikutnya.',
+      variant: 'success',
+      actions: [{ label: 'Mengerti', action: 'forgot-close-success' }],
+    }).toString();
+  }
+
+  return html`
+    <main class="min-h-screen w-full overflow-x-hidden bg-white text-zinc-900">
+      <div class="flex min-h-screen w-full">
+        <aside aria-hidden="true" class="hidden w-1/2 shrink-0 md:flex md:items-stretch lg:w-[48%]">
+          <div class="flex h-full w-full flex-col bg-primary"></div>
+        </aside>
+        <section class="flex min-h-screen w-full flex-1 flex-col items-center justify-start px-5 py-10 sm:px-8 md:w-1/2 md:px-12 md:py-14 lg:w-[52%] lg:px-20 lg:py-20 xl:px-28">
+          <div class="flex w-full max-w-xl flex-1 flex-col">
+            <a href="#/login" data-action="forgot-back-login" aria-label="PinjemDulu beranda" class="mb-10 inline-flex items-center gap-3 transition hover:opacity-90">
+              <img src="assets/img/Logo-PinjemDulu.png" alt="Logo PinjemDulu" class="h-[42px] w-[42px] shrink-0 rounded-[14px] object-contain shadow-sm sm:h-[44px] sm:w-[44px]" />
+              <span class="flex items-baseline text-2xl font-extrabold tracking-tight"><span class="text-zinc-900">Pinjem</span><span class="text-primary">Dulu</span></span>
+            </a>
+            <div class="mb-8">
+              <p class="mb-2 text-sm font-medium text-zinc-500">Selamat Datang Kembali!</p>
+              <h1 class="mb-2 text-3xl font-semibold leading-[1.4] tracking-[0] text-zinc-900 sm:text-[32px]">Atur Ulang Password</h1>
+              <p class="text-sm leading-6 text-zinc-500">Masukkan NIM dan nomor WhatsApp yang terdaftar untuk memverifikasi akun Anda.</p>
+            </div>
+            <form id="forgot-password-form" novalidate class="space-y-5">
+              <div>
+                <label for="forgot-nim" class="${labelClass('mb-2 block text-zinc-600')}">NIM<span class="ml-0.5 text-rose-500">*</span></label>
+                <input id="forgot-nim" name="nim" type="text" inputmode="numeric" placeholder="Masukkan NIM anda" class="${inputClass('h-12 rounded-2xl px-4 py-3')}" required />
+                <p id="forgot-nim-error" class="mt-1 text-xs text-rose-600 ${forgotError ? '' : 'hidden'}">${escapeHtml(forgotError)}</p>
+              </div>
+              <div>
+                <label for="forgot-whatsapp" class="${labelClass('mb-2 block text-zinc-600')}">No. Whatsapp<span class="ml-0.5 text-rose-500">*</span></label>
+                <input id="forgot-whatsapp" name="whatsapp" type="tel" inputmode="tel" placeholder="Masukkan nomor whatsapp yang bisa dihubungi" class="${inputClass('h-12 rounded-2xl px-4 py-3')}" required />
+                <p id="forgot-whatsapp-error" class="mt-1 text-xs text-rose-600 hidden"></p>
+              </div>
+              <button type="submit" class="${buttonClass({ variant: 'default', size: 'lg' })} h-12 w-full rounded-2xl">Kirim</button>
+            </form>
+            <footer class="mt-auto py-4 text-center text-xs text-zinc-400">&copy; 2026. PinjemDulu - All Rights Reserved.</footer>
+          </div>
+        </section>
+      </div>
+      ${raw(modal)}
+    </main>
+  `.toString();
+}
+
+function getInitials(name = '') {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return 'U';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 /**
  * Render halaman login tanpa shell (full-screen dua kolom).
@@ -24,31 +97,58 @@ export function render(ctx = {}) {
   currentCaptchaId = cap.captchaId;
   currentCaptchaText = cap.text;
 
+  if (authView === 'forgot') {
+    return renderForgotPasswordPage();
+  }
+
   const quickUsers = mockUsers.map((u) => {
     const isNonaktif = (u.statusAkun || u.status_akun) !== 'aktif';
-    const roleName = u.role === 'peminjam' ? 'Peminjam' : 'PJ Inventaris';
+    const isPj = u.role === 'penanggung_jawab';
+    const roleName = isPj ? 'PJ' : 'Peminjam';
+    const roleFullName = isPj ? 'PJ Inventaris' : 'Peminjam';
     const orgName =
       typeof u.organisasi === 'object' && u.organisasi
         ? u.organisasi.namaOrganisasi || u.organisasi.nama || 'OKI'
         : String(u.organisasi || 'OKI');
+    const initials = getInitials(u.nama);
 
     return html`
       <button
         type="button"
         data-action="quick-login"
+        data-role="${u.role}"
+        data-nim="${u.nim || ''}"
         data-email="${u.email}"
-        class="group flex flex-col justify-start gap-1 rounded-2xl border border-zinc-200 bg-white p-3 text-left transition hover:border-primary/40 hover:bg-blue-50/50"
+        class="group flex items-center justify-between gap-2.5 rounded-xl border border-zinc-200/90 bg-white p-2.5 text-left transition hover:border-primary/40 hover:bg-zinc-50 hover:shadow-xs focus:outline-none focus:ring-2 focus:ring-primary/20"
       >
-        <div class="flex items-center gap-2">
-          <p class="truncate text-sm font-semibold text-zinc-900">${u.nama}</p>
-          ${
-            isNonaktif
-              ? raw('<span class="rounded-full bg-rose-100 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-rose-700">Nonaktif</span>')
-              : ''
-          }
+        <div class="flex min-w-0 items-center gap-2.5">
+          <span
+            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isPj
+              ? 'bg-amber-100 text-amber-800'
+              : 'bg-blue-100 text-blue-700'} text-xs font-bold"
+          >
+            ${initials}
+          </span>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-1.5">
+              <p class="truncate text-xs font-semibold text-zinc-900">${u.nama}</p>
+              ${isNonaktif
+                ? raw(
+                    '<span class="shrink-0 rounded bg-rose-100 px-1 py-0.2 text-[9px] font-bold uppercase tracking-wider text-rose-700">Nonaktif</span>'
+                  )
+                : raw(
+                    `<span class="shrink-0 rounded ${
+                      isPj ? 'bg-amber-50 text-amber-800' : 'bg-blue-50 text-blue-700'
+                    } px-1.5 py-0.2 text-[9px] font-medium">${roleName}</span>`
+                  )}
+            </div>
+            <p class="truncate text-[11px] font-mono text-zinc-500">NIM: ${u.nim || '—'}</p>
+            <p class="truncate text-[10px] text-zinc-400">${roleFullName} · ${orgName}</p>
+          </div>
         </div>
-        <p class="truncate text-[11px] text-zinc-500">${u.email}</p>
-        <p class="truncate text-[11px] text-zinc-400">${roleName} · ${orgName}</p>
+        <span class="shrink-0 text-zinc-300 transition-transform group-hover:translate-x-0.5 group-hover:text-primary">
+          ${renderIcon('ChevronRight', 'h-4 w-4')}
+        </span>
       </button>
     `;
   });
@@ -65,10 +165,12 @@ export function render(ctx = {}) {
         <section class="flex min-h-screen w-full flex-1 flex-col items-center justify-start px-5 py-10 sm:px-8 md:w-1/2 md:px-12 md:py-14 lg:w-[52%] lg:px-20 lg:py-20 xl:px-28">
           <div class="flex w-full max-w-xl flex-1 flex-col">
             <!-- Logo Brand -->
-            <a href="#/login" aria-label="PinjemDulu beranda" class="mb-10 inline-flex items-center gap-3 self-start">
-              <span class="inline-flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] bg-brand-solid text-white shadow-sm sm:h-[44px] sm:w-[44px]">
-                ${renderIcon('Sparkles', 'h-6 w-6')}
-              </span>
+            <a href="#/login" aria-label="PinjemDulu beranda" class="mb-10 inline-flex items-center gap-3 self-start transition hover:opacity-90">
+              <img
+                src="assets/img/Logo-PinjemDulu.png"
+                alt="Logo PinjemDulu"
+                class="h-[42px] w-[42px] shrink-0 rounded-[14px] object-contain shadow-sm sm:h-[44px] sm:w-[44px]"
+              />
               <span class="flex items-baseline text-2xl font-extrabold tracking-tight">
                 <span class="text-zinc-900">Pinjem</span><span class="text-primary">Dulu</span>
               </span>
@@ -79,7 +181,7 @@ export function render(ctx = {}) {
               <p class="mb-2 text-sm font-medium text-zinc-500">
                 Selamat Datang Kembali!
               </p>
-              <h1 class="mb-2 text-3xl font-extrabold tracking-tight text-zinc-900 sm:text-[32px]">
+              <h1 class="mb-2 text-3xl font-semibold tracking-[0] text-zinc-900 sm:text-[32px] leading-[1.4]">
                 Siap mengelola atau meminjam?
               </h1>
               <p class="text-sm leading-6 text-zinc-500">
@@ -94,22 +196,24 @@ export function render(ctx = {}) {
             <form id="login-form" novalidate class="space-y-5">
               <input type="hidden" id="login-captcha-id" name="captchaId" value="${currentCaptchaId}" />
 
-              <!-- Field Email -->
+              <!-- Field NIM -->
               <div>
-                <label for="login-email" class="${labelClass('mb-2 block text-zinc-600')}">
-                  Email<span class="ml-0.5 text-rose-500">*</span>
+                <label for="login-nim" class="${labelClass('mb-2 block text-zinc-600')}">
+                  NIM<span class="ml-0.5 text-rose-500">*</span>
                 </label>
                 <div>
                   <input
-                    id="login-email"
-                    name="email"
-                    type="email"
-                    autocomplete="email"
-                    placeholder="contoh@mail.uma.ac.id"
+                    id="login-nim"
+                    data-legacy-id="login-email"
+                    name="nim"
+                    type="text"
+                    inputmode="numeric"
+                    autocomplete="username"
+                    placeholder="Masukkan NIM Anda (contoh: 254107020001)"
                     class="${inputClass('h-12 rounded-2xl px-4 py-3')}"
                     required
                   />
-                  <p id="email-error" class="mt-1 text-xs text-rose-600 hidden"></p>
+                  <p id="nim-error" class="mt-1 text-xs text-rose-600 hidden"></p>
                 </div>
               </div>
 
@@ -177,6 +281,10 @@ export function render(ctx = {}) {
                 </div>
               </div>
 
+              <button type="button" data-action="forgot-password" class="mt-2 text-left text-xs font-medium text-primary hover:underline">
+                Lupa Password?
+              </button>
+
               <!-- Tombol Submit Masuk -->
               <button
                 id="btn-login-submit"
@@ -188,22 +296,65 @@ export function render(ctx = {}) {
             </form>
 
             <!-- Panel Masuk Cepat (Mock) -->
-            <div class="mt-10 rounded-3xl border border-dashed border-zinc-300 bg-zinc-50/70 p-4 sm:p-5">
-              <div class="mb-3 flex items-center justify-between gap-2">
+            <div class="mt-8 rounded-2xl border border-zinc-200 bg-zinc-50/80 p-3.5 sm:p-4 shadow-xs">
+              <div class="mb-3 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p class="text-xs font-semibold uppercase tracking-wider text-primary">
-                    Mode Mock Aktif
-                  </p>
-                  <p class="text-[11px] text-zinc-500">
-                    Cepat pilih akun di bawah — tanpa captcha.
+                  <div class="flex items-center gap-1.5">
+                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-md bg-primary/10 text-primary">
+                      ${renderIcon('Sparkles', 'h-3.5 w-3.5')}
+                    </span>
+                    <p class="text-xs font-bold uppercase tracking-wider text-zinc-900">
+                      Pilih Akun Demo (Mock)
+                    </p>
+                    <span class="rounded-full bg-emerald-100 px-2 py-0.2 text-[9px] font-bold uppercase tracking-wider text-emerald-800">
+                      8 Akun
+                    </span>
+                  </div>
+                  <p class="mt-0.5 text-[11px] text-zinc-500">
+                    Klik akun untuk masuk instan tanpa perlu password & captcha.
                   </p>
                 </div>
-                <span class="rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-                  Mock
-                </span>
+
+                <!-- Filter Role Tab -->
+                <div class="flex items-center gap-1 rounded-lg bg-zinc-200/70 p-1 self-start sm:self-auto" role="tablist" aria-label="Filter Akun Mock">
+                  <button
+                    type="button"
+                    data-action="filter-mock-role"
+                    data-role="all"
+                    class="rounded-md bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-900 shadow-xs transition"
+                  >
+                    Semua
+                  </button>
+                  <button
+                    type="button"
+                    data-action="filter-mock-role"
+                    data-role="peminjam"
+                    class="rounded-md px-2.5 py-1 text-[11px] font-medium text-zinc-600 hover:text-zinc-900 transition"
+                  >
+                    Peminjam
+                  </button>
+                  <button
+                    type="button"
+                    data-action="filter-mock-role"
+                    data-role="penanggung_jawab"
+                    class="rounded-md px-2.5 py-1 text-[11px] font-medium text-zinc-600 hover:text-zinc-900 transition"
+                  >
+                    PJ OKI
+                  </button>
+                </div>
               </div>
-              <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+
+              <!-- List Grid Terbatas (Max Height + Scrollable) -->
+              <div
+                id="mock-users-grid"
+                class="grid grid-cols-1 gap-2 sm:grid-cols-2 max-h-[210px] overflow-y-auto pr-1"
+              >
                 ${quickUsers}
+              </div>
+
+              <div class="mt-2.5 flex items-center justify-between border-t border-zinc-200/60 pt-2 text-[11px] text-zinc-400">
+                <span>Gunakan scroll untuk melihat akun lainnya</span>
+                <span id="mock-count-info" class="font-medium text-zinc-500">8 dari 8 akun</span>
               </div>
             </div>
 
@@ -225,14 +376,103 @@ export function render(ctx = {}) {
 export function mount(root) {
   if (!root) return;
 
+  if (!root.dataset.authViewHandlers) {
+    root.addEventListener('click', (event) => {
+      const action = event.target.closest('[data-action]')?.getAttribute('data-action');
+      if (!action) return;
+
+      if (action === 'forgot-password') {
+        authView = 'forgot';
+        forgotModal = null;
+        forgotError = '';
+        root.innerHTML = render();
+      } else if (action === 'forgot-back-login' || action === 'forgot-close-success') {
+        authView = 'login';
+        forgotModal = null;
+        forgotError = '';
+        root.innerHTML = render();
+      } else if (action === 'forgot-back-form') {
+        forgotModal = null;
+        root.innerHTML = render();
+      } else if (action === 'forgot-submit-confirm') {
+        forgotModal = 'success';
+        root.innerHTML = render();
+      }
+    });
+    root.addEventListener('submit', (event) => {
+      if (event.target.id !== 'forgot-password-form') return;
+      event.preventDefault();
+
+      const formData = new FormData(event.target);
+      const nim = String(formData.get('nim') || '').trim();
+      const whatsapp = String(formData.get('whatsapp') || '').trim();
+      const nimError = root.querySelector('#forgot-nim-error');
+      const whatsappError = root.querySelector('#forgot-whatsapp-error');
+      const nimInput = root.querySelector('#forgot-nim');
+      const whatsappInput = root.querySelector('#forgot-whatsapp');
+      let hasError = false;
+
+      if (nimError) {
+        nimError.textContent = '';
+        nimError.classList.add('hidden');
+      }
+      if (whatsappError) {
+        whatsappError.textContent = '';
+        whatsappError.classList.add('hidden');
+      }
+      nimInput?.removeAttribute('aria-invalid');
+      whatsappInput?.removeAttribute('aria-invalid');
+
+      if (!nim) {
+        if (nimError) {
+          nimError.textContent = 'NIM wajib diisi.';
+          nimError.classList.remove('hidden');
+        }
+        nimInput?.setAttribute('aria-invalid', 'true');
+        hasError = true;
+      } else if (!/^[0-9]+$/.test(nim)) {
+        if (nimError) {
+          nimError.textContent = 'Format NIM tidak valid.';
+          nimError.classList.remove('hidden');
+        }
+        nimInput?.setAttribute('aria-invalid', 'true');
+        hasError = true;
+      } else if (!mockUsers.some((user) => String(user.nim) === nim)) {
+        if (nimError) {
+          nimError.textContent = 'NIM tidak terdaftar';
+          nimError.classList.remove('hidden');
+        }
+        nimInput?.setAttribute('aria-invalid', 'true');
+        hasError = true;
+      }
+
+      if (!whatsapp) {
+        if (whatsappError) {
+          whatsappError.textContent = 'Nomor WhatsApp wajib diisi.';
+          whatsappError.classList.remove('hidden');
+        }
+        whatsappInput?.setAttribute('aria-invalid', 'true');
+        hasError = true;
+      }
+
+      if (hasError) return;
+      forgotError = '';
+      forgotModal = 'confirm';
+      root.innerHTML = render();
+    });
+    root.dataset.authViewHandlers = 'true';
+  }
+
+  if (authView === 'forgot') return;
+
   const form = root.querySelector('#login-form');
-  const emailInput = root.querySelector('#login-email');
+  const nimInput = root.querySelector('#login-nim') || root.querySelector('#login-email') || root.querySelector('input[name="nim"]');
   const passwordInput = root.querySelector('#login-password');
   const captchaIdInput = root.querySelector('#login-captcha-id');
   const captchaAnswerInput = root.querySelector('#login-captcha-answer');
   const captchaDisplay = root.querySelector('#captcha-text-display');
   const globalErrorBox = root.querySelector('#login-global-error');
-  const emailError = root.querySelector('#email-error');
+  const nimError = root.querySelector('#nim-error') || root.querySelector('#email-error');
   const passwordError = root.querySelector('#password-error');
   const captchaError = root.querySelector('#captcha-error');
   const submitBtn = root.querySelector('#btn-login-submit');
@@ -247,11 +487,11 @@ export function mount(root) {
       globalErrorBox.textContent = '';
       globalErrorBox.classList.add('hidden');
     }
-    if (emailError) {
-      emailError.textContent = '';
-      emailError.classList.add('hidden');
-      emailInput?.removeAttribute('aria-invalid');
-      emailInput?.removeAttribute('aria-describedby');
+    if (nimError) {
+      nimError.textContent = '';
+      nimError.classList.add('hidden');
+      nimInput?.removeAttribute('aria-invalid');
+      nimInput?.removeAttribute('aria-describedby');
     }
     if (passwordError) {
       passwordError.textContent = '';
@@ -276,7 +516,7 @@ export function mount(root) {
     if (captchaAnswerInput) captchaAnswerInput.value = '';
   }
 
-  async function performLogin({ email, password, captchaId, captchaAnswer }) {
+  async function performLogin({ nim, email, password, captchaId, captchaAnswer }) {
     if (submitting) return;
     submitting = true;
     clearErrors();
@@ -287,7 +527,7 @@ export function mount(root) {
     }
 
     try {
-      const res = await login({ email, password, captchaId, captchaAnswer });
+      const res = await login({ nim, email, password, captchaId, captchaAnswer });
       if (res?.user) {
         setSession(res.user);
         navigate('#/inventaris');
@@ -298,12 +538,12 @@ export function mount(root) {
       let firstErrorField = null;
 
       if (statusCode === 401) {
-        if (emailError && emailInput) {
-          emailError.textContent = message;
-          emailError.classList.remove('hidden');
-          emailInput.setAttribute('aria-invalid', 'true');
-          emailInput.setAttribute('aria-describedby', 'email-error');
-          firstErrorField = emailInput;
+        if (nimError && nimInput) {
+          nimError.textContent = message;
+          nimError.classList.remove('hidden');
+          nimInput.setAttribute('aria-invalid', 'true');
+          nimInput.setAttribute('aria-describedby', 'nim-error');
+          firstErrorField = nimInput;
         }
       } else if (statusCode === 403) {
         if (globalErrorBox) {
@@ -358,9 +598,11 @@ export function mount(root) {
   root.addEventListener('click', (e) => {
     const btn = e.target.closest('[data-action="quick-login"]');
     if (!btn || submitting) return;
+    const nim = btn.getAttribute('data-nim');
     const email = btn.getAttribute('data-email');
-    if (email) {
+    if (nim || email) {
       performLogin({
+        nim,
         email,
         password: '',
         captchaId: 'MOCK-QUICKLOGIN',
@@ -369,13 +611,43 @@ export function mount(root) {
     }
   });
 
+  // Filter Tab Akun Mock
+  const filterBtns = root.querySelectorAll('[data-action="filter-mock-role"]');
+  const userCards = root.querySelectorAll('[data-action="quick-login"]');
+  const countInfo = root.querySelector('#mock-count-info');
+
+  filterBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const targetRole = btn.getAttribute('data-role');
+
+      filterBtns.forEach((b) => {
+        b.className =
+          b === btn
+            ? 'rounded-md bg-white px-2.5 py-1 text-[11px] font-semibold text-zinc-900 shadow-xs transition'
+            : 'rounded-md px-2.5 py-1 text-[11px] font-medium text-zinc-600 hover:text-zinc-900 transition';
+      });
+
+      let visibleCount = 0;
+      userCards.forEach((card) => {
+        const role = card.getAttribute('data-role');
+        const match = targetRole === 'all' || role === targetRole;
+        card.classList.toggle('hidden', !match);
+        if (match) visibleCount++;
+      });
+
+      if (countInfo) {
+        countInfo.textContent = `${visibleCount} dari ${userCards.length} akun`;
+      }
+    });
+  });
+
   // Submit Formulir Utama
   form?.addEventListener('submit', (e) => {
     e.preventDefault();
     if (submitting) return;
 
     clearErrors();
-    const emailVal = String(emailInput?.value || '').trim();
+    const nimVal = String(nimInput?.value || '').trim();
     const passwordVal = String(passwordInput?.value || '');
     const captchaAnsVal = String(captchaAnswerInput?.value || '').trim();
     const captchaIdVal = String(captchaIdInput?.value || currentCaptchaId);
@@ -383,22 +655,22 @@ export function mount(root) {
     let hasError = false;
     let firstErrorField = null;
 
-    if (!emailVal) {
-      if (emailError && emailInput) {
-        emailError.textContent = 'Email wajib diisi.';
-        emailError.classList.remove('hidden');
-        emailInput.setAttribute('aria-invalid', 'true');
-        emailInput.setAttribute('aria-describedby', 'email-error');
-        if (!firstErrorField) firstErrorField = emailInput;
+    if (!nimVal) {
+      if (nimError && nimInput) {
+        nimError.textContent = 'NIM wajib diisi.';
+        nimError.classList.remove('hidden');
+        nimInput.setAttribute('aria-invalid', 'true');
+        nimInput.setAttribute('aria-describedby', 'nim-error');
+        if (!firstErrorField) firstErrorField = nimInput;
         hasError = true;
       }
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
-      if (emailError && emailInput) {
-        emailError.textContent = 'Format email tidak valid.';
-        emailError.classList.remove('hidden');
-        emailInput.setAttribute('aria-invalid', 'true');
-        emailInput.setAttribute('aria-describedby', 'email-error');
-        if (!firstErrorField) firstErrorField = emailInput;
+    } else if (!/^[0-9]+$/.test(nimVal)) {
+      if (nimError && nimInput) {
+        nimError.textContent = 'Format NIM tidak valid (hanya angka).';
+        nimError.classList.remove('hidden');
+        nimInput.setAttribute('aria-invalid', 'true');
+        nimInput.setAttribute('aria-describedby', 'nim-error');
+        if (!firstErrorField) firstErrorField = nimInput;
         hasError = true;
       }
     }
@@ -431,10 +703,16 @@ export function mount(root) {
     }
 
     performLogin({
-      email: emailVal,
+      nim: nimVal,
       password: passwordVal,
       captchaId: captchaIdVal,
       captchaAnswer: captchaAnsVal,
     });
   });
+}
+
+export function unmount() {
+  authView = 'login';
+  forgotModal = null;
+  forgotError = '';
 }

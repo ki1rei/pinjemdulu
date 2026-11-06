@@ -6,8 +6,21 @@
 import { renderIcon } from './icons.js';
 import { escapeHtml } from './html.js';
 import { getNavForRole, ROLE_LABEL, isActivePath, getInitials } from '../lib/navigation.js';
+import { ROLES } from '../lib/constants.js';
 
 export const STORAGE_KEY_SIDEBAR = 'pd:v1:sidebar-collapsed';
+export const STORAGE_KEY_SIDEBAR_GROUPS = 'pd:v1:sidebar-groups';
+
+function getStoredGroupOpen(groupKey) {
+  try {
+    const saved = window.localStorage.getItem(STORAGE_KEY_SIDEBAR_GROUPS);
+    if (!saved) return null;
+    const groups = JSON.parse(saved);
+    return typeof groups?.[groupKey] === 'boolean' ? groups[groupKey] : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Render Brand Header di Sidebar.
@@ -17,14 +30,21 @@ export const STORAGE_KEY_SIDEBAR = 'pd:v1:sidebar-collapsed';
 function renderSidebarBrand(collapsed) {
   if (collapsed) {
     return `
-      <div class="flex w-full items-center justify-center px-2 pt-5 pb-5">
+      <div class="flex flex-col w-full items-center justify-center gap-3 px-2 pt-5 pb-5">
+        <a href="#/inventaris" aria-label="PinjemDulu beranda" title="PinjemDulu beranda" class="inline-flex items-center justify-center transition hover:opacity-90">
+          <img
+            src="assets/img/Logo-PinjemDulu.png"
+            alt="Logo PinjemDulu"
+            class="h-10 w-10 shrink-0 rounded-[12px] object-contain shadow-sm"
+          />
+        </a>
         <button
           type="button"
           data-action="toggle-sidebar"
           aria-label="Lebarkan sidebar"
           title="Lebarkan sidebar"
           aria-expanded="false"
-          class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-zinc-200 bg-white text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-800"
+          class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-zinc-200 bg-white text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-800"
         >
           ${renderIcon('PanelLeft', 'h-5 w-5')}
         </button>
@@ -34,10 +54,12 @@ function renderSidebarBrand(collapsed) {
 
   return `
     <div class="flex w-full items-center justify-between px-4 pt-6 pb-5">
-      <a href="#/inventaris" aria-label="PinjemDulu beranda" class="inline-flex min-w-0 items-center gap-3">
-        <span class="inline-flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] bg-brand-solid text-white shadow-sm sm:h-[44px] sm:w-[44px]">
-          ${renderIcon('Sparkles', 'h-6 w-6')}
-        </span>
+      <a href="#/inventaris" aria-label="PinjemDulu beranda" class="inline-flex min-w-0 items-center gap-3 transition hover:opacity-90">
+        <img
+          src="assets/img/Logo-PinjemDulu.png"
+          alt="Logo PinjemDulu"
+          class="h-[42px] w-[42px] shrink-0 rounded-[14px] object-contain shadow-sm sm:h-[44px] sm:w-[44px]"
+        />
         <div class="flex min-w-0 flex-col leading-none">
           <span class="truncate text-[20px] font-bold tracking-tight sm:text-[24px]">
             <span class="text-zinc-900">Pinjem</span><span class="text-primary">Dulu</span>
@@ -66,19 +88,30 @@ function renderSidebarBrand(collapsed) {
  * @param {Array<object>} items
  * @param {boolean} collapsed
  * @param {string} currentHash
+ * @param {string} [role]
  * @returns {string}
  */
-function renderSidebarNav(items, collapsed, currentHash) {
+function renderSidebarNav(items, collapsed, currentHash, role = '', idPrefix = 'sidebar') {
   const listItems = items
     .map((item) => {
       const isGroup = item.type === 'group' || (Array.isArray(item.children) && item.children.length > 0);
 
       if (isGroup) {
         const hasActiveChild = (item.children || []).some((c) => isActivePath(c.href, currentHash));
-        const isOpen = hasActiveChild;
-        const icon = item.icon ? renderIcon(item.icon, 'h-6 w-6 text-zinc-500') : '';
-        const chevron = isOpen ? renderIcon('ChevronUp', 'h-4 w-4 text-zinc-400') : renderIcon('ChevronDown', 'h-4 w-4 text-zinc-400');
+        const isDashboardOpen =
+          role === ROLES.PEMINJAM &&
+          item.key === 'nav-pengajuan-saya' &&
+          isActivePath('#/dashboard-peminjam', currentHash);
+        // Preferensi buka/tutup manual tetap dipertahankan saat berpindah halaman.
+        // Jika belum ada preferensi, buka otomatis ketika salah satu submenu aktif.
+        const storedOpen = getStoredGroupOpen(item.key);
+        const isOpen = storedOpen ?? (hasActiveChild || isDashboardOpen);
+        const icon = item.icon ? renderIcon(item.icon, 'h-6 w-6 text-zinc-400 transition-colors sidebar-nav-group-icon-svg') : '';
+        const chevron = isOpen ? renderIcon('ChevronUp', 'h-4 w-4 text-zinc-400 transition-colors sidebar-nav-group-chevron-svg') : renderIcon('ChevronDown', 'h-4 w-4 text-zinc-400 transition-colors sidebar-nav-group-chevron-svg');
         const tooltip = collapsed ? `title="${escapeHtml(item.label)}"` : '';
+        const groupBadge = item.badge
+          ? `<span class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-white">${escapeHtml(String(item.badge))}</span>`
+          : '';
 
         if (collapsed) {
           return `
@@ -102,6 +135,9 @@ function renderSidebarNav(items, collapsed, currentHash) {
         const childItems = (item.children || [])
           .map((child) => {
             const childActive = isActivePath(child.href, currentHash);
+            const childBadge = child.badge
+              ? `<span class="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-white">${escapeHtml(String(child.badge))}</span>`
+              : '';
             return `
               <li>
                 <a
@@ -114,14 +150,17 @@ function renderSidebarNav(items, collapsed, currentHash) {
                   }"
                 >
                   <span class="inline-block size-2 shrink-0 rounded-full ${
-                    childActive ? 'bg-zinc-900' : 'bg-zinc-400 group-hover:bg-zinc-600'
+                    childActive ? 'bg-zinc-900' : 'bg-zinc-600 group-hover:bg-zinc-800'
                   }"></span>
                   <span class="leading-tight">${escapeHtml(child.label)}</span>
+                  ${childBadge}
                 </a>
               </li>
             `;
           })
           .join('');
+
+        const subId = `sub-${idPrefix}-${item.key}`;
 
         return `
           <li class="flex flex-col gap-1">
@@ -130,8 +169,8 @@ function renderSidebarNav(items, collapsed, currentHash) {
               data-action="toggle-group"
               data-group="${escapeHtml(item.key)}"
               aria-expanded="${isOpen}"
-              aria-controls="sub-${escapeHtml(item.key)}"
-              class="group flex w-full items-center justify-between rounded-2xl px-3 py-3 text-[15px] text-zinc-600 transition hover:bg-zinc-50/60 hover:text-zinc-900 font-medium"
+              aria-controls="${escapeHtml(subId)}"
+              class="group sidebar-nav-group flex w-full items-center justify-between rounded-2xl px-3 py-3 text-[15px] text-zinc-400 transition hover:bg-zinc-50/60 hover:text-zinc-900 font-medium"
             >
               <div class="flex items-center gap-3">
                 <span class="inline-flex h-6 w-6 shrink-0 items-center justify-center">
@@ -139,12 +178,15 @@ function renderSidebarNav(items, collapsed, currentHash) {
                 </span>
                 <span class="leading-tight text-[15.5px]">${escapeHtml(item.label)}</span>
               </div>
-              <span class="transition-transform duration-200" data-chevron="${escapeHtml(item.key)}">
-                ${chevron}
-              </span>
+              <div class="flex items-center gap-2">
+                ${groupBadge}
+                <span class="transition-transform duration-200" data-chevron="${escapeHtml(item.key)}">
+                  ${chevron}
+                </span>
+              </div>
             </button>
             <ul
-              id="sub-${escapeHtml(item.key)}"
+              id="${escapeHtml(subId)}"
               class="flex flex-col gap-1 pl-4 ${isOpen ? '' : 'hidden'}"
             >
               ${childItems}
@@ -224,12 +266,14 @@ function renderSidebarUserCard(user, collapsed) {
   if (collapsed) {
     return `
       <div class="mt-auto flex flex-col items-center gap-3 border-t border-zinc-100 px-2 pb-5 pt-4">
-        <div
+        <a
+          href="#/profil"
           title="${escapeHtml(nama)} · ${escapeHtml(roleText)}"
+          aria-label="Buka profil ${escapeHtml(nama)}"
           class="inline-flex h-11 w-11 items-center justify-center rounded-[18px] bg-avatar text-base font-bold text-white shadow-sm"
         >
           ${escapeHtml(initials)}
-        </div>
+        </a>
       </div>
     `;
   }
@@ -237,17 +281,21 @@ function renderSidebarUserCard(user, collapsed) {
   return `
     <div class="mt-auto border-t border-zinc-100 px-3 pb-5 pt-4">
       <div class="flex items-center gap-3 rounded-[20px] px-2 py-3">
-        <div class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-avatar text-base font-bold text-white shadow-sm">
+        <a
+          href="#/profil"
+          aria-label="Buka profil ${escapeHtml(nama)}"
+          class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-avatar text-base font-bold text-white shadow-sm"
+        >
           ${escapeHtml(initials)}
-        </div>
-        <div class="min-w-0 flex-1">
+        </a>
+        <a href="#/profil" class="min-w-0 flex-1" aria-label="Buka profil ${escapeHtml(nama)}">
           <p class="truncate text-[15px] font-semibold text-zinc-900">
             ${escapeHtml(nama)}
           </p>
           <p class="mt-0.5 truncate text-[13px] text-zinc-500">
             ${escapeHtml(roleText)}
           </p>
-        </div>
+        </a>
         <button
           type="button"
           data-action="logout"
@@ -267,7 +315,7 @@ function renderSidebarUserCard(user, collapsed) {
  * @param {{ user: object|null, currentHash: string, collapsed?: boolean }} props
  * @returns {string}
  */
-export function renderSidebar({ user = null, currentHash = '#/dashboard', collapsed = false } = {}) {
+export function renderSidebar({ user = null, currentHash = '#/dashboard-peminjam', collapsed = false } = {}) {
   const items = getNavForRole(user?.role);
   const widthClass = collapsed ? 'w-[84px]' : 'w-[280px]';
 
@@ -278,7 +326,7 @@ export function renderSidebar({ user = null, currentHash = '#/dashboard', collap
       class="sticky top-0 hidden h-screen shrink-0 flex-col border-r border-zinc-100 bg-white transition-[width] duration-200 ease-out md:flex ${widthClass}"
     >
       ${renderSidebarBrand(collapsed)}
-      ${renderSidebarNav(items, collapsed, currentHash)}
+      ${renderSidebarNav(items, collapsed, currentHash, user?.role, 'sidebar')}
       ${renderSidebarUserCard(user, collapsed)}
     </aside>
   `;
@@ -289,7 +337,7 @@ export function renderSidebar({ user = null, currentHash = '#/dashboard', collap
  * @param {{ user: object|null, currentHash: string, open?: boolean }} props
  * @returns {string}
  */
-export function renderMobileDrawer({ user = null, currentHash = '#/dashboard', open = false } = {}) {
+export function renderMobileDrawer({ user = null, currentHash = '#/dashboard-peminjam', open = false } = {}) {
   const items = getNavForRole(user?.role);
 
   return `
@@ -312,10 +360,12 @@ export function renderMobileDrawer({ user = null, currentHash = '#/dashboard', o
       }"
     >
       <div class="flex w-full items-center justify-between px-4 pt-6 pb-5">
-        <a href="#/inventaris" aria-label="PinjemDulu beranda" class="inline-flex min-w-0 items-center gap-3">
-          <span class="inline-flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] bg-brand-solid text-white shadow-sm">
-            ${renderIcon('Sparkles', 'h-6 w-6')}
-          </span>
+        <a href="#/inventaris" aria-label="PinjemDulu beranda" class="inline-flex min-w-0 items-center gap-3 transition hover:opacity-90">
+          <img
+            src="assets/img/Logo-PinjemDulu.png"
+            alt="Logo PinjemDulu"
+            class="h-[42px] w-[42px] shrink-0 rounded-[14px] object-contain shadow-sm"
+          />
           <div class="flex min-w-0 flex-col leading-none">
             <span class="truncate text-[20px] font-bold tracking-tight">
               <span class="text-zinc-900">Pinjem</span><span class="text-primary">Dulu</span>
@@ -335,7 +385,7 @@ export function renderMobileDrawer({ user = null, currentHash = '#/dashboard', o
         </button>
       </div>
 
-      ${renderSidebarNav(items, false, currentHash)}
+      ${renderSidebarNav(items, false, currentHash, user?.role, 'drawer')}
       ${renderSidebarUserCard(user, false)}
     </aside>
   `;

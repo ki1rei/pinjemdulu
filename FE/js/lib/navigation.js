@@ -8,7 +8,22 @@ export const ROLE_LABEL = Object.freeze({
   [ROLES.PENANGGUNG_JAWAB]: 'PJ Inventaris',
 });
 
-const PENGAJUAN_SAYA_CHILDREN = Object.freeze([
+const PENGAJUAN_SAYA_PEMINJAM_CHILDREN = Object.freeze([
+  {
+    key: 'nav-pengajuan-saya-peminjaman',
+    label: 'Peminjaman',
+    href: '#/pengajuan-saya/peminjaman',
+    badge: 2,
+  },
+  {
+    key: 'nav-pengajuan-saya-pengembalian',
+    label: 'Pengembalian',
+    href: '#/pengajuan-saya/pengembalian',
+    badge: 2,
+  },
+]);
+
+const PENGAJUAN_SAYA_PJ_CHILDREN = Object.freeze([
   {
     key: 'nav-pengajuan-saya-peminjaman',
     label: 'Peminjaman',
@@ -56,7 +71,7 @@ const NAV_PEMINJAM = Object.freeze([
   {
     key: 'nav-dashboard',
     label: 'Dashboard',
-    href: '#/dashboard',
+    href: '#/dashboard-peminjam',
     icon: 'LayoutGrid',
   },
   {
@@ -70,7 +85,8 @@ const NAV_PEMINJAM = Object.freeze([
     label: 'Pengajuan Saya',
     type: 'group',
     icon: 'HandCoins',
-    children: PENGAJUAN_SAYA_CHILDREN,
+    badge: 4,
+    children: PENGAJUAN_SAYA_PEMINJAM_CHILDREN,
   },
   {
     key: 'nav-pengajuan-pj',
@@ -94,7 +110,7 @@ const NAV_PENANGGUNG_JAWAB = Object.freeze([
   {
     key: 'nav-dashboard',
     label: 'Dashboard',
-    href: '#/dashboard',
+    href: '#/dashboard-pj',
     icon: 'LayoutGrid',
   },
   {
@@ -108,7 +124,7 @@ const NAV_PENANGGUNG_JAWAB = Object.freeze([
     label: 'Pengajuan Saya',
     type: 'group',
     icon: 'HandCoins',
-    children: PENGAJUAN_SAYA_CHILDREN,
+    children: PENGAJUAN_SAYA_PJ_CHILDREN,
   },
   {
     key: 'nav-pengelolaan',
@@ -161,7 +177,6 @@ export function isActivePath(itemHref, currentHash) {
   const current = normalize(currentHash);
 
   if (target === current) return true;
-  if (target === '#/dashboard') return false;
   return current.startsWith(`${target}/`);
 }
 
@@ -171,23 +186,24 @@ export function isActivePath(itemHref, currentHash) {
  * @returns {{ title: string, icon: string|null }}
  */
 export function getPageTitle(hash = '') {
-  const clean = String(hash || '').replace(/\?.*$/, '').replace(/\/$/, '') || '#/dashboard';
-  if (clean === '#/dashboard') return { title: 'Dashboard', icon: 'LayoutGrid' };
+  const clean = String(hash || '').replace(/\?.*$/, '').replace(/\/$/, '') || '#/dashboard-peminjam';
+  if (clean === '#/dashboard-peminjam' || clean === '#/dashboard-pj') return { title: 'Dashboard', icon: 'LayoutGrid' };
   if (clean === '#/inventaris') return { title: 'Inventaris', icon: 'Archive' };
   if (/^#\/inventaris\/[^/]+\/ajukan$/.test(clean)) return { title: 'Ajukan Peminjaman', icon: 'HandCoins' };
   if (/^#\/inventaris\/[^/]+$/.test(clean)) return { title: 'Inventaris', icon: 'Archive' };
   if (clean === '#/kelola/inventaris/tambah') return { title: 'Tambah Barang', icon: 'Sliders' };
-  if (/^#\/kelola\/inventaris\/[^/]+\/ubah$/.test(clean)) return { title: 'Ubah Barang', icon: 'Sliders' };
+  if (/^#\/kelola\/inventaris\/[^/]+\/ubah$/.test(clean)) return { title: 'Kelola Inventaris', icon: 'Sliders' };
   if (clean === '#/kelola/inventaris') return { title: 'Kelola Inventaris', icon: 'Sliders' };
   if (clean === '#/kelola/kategori') return { title: 'Kelola Kategori', icon: 'FolderTree' };
   if (clean === '#/kelola/peminjaman') return { title: 'Kelola Peminjaman', icon: 'Sliders' };
   if (clean === '#/kelola/pengembalian') return { title: 'Kelola Pengembalian', icon: 'Sliders' };
   if (clean === '#/kelola/pengajuan-pj') return { title: 'List Pengajuan PJ', icon: 'Sliders' };
   if (clean === '#/kelola/pengguna') return { title: 'Kelola Pengguna', icon: 'Sliders' };
-  if (clean === '#/pengajuan-saya/peminjaman') return { title: 'Peminjaman', icon: 'HandCoins' };
-  if (clean === '#/pengajuan-saya/pengembalian') return { title: 'Pengembalian', icon: 'HandCoins' };
+  if (clean === '#/pengajuan-saya/peminjaman') return { title: 'Pengajuan Saya', icon: 'HandCoins' };
+  if (clean === '#/pengajuan-saya/pengembalian') return { title: 'Pengajuan Saya', icon: 'HandCoins' };
   if (clean === '#/pengajuan-pj') return { title: 'Pengajuan PJ', icon: 'UserRoundPlus' };
   if (clean === '#/tata-tertib') return { title: 'Tata Tertib', icon: 'FileText' };
+  if (clean === '#/profil') return { title: 'Profil Pengguna', icon: 'CircleUserRound' };
   if (clean === '#/login') return { title: 'Masuk', icon: null };
   return { title: 'PinjemDulu', icon: null };
 }

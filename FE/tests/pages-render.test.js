@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import * as LoginPage from '../js/pages/login.js';
+import * as DashboardPage from '../js/pages/dashboard-peminjam.js';
 import * as PlaceholderPage from '../js/pages/placeholder.js';
 import * as NotFoundPage from '../js/pages/notfound.js';
 import { renderSidebar, renderMobileDrawer } from '../js/ui/sidebar.js';
@@ -48,15 +49,40 @@ test('pages-render: LoginPage merender struktur form dua kolom, captcha, dan mas
   assert.ok(!html.includes('undefined'));
   assert.ok(!html.includes('[object Object]'));
 
-  // Validasi pencegah escape ganda pada ikon dan tombol
   assertNoEscapedMarkup(html, 'LoginPage');
-  assert.ok(html.includes('<svg class="h-6 w-6"'));
+  assert.ok(html.includes('assets/img/Logo-PinjemDulu.png'));
+  assert.ok(html.includes('<svg'));
   assert.ok(html.includes('<button'));
   assert.ok(html.includes('data-action="quick-login"'));
 });
 
+test('pages-render: DashboardPage merender sapaan peminjam, 4 kartu status, ringkasan kanan, dan tabel Pengajuan Saya', () => {
+  const user = { nama: 'Maitri Sakti', nim: '254107020789', role: ROLES.PEMINJAM };
+  const html = DashboardPage.render({ user });
+  assert.ok(typeof html === 'string');
+  assert.ok(html.includes('Halo, Maitri Sakti'));
+  assert.ok(html.includes('Siap menyiapkan kegiatan organisasi hari ini?'));
+  assert.ok(html.includes('Disetujui'));
+  assert.ok(html.includes('Ditolak'));
+  assert.ok(html.includes('Dikembalikan'));
+  assert.ok(html.includes('Terlambat'));
+  assert.ok(html.includes('Total Peminjaman'));
+  assert.ok(html.includes('Pengajuan PJ'));
+  assert.ok(html.includes('Pengajuan Saya'));
+  assert.ok(html.includes('Proyektor Epson'));
+  assert.ok(html.includes('Lihat Semua'));
+  assert.ok(!html.includes('undefined'));
+  assert.ok(!html.includes('[object Object]'));
+  assertNoEscapedMarkup(html, 'DashboardPage');
+
+  const maliciousUser = { nama: '<script>alert("xss")</script>', role: ROLES.PEMINJAM };
+  const safeHtml = DashboardPage.render({ user: maliciousUser });
+  assert.equal(safeHtml.includes('<script>alert("xss")</script>'), false);
+  assert.equal(safeHtml.includes('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'), true);
+});
+
 test('pages-render: PlaceholderPage merender judul dan penanda "Segera hadir" tanpa escape ganda', () => {
-  const html = PlaceholderPage.render({ path: '#/dashboard' });
+  const html = PlaceholderPage.render({ path: '#/dashboard-peminjam' });
   assert.ok(typeof html === 'string');
   assert.ok(html.includes('Dashboard'));
   assert.ok(html.includes('Segera hadir'));
@@ -81,13 +107,16 @@ test('pages-render: NotFoundPage merender judul dan tombol kembali ke inventaris
 
 test('pages-render: renderSidebar merender untuk Peminjam dengan benar tanpa escape ganda', () => {
   const user = { nama: 'Maitri Sakti', role: ROLES.PEMINJAM };
-  const expandedHtml = renderSidebar({ user, currentHash: '#/dashboard', collapsed: false });
+  const expandedHtml = renderSidebar({ user, currentHash: '#/dashboard-peminjam', collapsed: false });
   assert.ok(expandedHtml.includes('w-[280px]'));
+  assert.ok(expandedHtml.includes('assets/img/Logo-PinjemDulu.png'));
   assert.ok(expandedHtml.includes('Pinjem'));
   assert.ok(expandedHtml.includes('Dulu'));
   assert.ok(expandedHtml.includes('INVENTARIS OKI KAMPUS'));
   assert.ok(expandedHtml.includes('Dashboard'));
   assert.ok(expandedHtml.includes('Inventaris'));
+  assert.ok(expandedHtml.includes('id="sub-sidebar-nav-pengajuan-saya"'));
+  assert.ok(expandedHtml.includes('aria-controls="sub-sidebar-nav-pengajuan-saya"'));
   assert.ok(!expandedHtml.includes('Kelola Inventaris'));
   assert.ok(expandedHtml.includes('MS'));
   assert.ok(expandedHtml.includes('Maitri Sakti'));
@@ -96,8 +125,9 @@ test('pages-render: renderSidebar merender untuk Peminjam dengan benar tanpa esc
   assert.ok(!expandedHtml.includes('[object Object]'));
   assertNoEscapedMarkup(expandedHtml, 'Sidebar Peminjam (Expanded)');
 
-  const collapsedHtml = renderSidebar({ user, currentHash: '#/dashboard', collapsed: true });
+  const collapsedHtml = renderSidebar({ user, currentHash: '#/dashboard-peminjam', collapsed: true });
   assert.ok(collapsedHtml.includes('w-[84px]'));
+  assert.ok(collapsedHtml.includes('assets/img/Logo-PinjemDulu.png'));
   assert.ok(collapsedHtml.includes('MS'));
   assert.ok(!collapsedHtml.includes('undefined'));
   assertNoEscapedMarkup(collapsedHtml, 'Sidebar Peminjam (Collapsed)');
@@ -106,6 +136,7 @@ test('pages-render: renderSidebar merender untuk Peminjam dengan benar tanpa esc
 test('pages-render: renderSidebar merender untuk PJ dengan menu kelola tanpa escape ganda', () => {
   const user = { nama: 'Siti Rahma', role: ROLES.PENANGGUNG_JAWAB };
   const html = renderSidebar({ user, currentHash: '#/kelola/inventaris', collapsed: false });
+  assert.ok(html.includes('assets/img/Logo-PinjemDulu.png'));
   assert.ok(html.includes('Kelola Inventaris'));
   assert.ok(html.includes('Pengelolaan'));
   assert.ok(html.includes('Kelola Peminjaman'));
@@ -118,9 +149,12 @@ test('pages-render: renderSidebar merender untuk PJ dengan menu kelola tanpa esc
 
 test('pages-render: renderMobileDrawer merender modal drawer dan tombol tutup tanpa escape ganda', () => {
   const user = { nama: 'Budi Santoso', role: ROLES.PENANGGUNG_JAWAB };
-  const html = renderMobileDrawer({ user, currentHash: '#/dashboard', open: true });
+  const html = renderMobileDrawer({ user, currentHash: '#/dashboard-peminjam', open: true });
   assert.ok(html.includes('mobile-drawer'));
+  assert.ok(html.includes('assets/img/Logo-PinjemDulu.png'));
   assert.ok(html.includes('translate-x-0'));
+  assert.ok(html.includes('id="sub-drawer-nav-pengajuan-saya"'));
+  assert.ok(html.includes('aria-controls="sub-drawer-nav-pengajuan-saya"'));
   assert.ok(html.includes('Budi Santoso'));
   assert.ok(html.includes('BS'));
   assert.ok(!html.includes('undefined'));
@@ -146,7 +180,7 @@ test('pages-render: renderFooter merender hak cipta 2026 tanpa escape ganda', ()
 
 test('pelindung kebalikan XSS: data berbahaya tetap ter-escape pada nama pengguna di sidebar', () => {
   const maliciousUser = { nama: '<script>alert("xss")</script>', role: ROLES.PEMINJAM };
-  const html = renderSidebar({ user: maliciousUser, currentHash: '#/dashboard' });
+  const html = renderSidebar({ user: maliciousUser, currentHash: '#/dashboard-peminjam' });
   assert.equal(html.includes('<script>alert("xss")</script>'), false);
   assert.equal(html.includes('&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'), true);
 });

@@ -14,6 +14,10 @@ export function resolveRoute({ hash = '', user = null } = {}) {
   const rawHash = String(hash || '').trim();
   const cleanHash = rawHash.split('?')[0].replace(/\/+$/, '') || '#/';
 
+  if (cleanHash === '#/reset-password') {
+    return { type: 'render', route: 'reset-password' };
+  }
+
   // 1. Belum login
   if (!user) {
     if (cleanHash === '#/login') {
@@ -33,12 +37,42 @@ export function resolveRoute({ hash = '', user = null } = {}) {
   }
 
   // 4. Pencocokan rute internal yang sah
-  if (cleanHash === '#/dashboard') {
-    return { type: 'render', route: 'dashboard' };
+  if (cleanHash === '#/dashboard-peminjam') {
+    if (user.role === ROLES.PENANGGUNG_JAWAB) {
+      return { type: 'redirect', to: '#/dashboard-pj' };
+    }
+    return { type: 'render', route: 'dashboard-peminjam' };
+  }
+
+  if (cleanHash === '#/dashboard-pj') {
+    if (user.role === ROLES.PEMINJAM) {
+      return { type: 'redirect', to: '#/dashboard-peminjam' };
+    }
+    return { type: 'render', route: 'dashboard-pj' };
   }
 
   if (cleanHash === '#/inventaris') {
     return { type: 'render', route: 'inventaris' };
+  }
+
+  if (cleanHash === '#/pengajuan-saya/peminjaman') {
+    return { type: 'render', route: 'peminjaman' };
+  }
+
+  if (cleanHash === '#/pengajuan-saya/pengembalian') {
+    return { type: 'render', route: 'pengembalian' };
+  }
+
+  if (cleanHash === '#/pengajuan-pj') {
+    return { type: 'render', route: 'pengajuan-pj' };
+  }
+
+  if (cleanHash === '#/tata-tertib') {
+    return { type: 'render', route: 'tata-tertib' };
+  }
+
+  if (cleanHash === '#/profil') {
+    return { type: 'render', route: 'profil' };
   }
 
   const ajukanMatch = cleanHash.match(/^#\/inventaris\/([^/]+)\/ajukan$/);
@@ -53,6 +87,22 @@ export function resolveRoute({ hash = '', user = null } = {}) {
 
   if (cleanHash === '#/kelola/inventaris') {
     return { type: 'render', route: 'kelola-inventaris' };
+  }
+
+  if (cleanHash === '#/kelola/peminjaman') {
+    return { type: 'render', route: 'kelola-peminjaman' };
+  }
+
+  if (cleanHash === '#/kelola/pengembalian') {
+    return { type: 'render', route: 'kelola-pengembalian' };
+  }
+
+  if (cleanHash === '#/kelola/pengajuan-pj') {
+    return { type: 'render', route: 'kelola-pengajuan-pj' };
+  }
+
+  if (cleanHash === '#/kelola/pengguna') {
+    return { type: 'render', route: 'kelola-pengguna' };
   }
 
   if (cleanHash === '#/kelola/inventaris/tambah') {

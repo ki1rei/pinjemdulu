@@ -4,106 +4,169 @@ import { mockUsers } from './users.js';
 
 const peminjam = mockUsers[0];
 
-const INITIAL_MOCK_PEMINJAMAN = [
-  {
-    id: 'pinjam-1',
-    idPeminjaman: 1,
+/** Geser tanggal ISO (YYYY-MM-DD) sebanyak `hari` hari. */
+function geserTanggal(iso, hari) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + hari);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Bangun satu data peminjaman mock. Nama barang dan organisasi pada `inventaris`
+ * adalah salinan (snapshot) yang tampil di halaman Pengajuan Saya; `indeksInventaris`
+ * hanya menunjuk barang asli di mockInventaris.
+ */
+function buatPeminjaman({
+  nomor,
+  indeksInventaris,
+  namaBarang,
+  namaOrganisasi,
+  pengajuan,
+  mulai,
+  selesai,
+  status,
+  keperluan,
+  alasanPenolakan = null,
+  kondisiSebelum = null,
+  deskripsiSebelum = null,
+  kondisiSesudah = null,
+  deskripsiSesudah = null,
+  tanggalPengembalian = null,
+  sanksi = null,
+  waktuTerlambat = null,
+  diprosesOleh = null,
+  tanggalPengambilan = null,
+  fotoPengambilan = null,
+  peminjamCustom = null,
+}) {
+  const barang = mockInventaris[indeksInventaris];
+  const p = peminjamCustom || peminjam;
+  return {
+    id: `pinjam-${nomor}`,
+    idPeminjaman: nomor,
     pengguna: {
-      nim: peminjam.nim,
-      nama: peminjam.nama,
+      nim: p.nim,
+      nama: p.nama,
     },
-    peminjam,
+    peminjam: p,
     inventaris: {
-      idInventaris: mockInventaris[0].idInventaris,
-      namaBarang: mockInventaris[0].namaBarang,
-      namaOrganisasi: mockInventaris[0].namaOrganisasi,
-      thumbnail: mockInventaris[0].thumbnail,
+      idInventaris: barang.idInventaris,
+      namaBarang,
+      namaOrganisasi,
+      thumbnail: barang.thumbnail,
     },
-    barang: mockInventaris[0],
-    tanggalPengajuan: '2026-10-01T08:00:00',
-    startDate: '2026-10-12',
-    endDate: '2026-10-14',
-    mulai: '2026-10-12',
-    selesai: '2026-10-14',
-    bufferStartDate: '2026-10-11',
-    bufferEndDate: '2026-10-15',
-    tanggalPengembalian: null,
-    status: STATUS_PEMINJAMAN.DIAJUKAN,
-    alasanPenolakan: null,
-    keperluan: 'Rapat kerja BEM FT',
+    barang,
+    tanggalPengajuan: `${pengajuan}T08:00:00`,
+    startDate: mulai,
+    endDate: selesai,
+    mulai,
+    selesai,
+    bufferStartDate: geserTanggal(mulai, -1),
+    bufferEndDate: geserTanggal(selesai, 1),
+    tanggalPengembalian,
+    status,
+    alasanPenolakan,
+    keperluan,
     jumlahPinjam: 1,
-    kondisiSebelum: null,
-    deskripsiSebelum: null,
-    kondisiSesudah: null,
-    deskripsiSesudah: null,
-    sanksi: null,
-  },
-  {
-    id: 'pinjam-2',
-    idPeminjaman: 2,
-    pengguna: {
-      nim: peminjam.nim,
-      nama: peminjam.nama,
-    },
-    peminjam,
-    inventaris: {
-      idInventaris: mockInventaris[3].idInventaris,
-      namaBarang: mockInventaris[3].namaBarang,
-      namaOrganisasi: mockInventaris[3].namaOrganisasi,
-      thumbnail: mockInventaris[3].thumbnail,
-    },
-    barang: mockInventaris[3],
-    tanggalPengajuan: '2026-10-02T09:00:00',
-    startDate: '2026-10-06',
-    endDate: '2026-10-09',
-    mulai: '2026-10-06',
-    selesai: '2026-10-09',
-    bufferStartDate: '2026-10-05',
-    bufferEndDate: '2026-10-10',
-    tanggalPengembalian: null,
-    status: STATUS_PEMINJAMAN.DIPINJAM,
-    alasanPenolakan: null,
-    keperluan: 'Dokumentasi acara kampus',
-    jumlahPinjam: 1,
-    kondisiSebelum: 'baik',
-    deskripsiSebelum: 'Lensa bersih, baterai terpasang',
-    kondisiSesudah: null,
-    deskripsiSesudah: null,
-    sanksi: null,
-  },
-  {
-    id: 'pinjam-3',
-    idPeminjaman: 3,
-    pengguna: {
-      nim: peminjam.nim,
-      nama: peminjam.nama,
-    },
-    peminjam,
-    inventaris: {
-      idInventaris: mockInventaris[1].idInventaris,
-      namaBarang: mockInventaris[1].namaBarang,
-      namaOrganisasi: mockInventaris[1].namaOrganisasi,
-      thumbnail: mockInventaris[1].thumbnail,
-    },
-    barang: mockInventaris[1],
-    tanggalPengajuan: '2026-09-15T10:00:00',
-    startDate: '2026-09-20',
-    endDate: '2026-09-22',
-    mulai: '2026-09-20',
-    selesai: '2026-09-22',
-    bufferStartDate: '2026-09-19',
-    bufferEndDate: '2026-09-23',
-    tanggalPengembalian: '2026-09-22',
-    status: STATUS_PEMINJAMAN.DIKEMBALIKAN,
-    alasanPenolakan: null,
-    keperluan: 'Pelatihan internal',
-    jumlahPinjam: 1,
-    kondisiSebelum: 'baik',
-    deskripsiSebelum: 'Kabel lengkap',
-    kondisiSesudah: 'baik',
-    deskripsiSesudah: 'Kembali lengkap',
-    sanksi: null,
-  },
+    kondisiSebelum,
+    deskripsiSebelum,
+    kondisiSesudah,
+    deskripsiSesudah,
+    sanksi,
+    waktuTerlambat,
+    diprosesOleh,
+    tanggalPengambilan,
+    fotoPengambilan,
+  };
+}
+
+/*
+ * Data contoh Pengajuan Saya > Peminjaman dan Pengembalian sesuai desain UI:
+ * Mencakup semua status: Diajukan, Disetujui, Dipinjam, Ditolak, Menunggu, Dikembalikan, Terlambat.
+ */
+export const INITIAL_MOCK_PEMINJAMAN = [
+  buatPeminjaman({
+    nomor: 1, indeksInventaris: 0, namaBarang: 'Proyektor Epson', namaOrganisasi: 'HMTI',
+    pengajuan: '2026-10-17', mulai: '2026-10-20', selesai: '2026-10-25',
+    status: STATUS_PEMINJAMAN.DIAJUKAN, keperluan: 'Seminar BEM',
+  }),
+  buatPeminjaman({
+    nomor: 2, indeksInventaris: 4, namaBarang: 'Camera Canon 700D', namaOrganisasi: 'HMS',
+    pengajuan: '2026-10-17', mulai: '2026-10-20', selesai: '2026-10-25',
+    status: STATUS_PEMINJAMAN.DIPINJAM, keperluan: 'Dokumentasi acara kampus', tanggalPengambilan: '2026-10-20',
+    kondisiSebelum: 'baik', deskripsiSebelum: 'Lensa bersih, baterai terpasang',
+  }),
+  buatPeminjaman({
+    nomor: 3, indeksInventaris: 0, namaBarang: 'Proyektor Epson', namaOrganisasi: 'HMTI',
+    pengajuan: '2026-10-10', mulai: '2026-10-20', selesai: '2026-10-17',
+    tanggalPengembalian: '2026-10-25', status: STATUS_PEMINJAMAN.DIKEMBALIKAN,
+    keperluan: 'Seminar BEM', diprosesOleh: 'Hanin Maizah',
+    kondisiSebelum: 'baik', kondisiSesudah: 'baik', deskripsiSesudah: 'Lengkap dan berfungsi normal',
+  }),
+  buatPeminjaman({
+    nomor: 4, indeksInventaris: 2, namaBarang: 'Kabel HDMI', namaOrganisasi: 'HME',
+    pengajuan: '2026-08-12', mulai: '2026-08-15', selesai: '2026-08-20',
+    status: STATUS_PEMINJAMAN.DIAJUKAN, keperluan: 'Workshop HME',
+  }),
+  buatPeminjaman({
+    nomor: 5, indeksInventaris: 4, namaBarang: 'Camera Canon 700D', namaOrganisasi: 'HMS',
+    pengajuan: '2026-07-04', mulai: '2026-07-07', selesai: '2026-07-12',
+    status: STATUS_PEMINJAMAN.DIAJUKAN, keperluan: 'Dokumentasi kegiatan HMS',
+  }),
+  buatPeminjaman({
+    nomor: 6, indeksInventaris: 1, namaBarang: 'Speaker Portable', namaOrganisasi: 'HIMANIA',
+    pengajuan: '2026-04-23', mulai: '2026-04-26', selesai: '2026-04-30',
+    status: STATUS_PEMINJAMAN.DIAJUKAN, keperluan: 'Pentas seni HIMANIA',
+  }),
+  buatPeminjaman({
+    nomor: 7, indeksInventaris: 0, namaBarang: 'Proyektor Epson', namaOrganisasi: 'HMTI',
+    pengajuan: '2026-10-17', mulai: '2026-10-20', selesai: '2026-10-25',
+    status: STATUS_PEMINJAMAN.DISETUJUI, keperluan: 'Seminar BEM',
+  }),
+  buatPeminjaman({
+    nomor: 8, indeksInventaris: 2, namaBarang: 'Kabel HDMI', namaOrganisasi: 'HME',
+    pengajuan: '2026-08-12', mulai: '2026-08-15', selesai: '2026-08-20',
+    status: STATUS_PEMINJAMAN.DISETUJUI, keperluan: 'Workshop HME',
+  }),
+  buatPeminjaman({
+    nomor: 9, indeksInventaris: 1, namaBarang: 'Speaker Portable', namaOrganisasi: 'HIMANIA',
+    pengajuan: '2026-08-12', mulai: '2026-08-15', selesai: '2026-08-20',
+    status: STATUS_PEMINJAMAN.DIPINJAM, keperluan: 'Pentas seni HIMANIA', tanggalPengambilan: '2026-10-20',
+    kondisiSebelum: 'baik', deskripsiSebelum: 'Speaker berfungsi normal',
+  }),
+  buatPeminjaman({
+    nomor: 10, indeksInventaris: 0, namaBarang: 'Proyektor Epson', namaOrganisasi: 'HMTI',
+    pengajuan: '2026-10-17', mulai: '2026-10-20', selesai: '2026-10-25',
+    status: STATUS_PEMINJAMAN.DITOLAK, keperluan: 'Seminar BEM',
+    alasanPenolakan: 'Peminjaman tidak dapat diproses karena alasan operasional',
+  }),
+  buatPeminjaman({
+    nomor: 11, indeksInventaris: 0, namaBarang: 'Proyektor Epson', namaOrganisasi: 'HMTI',
+    pengajuan: '2026-10-15', mulai: '2026-10-20', selesai: '2026-10-17',
+    status: STATUS_PEMINJAMAN.MENUNGGU_KONFIRMASI_PENGEMBALIAN, keperluan: 'Seminar BEM',
+    kondisiSebelum: 'baik', deskripsiSebelum: 'Kabel dan remote lengkap',
+  }),
+  buatPeminjaman({
+    nomor: 12, indeksInventaris: 2, namaBarang: 'Kabel HDMI', namaOrganisasi: 'HME',
+    pengajuan: '2026-10-10', mulai: '2026-10-20', selesai: '2026-10-17',
+    tanggalPengembalian: '2026-10-25', status: STATUS_PEMINJAMAN.TERLAMBAT,
+    waktuTerlambat: 3, keperluan: 'Seminar BEM', diprosesOleh: 'Hanin Maizah',
+    sanksi: 'Sanksi Keterlambatan: Pembatasan peminjaman sementara selama 7 hari.',
+    kondisiSebelum: 'baik', deskripsiSebelum: 'Kabel utuh',
+  }),
+  buatPeminjaman({
+    nomor: 13, indeksInventaris: 5, namaBarang: 'Mikrofon Wireless', namaOrganisasi: 'THEATRISIC',
+    pengajuan: '2026-10-15', mulai: '2026-10-20', selesai: '2026-10-25',
+    status: STATUS_PEMINJAMAN.MENUNGGU_KONFIRMASI_PENGEMBALIAN, keperluan: 'Seminar BEM',
+    kondisiSebelum: 'baik', deskripsiSebelum: 'Mic dan receiver lengkap',
+  }),
+  buatPeminjaman({
+    nomor: 14, indeksInventaris: 3, namaBarang: 'Tripod Kamera', namaOrganisasi: 'HMTI',
+    pengajuan: '2026-09-28', mulai: '2026-10-01', selesai: '2026-10-03',
+    tanggalPengembalian: '2026-10-03', status: STATUS_PEMINJAMAN.DIKEMBALIKAN,
+    keperluan: 'Dokumentasi internal', diprosesOleh: 'Siti Rahma',
+    kondisiSebelum: 'baik', kondisiSesudah: 'baik', deskripsiSesudah: 'Lengkap',
+  }),
 ];
 
 const _peminjamanStore = [];

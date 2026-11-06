@@ -17,6 +17,9 @@ export const mockUsers = [
     role: ROLES.PEMINJAM,
     statusAkun: STATUS_AKUN.AKTIF,
     status_akun: STATUS_AKUN.AKTIF,
+    businessUnit: 'Software Engineering',
+    displayOrganization: 'HMTI',
+    managementList: true,
   },
   {
     id: 'user-2',
@@ -27,6 +30,7 @@ export const mockUsers = [
     role: ROLES.PENANGGUNG_JAWAB,
     statusAkun: STATUS_AKUN.AKTIF,
     status_akun: STATUS_AKUN.AKTIF,
+    managementList: false,
   },
   {
     id: 'user-3',
@@ -37,6 +41,7 @@ export const mockUsers = [
     role: ROLES.PENANGGUNG_JAWAB,
     statusAkun: STATUS_AKUN.AKTIF,
     status_akun: STATUS_AKUN.AKTIF,
+    managementList: false,
   },
   {
     id: 'user-4',
@@ -47,5 +52,15 @@ export const mockUsers = [
     role: ROLES.PEMINJAM,
     statusAkun: STATUS_AKUN.NONAKTIF,
     status_akun: STATUS_AKUN.NONAKTIF,
+    managementList: false,
   },
+  { id: 'user-5', nama: 'Bintang Putra', nim: '254107020001', email: 'bintang.putra@example.test', organisasi: ukmFoto, businessUnit: 'Research and Development', role: ROLES.PEMINJAM, statusAkun: STATUS_AKUN.AKTIF, status_akun: STATUS_AKUN.AKTIF, displayOrganization: 'HIMANIA', managementList: true },
+  { id: 'user-6', nama: 'Berbinar Neira', nim: '254107020002', email: 'berbinar.neira@example.test', organisasi: ukmFoto, businessUnit: 'Product Development', role: ROLES.PEMINJAM, statusAkun: STATUS_AKUN.AKTIF, status_akun: STATUS_AKUN.AKTIF, displayOrganization: 'HIMANIA', managementList: true },
+  { id: 'user-7', nama: 'Gama Punta', nim: '254107020003', email: 'gama.punta@example.test', organisasi: bemFt, businessUnit: 'Software Engineering', role: ROLES.PEMINJAM, statusAkun: STATUS_AKUN.AKTIF, status_akun: STATUS_AKUN.AKTIF, displayOrganization: 'HMS', managementList: true },
+  { id: 'user-8', nama: 'Gentala Arka', nim: '254107020004', email: 'gentala.arka@example.test', organisasi: ukmFoto, businessUnit: 'Software Engineering', role: ROLES.PENANGGUNG_JAWAB, statusAkun: STATUS_AKUN.NONAKTIF, status_akun: STATUS_AKUN.NONAKTIF, displayOrganization: 'THEATRISIC', managementList: true },
+  { id: 'user-9', nama: 'Hanin Maizah', nim: '254107020005', email: 'hanin.maizah@example.test', organisasi: bemFt, businessUnit: 'Hardware Engineering', role: ROLES.PEMINJAM, statusAkun: STATUS_AKUN.AKTIF, status_akun: STATUS_AKUN.AKTIF, displayOrganization: 'HME', managementList: true },
+  { id: 'user-10', nama: 'Jingga Pratama', nim: '254107020006', email: 'jingga.pratama@example.test', organisasi: ukmFoto, businessUnit: 'Software Engineering', role: ROLES.PENANGGUNG_JAWAB, statusAkun: STATUS_AKUN.AKTIF, status_akun: STATUS_AKUN.AKTIF, displayOrganization: 'THEATRISIC', managementList: true },
+  { id: 'user-11', nama: 'Maria Khalda', nim: '254107020007', email: 'maria.khalda@example.test', organisasi: bemFt, businessUnit: 'Software Engineering', role: ROLES.PEMINJAM, statusAkun: STATUS_AKUN.AKTIF, status_akun: STATUS_AKUN.AKTIF, displayOrganization: 'HMS', managementList: true },
+  { id: 'user-12', nama: 'Rion Ardian', nim: '254107020008', email: 'rion.ardian@example.test', organisasi: bemFt, businessUnit: 'Sales Marketing', role: ROLES.PEMINJAM, statusAkun: STATUS_AKUN.AKTIF, status_akun: STATUS_AKUN.AKTIF, displayOrganization: 'HME', managementList: true },
+  { id: 'user-13', nama: 'Tiara Ayudya', nim: '254107020009', email: 'tiara.ayudya@example.test', organisasi: bemFt, businessUnit: 'Sales Marketing', role: ROLES.PEMINJAM, statusAkun: STATUS_AKUN.AKTIF, status_akun: STATUS_AKUN.AKTIF, displayOrganization: 'HMTI', managementList: true },
 ];
