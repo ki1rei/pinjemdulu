@@ -176,7 +176,6 @@ function refresh() { if (rootElement) rootElement.innerHTML = renderContent(); }
 export function render() { return renderContent(); }
 export async function mount(root) {
   rootElement = root;
-  activeTab = STATUS_REQUEST_PJ.MENUNGGU;
   searchTerm = '';
   currentPage = 1;
   toastMessage = '';
