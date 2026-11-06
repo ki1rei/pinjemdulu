@@ -851,6 +851,7 @@ export function renderFeedbackModal(feedback) {
     id: 'dialog-feedback-kelola',
     titleId: 'dialog-feedback-title',
     variant: isSuccess ? 'success' : 'reject',
+    plainGif: true,
     title: feedback.title,
     description: feedback.message,
     actions: [
@@ -858,7 +859,7 @@ export function renderFeedbackModal(feedback) {
         label: 'Kembali',
         action: 'close-feedback-dialog',
         variant: 'default',
-        className: 'w-full rounded-xl',
+        className: 'w-full rounded-xl transition-colors hover:bg-secondary-hover hover:text-secondary-hover-foreground hover:border-secondary-hover',
       },
     ],
   });
