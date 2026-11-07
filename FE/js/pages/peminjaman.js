@@ -100,7 +100,7 @@ function renderTabs() {
     const selected = activeTab === tab.key;
     return `
       <button type="button" data-tab="${tab.key}" aria-pressed="${selected}"
-        class="shrink-0 rounded-lg px-5 py-2.5 text-sm font-medium transition ${selected ? 'bg-info text-info-foreground' : 'text-zinc-600 hover:bg-zinc-50'}">
+        class="shrink-0 cursor-pointer select-none rounded-lg px-4 py-2 text-[11px] font-medium transition ${selected ? 'bg-blue-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}">
         ${tab.label}
       </button>`;
   }).join('');
@@ -344,7 +344,7 @@ export function render() {
         <p class="mt-1 text-sm text-slate-400">Pantau status pengajuan dan riwayat peminjaman barangmu.</p>
       </div>
 
-      <div class="mb-4 inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-white p-1.5" data-tabs role="tablist" aria-label="Filter status peminjaman">
+      <div class="mb-3 inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-white p-1.5" data-tabs role="tablist" aria-label="Filter status peminjaman">
         ${renderTabs()}
       </div>
 

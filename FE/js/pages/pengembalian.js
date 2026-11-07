@@ -50,7 +50,7 @@ function renderTabs() {
   return TABS.map((tab) => {
     const selected = activeTab === tab.key;
     return `<button type="button" data-tab="${tab.key}" role="tab" aria-selected="${selected}"
-      class="shrink-0 rounded-lg px-5 py-2.5 text-sm font-medium transition ${selected ? 'bg-info text-info-foreground' : 'text-slate-600 hover:bg-zinc-50'}">${tab.label}</button>`;
+      class="shrink-0 cursor-pointer select-none rounded-lg px-4 py-2 text-[11px] font-medium transition ${selected ? 'bg-blue-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}">${tab.label}</button>`;
   }).join('');
 }
 
@@ -206,7 +206,7 @@ export function render() {
       <p class="mt-1 text-sm text-slate-400">Pantau status pengembalian dan riwayat pengembalian barangmu.</p>
     </div>
 
-    <div class="mb-4 inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-white p-1.5" data-tabs role="tablist" aria-label="Filter status pengembalian">${renderTabs()}</div>
+    <div class="mb-3 inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-white p-1.5" data-tabs role="tablist" aria-label="Filter status pengembalian">${renderTabs()}</div>
 
     <div class="rounded-xl bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.025)] sm:p-6">
       <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
