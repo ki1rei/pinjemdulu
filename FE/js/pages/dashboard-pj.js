@@ -215,7 +215,7 @@ function getOrgBadgeClass(org) {
   return 'bg-slate-200 text-slate-700';
 }
 
-function getStatusBadge(status) {
+function getStatusBadge(status, isReturn = false) {
   const normalized = String(status || '').toLowerCase();
   if (normalized === 'menunggu' || normalized === STATUS_PEMINJAMAN.MENUNGGU_KONFIRMASI_PENGEMBALIAN) {
     return { label: 'Menunggu', cls: 'bg-amber-50 text-amber-600' };
@@ -236,7 +236,10 @@ function getStatusBadge(status) {
     return { label: 'Dipinjam', cls: 'bg-purple-50 text-purple-700' };
   }
   if (normalized === 'ditolak' || normalized === STATUS_PEMINJAMAN.DITOLAK) {
-    return { label: 'Ditolak', cls: 'bg-rose-100 text-rose-700' };
+    return {
+      label: 'Ditolak',
+      cls: isReturn ? 'status-chip-return-rejected-dashboard' : 'bg-rose-100 text-rose-700',
+    };
   }
   return { label: String(status || '-'), cls: 'bg-zinc-100 text-zinc-700' };
 }
@@ -369,7 +372,7 @@ function renderManagementTable() {
       <td class="min-w-[150px] px-4 py-4 text-xs text-slate-400">${escapeHtml(row.barang)}</td>
       <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(formatDateEnOrId(row.mulai))}</td>
       ${isReturn ? `<td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(formatDateEnOrId(row.selesai))}</td><td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(formatDateEnOrId(row.tanggalKembali))}</td>` : `<td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(approved || status === String(STATUS_PEMINJAMAN.DIPINJAM).toLowerCase() ? formatDateEnOrId(row.pengambilan) : '—')}</td><td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(formatDateEnOrId(row.selesai))}</td><td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(row.jumlah)}</td>`}
-      ${isReturn ? `<td class="whitespace-nowrap px-4 py-4 text-center">${renderStatusChip({ status: row.status })}</td>` : `<td class="whitespace-nowrap px-4 py-4 text-center">${renderStatusChip({ status: row.status })}</td>`}
+      ${isReturn ? `<td class="whitespace-nowrap px-4 py-4 text-center">${renderStatusChip({ status: row.status, className: String(row.status || '').toLowerCase() === 'ditolak' ? 'status-chip-return-rejected' : '' })}</td>` : `<td class="whitespace-nowrap px-4 py-4 text-center">${renderStatusChip({ status: row.status })}</td>`}
       <td class="whitespace-nowrap px-1 py-4"><div class="flex items-center justify-center gap-0">${actionButtons}</div></td>
     </tr>`;
   }).join('') : `<tr><td colspan="${isReturn ? 8 : 9}" class="px-6 py-16 text-center text-sm text-slate-400">${renderIcon('Search', 'mr-2 inline h-4 w-4')}Tidak ada data ${isReturn ? 'pengembalian' : 'peminjaman'}.</td></tr>`;
@@ -410,7 +413,7 @@ function renderTable() {
 
   const bodyHtml = rows
     .map((row, index) => {
-      const badge = getStatusBadge(row.status);
+      const badge = getStatusBadge(row.status, isPengembalian);
       const orgBadgeCls = getOrgBadgeClass(row.organisasi);
       const orgInitial = String(row.organisasi || 'O').slice(0, 1).toUpperCase();
 
@@ -478,8 +481,8 @@ function renderTable() {
 
 function renderDetailModal() {
   if (!detailRow) return '';
-  const badge = getStatusBadge(detailRow.status);
   const isPengembalian = activeTab === 'pengembalian';
+  const badge = getStatusBadge(detailRow.status, isPengembalian);
 
   return `
     <div class="fixed inset-0 z-[9999] isolate flex items-center justify-center bg-slate-900/35 backdrop-blur-sm p-4" data-modal-overlay>
@@ -587,7 +590,7 @@ function renderManagementModal() {
           <div class="flex items-center justify-between gap-6"><p class="text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">${isReturn ? 'Barang Dipinjam' : 'Nama Barang'}</p><p class="text-right text-base font-medium text-slate-800">${escapeHtml(item)}</p></div>
           <div class="flex items-center justify-between gap-6"><p class="text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Jumlah Unit</p><p class="text-base font-medium text-slate-800">${escapeHtml(row.jumlahPinjam ?? row.jumlahUnit ?? 1)}</p></div>
           ${dateGrid}
-          <div class="flex items-center justify-between gap-6"><p class="text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Status</p><div class="flex items-center gap-2">${isLate ? `<button type="button" data-action="management-show-late-tooltip" aria-label="Lihat waktu keterlambatan" aria-describedby="dashboard-late-tooltip" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-rose-700 transition-colors hover:bg-rose-50 hover:text-rose-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300">${renderIcon('AlertCircle', 'h-6 w-6')}</button>` : ''}${renderStatusChip({status: row.status})}</div></div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Status</p><div class="flex items-center gap-2">${isLate ? `<button type="button" data-action="management-show-late-tooltip" aria-label="Lihat waktu keterlambatan" aria-describedby="dashboard-late-tooltip" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-rose-700 transition-colors hover:bg-rose-50 hover:text-rose-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-300">${renderIcon('AlertCircle', 'h-6 w-6')}</button>` : ''}${renderStatusChip({status: row.status, className: isReturn && isRejected ? 'status-chip-return-rejected' : ''})}</div></div>
           ${isRejected ? `<div><p class="mb-2 text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Alasan Penolakan</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-700">${escapeHtml(row.alasanPenolakan || 'Pengembalian ditolak oleh pengelola.')}</div></div>` : ''}
           <div><p class="mb-2 text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Keperluan Peminjaman Barang</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-800">${escapeHtml(row.keperluan || 'Seminar BEM')}</div></div>
           ${isReturn && row.kondisiPengembalian ? `<div><p class="mb-2 text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Kondisi Barang Saat Dikembalikan</p><p class="text-base text-slate-800">${escapeHtml(row.kondisiPengembalian)}</p></div>` : ''}
