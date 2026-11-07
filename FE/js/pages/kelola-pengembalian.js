@@ -14,6 +14,14 @@ import { renderModal as renderGlobalModal } from '../ui/modal.js';
 import { compressImageToDataUrl } from './kelola-inventaris-form.js';
 import { validateFotoFile } from '../lib/inventaris-form.js';
 
+function renderReturnStatusChip(status) {
+  const isRejected = String(status || '').toLowerCase().trim() === 'ditolak';
+  return renderStatusChip({
+    status,
+    className: isRejected ? 'status-chip-return-rejected' : '',
+  });
+}
+
 const OKI_LIST = ['BEM', 'HMTI', 'HME', 'HIMANIA', 'RISPOL', 'HMS', 'THEATRISIC', 'PP'];
 
 let rows = [];
@@ -249,7 +257,7 @@ function renderTableRows() {
       <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(dateLabel(row.startDate || row.mulai || row.tanggalMulai))}</td>
       <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(dateLabel(row.endDate || row.selesai || row.tanggalSelesai))}</td>
       <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(dateLabel(row.tanggalPengembalian))}</td>
-      <td class="px-4 py-4 text-center">${renderStatusChip(row.status)}</td>
+      <td class="px-4 py-4 text-center">${renderReturnStatusChip(row.status)}</td>
       <td class="whitespace-nowrap px-4 py-4"><div class="flex items-center justify-center gap-0"><button type="button" data-action="detail" data-id="${escapeHtml(id)}" title="Lihat detail" aria-label="Lihat detail" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100">${renderIcon('Info', 'h-4 w-4')}</button>${pending ? `<button type="button" data-action="confirm" data-id="${escapeHtml(id)}" title="Setujui pengembalian" aria-label="Setujui pengembalian" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-green-600 hover:bg-green-50">${renderIcon('CircleCheck', 'h-4 w-4')}</button><button type="button" data-action="late" data-id="${escapeHtml(id)}" title="Tolak pengembalian" aria-label="Tolak pengembalian" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-red-600 hover:bg-red-50">${renderIcon('CircleX', 'h-4 w-4')}</button>` : ''}</div></td>
     </tr>`;
   }).join('');
@@ -385,7 +393,7 @@ function renderModal() {
             ${dateColumns.map((date, index) => `<div class="text-center ${index === 0 ? 'sm:px-2' : 'sm:px-4'}"><p class="text-sm font-semibold text-slate-900 sm:text-base">${date.label}</p><p class="mt-3 text-sm font-medium text-slate-800 sm:text-base">${escapeHtml(date.value)}</p></div>`).join('')}
           </div>
 
-          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Status</p><div class="flex items-center gap-2">${isTerlambat ? `<button type="button" data-action="show-late-tooltip" aria-label="Lihat waktu keterlambatan" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-rose-700 transition-colors hover:bg-rose-50 hover:text-rose-800">${renderIcon('AlertCircle', 'h-6 w-6')}</button>` : ''}${renderStatusChip(row.status)}</div></div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Status</p><div class="flex items-center gap-2">${isTerlambat ? `<button type="button" data-action="show-late-tooltip" aria-label="Lihat waktu keterlambatan" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-rose-700 transition-colors hover:bg-rose-50 hover:text-rose-800">${renderIcon('AlertCircle', 'h-6 w-6')}</button>` : ''}${renderReturnStatusChip(row.status)}</div></div>
 
           ${isDikembalikan ? `<div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Diproses Oleh</p><p class="text-base font-medium text-slate-800">${escapeHtml(row.diprosesOleh || row.namaPeminjam || name)}</p></div>` : ''}
           ${isDikembalikan && row.kondisiPengembalian ? `<div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Kondisi Barang Saat Dikembalikan</p><span class="rounded-lg px-3 py-1.5 text-sm font-medium ${String(row.kondisiPengembalian).toLowerCase() === 'rusak' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-50 text-emerald-700'}">${escapeHtml(row.kondisiPengembalian)}</span></div>` : ''}
@@ -515,7 +523,7 @@ function renderModal() {
   // 8. Popup Alasan Penolakan — disamakan dengan popup Permohonan Ditolak pada List Pengajuan PJ.
   if (activeDialog === 'form-reject') {
     const showError = rejectionValidationCount > 0;
-    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" data-modal-backdrop>
+    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-modal-backdrop>
       <section role="dialog" aria-modal="true" aria-labelledby="return-reject-title" class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
         <h2 id="return-reject-title" class="text-xl font-bold tracking-tight text-slate-900">Permohonan Ditolak</h2>
         <div class="mt-5 space-y-2">
