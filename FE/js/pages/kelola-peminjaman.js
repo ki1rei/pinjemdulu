@@ -322,7 +322,7 @@ function renderPagination() {
 
 function renderModal() {
   if (pickupModal) {
-    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" data-modal-backdrop>
+    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-modal-backdrop>
       <section role="dialog" aria-modal="true" aria-labelledby="pickup-title" class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
         <h2 id="pickup-title" class="text-2xl font-semibold tracking-tight text-slate-900">Pengambilan Barang</h2>
         <div class="mt-5 space-y-4 text-sm">
@@ -343,7 +343,7 @@ function renderModal() {
   }
   if (confirmModal) {
     if (confirmModal.type === "reject-reason") {
-      return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" data-modal-backdrop>
+      return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-modal-backdrop>
         <section role="dialog" aria-modal="true" aria-labelledby="reject-loan-title" class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
           <h2 id="reject-loan-title" class="text-xl font-bold tracking-tight text-slate-900">Permohonan Ditolak</h2>
           <div class="mt-5 space-y-2">
