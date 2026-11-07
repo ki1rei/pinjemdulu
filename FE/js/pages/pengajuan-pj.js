@@ -14,6 +14,7 @@ import {
 } from '../lib/pengajuan-pj.js';
 import { formatTanggal } from '../lib/format.js';
 import { renderIcon } from '../ui/icons.js';
+import { buttonClass } from '../ui/classes.js';
 import { escapeHtml } from '../ui/html.js';
 import { renderStatusChip } from '../ui/status-chip.js';
 import { renderModal } from '../ui/modal.js';
@@ -351,9 +352,13 @@ export function render() {
       <div class="rounded-xl bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.025)] sm:p-6">
         <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 data-list-title class="text-lg font-semibold text-slate-900">List Pengajuan ${tabLabel()}</h2>
-          <button type="button" data-action="open-form"
-            class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90">
-            ${renderIcon('Plus', 'h-4 w-4')}Tambah Pengajuan
+          <button
+            type="button"
+            data-action="open-form"
+            class="${buttonClass({ variant: 'default', size: 'default', className: 'h-11 rounded-full px-5 gap-1.5 button-hover-soft-primary' })}"
+          >
+            ${renderIcon('Plus', 'h-4 w-4')}
+            <span>Tambah Pengajuan</span>
           </button>
         </div>
         <div class="w-full overflow-x-auto">
