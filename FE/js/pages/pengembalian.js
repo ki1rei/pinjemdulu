@@ -106,86 +106,58 @@ function renderDetail(row) {
   const isDikembalikan = row.status === 'dikembalikan' || row.status === STATUS_PEMINJAMAN.DIKEMBALIKAN || row.status === 'selesai';
   const isDitolak = row.status === 'ditolak' || row.status === STATUS_PEMINJAMAN.DITOLAK;
   const daysLate = row.waktuTerlambat || 3;
+  const dateColumns = [
+    { label: 'Tanggal Mulai', value: dateLabel(row.tanggalMulai) },
+    { label: 'Tanggal Pengambilan', value: row.tanggalPengambilan ? dateLabel(row.tanggalPengambilan) : '–' },
+    { label: 'Tanggal Selesai', value: dateLabel(row.tanggalSelesai) },
+    { label: 'Tanggal Pengembalian', value: row.tanggalDikembalikan ? dateLabel(row.tanggalDikembalikan) : '–' },
+  ];
   return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-modal-overlay>
-    <section role="dialog" aria-modal="true" aria-labelledby="return-detail-title" class="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+    <section role="dialog" aria-modal="true" aria-labelledby="return-detail-title" class="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl sm:p-8">
       <div class="flex items-start justify-between gap-4">
-        <h2 id="return-detail-title" class="text-xl font-bold text-slate-900">${isDitolak ? 'Detail Penolakan' : 'Detail Pengembalian'}</h2>
-        <button type="button" data-close-detail aria-label="Tutup detail" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100">${renderIcon('X', 'h-5 w-5')}</button>
+        <h2 id="return-detail-title" class="text-2xl font-semibold tracking-tight text-slate-900">${isDitolak ? 'Detail Penolakan' : 'Detail Pengembalian'}</h2>
+        <button type="button" data-close-detail aria-label="Tutup detail" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">${renderIcon('X', 'h-5 w-5')}</button>
       </div>
-      <div class="mt-6 space-y-5">
-        <div>
-          <p class="text-xs font-semibold text-slate-900">Nama Barang</p>
-          <div class="mt-2 flex items-center justify-between">
-            <span class="text-sm font-normal text-slate-800">${escapeHtml(row.namaBarang)}</span>
-            <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-              <span class="inline-block h-3 w-3 rounded-full bg-slate-400" aria-hidden="true"></span>
-              ${escapeHtml(row.organisasi)}
-            </span>
+
+      <div class="mt-6 space-y-6 text-sm">
+        <div class="flex items-center justify-between gap-6">
+          <p class="text-base font-semibold text-slate-900">Barang Dipinjam</p>
+          <div class="text-right">
+            <p class="text-base font-medium text-slate-800">${escapeHtml(row.namaBarang)}</p>
+            <p class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600"><span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-800 text-[9px] font-bold text-white">${escapeHtml(String(row.organisasi || 'O').slice(0, 1).toUpperCase())}</span>${escapeHtml(row.organisasi)}</p>
           </div>
         </div>
+        <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Jumlah Unit</p><p class="text-base font-medium text-slate-800">${escapeHtml(row.jumlahUnit || 1)}</p></div>
 
-        <div class="grid grid-cols-1 gap-3 sm:grid-cols-4 sm:gap-0 sm:divide-x sm:divide-zinc-200">
-          <div class="sm:px-4">
-            <p class="text-xs font-semibold text-slate-900">Tanggal Mulai</p>
-            <p class="mt-2 text-xs sm:text-sm text-slate-700">${escapeHtml(dateLabel(row.tanggalMulai))}</p>
-          </div>
-          <div class="sm:px-4">
-            <p class="text-xs font-semibold text-slate-900">Tanggal Pengambilan</p>
-            <p class="mt-2 text-xs sm:text-sm text-slate-700">${row.tanggalPengambilan ? escapeHtml(dateLabel(row.tanggalPengambilan)) : '–'}</p>
-          </div>
-          <div class="sm:px-4">
-            <p class="text-xs font-semibold text-slate-900">Tanggal Selesai</p>
-            <p class="mt-2 text-xs sm:text-sm text-slate-700">${escapeHtml(dateLabel(row.tanggalSelesai))}</p>
-          </div>
-          <div class="sm:px-4">
-            <p class="text-xs font-semibold text-slate-900">Tanggal Pengembalian</p>
-            <p class="mt-2 text-xs sm:text-sm text-slate-700">${row.tanggalDikembalikan ? escapeHtml(dateLabel(row.tanggalDikembalikan)) : '–'}</p>
-          </div>
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 sm:gap-0 sm:divide-x sm:divide-slate-300">
+          ${dateColumns.map((date, index) => `<div class="text-center ${index === 0 ? 'sm:px-2' : 'sm:px-4'}"><p class="text-sm font-semibold text-slate-900 sm:text-base">${date.label}</p><p class="mt-3 text-sm font-medium text-slate-800 sm:text-base">${escapeHtml(date.value)}</p></div>`).join('')}
         </div>
 
-        <div>
-          <p class="text-xs font-semibold text-slate-900">Jumlah</p>
-          <p class="mt-2 text-xs sm:text-sm text-slate-700">${escapeHtml(row.jumlahUnit || 1)}</p>
-        </div>
-
-        <div>
-          <p class="text-xs font-semibold text-slate-900">Keperluan Peminjaman Barang</p>
-          <div class="mt-2 rounded-2xl border border-zinc-200/80 p-3.5 text-xs sm:text-sm text-slate-700 bg-white">
-            ${escapeHtml(row.keperluan || 'Seminar BEM')}
-          </div>
-        </div>
-
-        ${(isDikembalikan || isTerlambat) && row.diprosesOleh ? `
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold text-slate-900">Diproses Oleh</span>
-            <span class="text-sm font-medium text-slate-800">${escapeHtml(row.diprosesOleh)}</span>
-          </div>
-        ` : ''}
-
-        <div>
-          <p class="text-xs font-semibold text-slate-900">Status</p>
-          <div class="mt-2 flex items-center">
-            ${renderStatusChip({ status: row.status })}
+        <div class="flex items-center justify-between gap-6">
+          <p class="text-base font-semibold text-slate-900">Status</p>
+          <div class="flex items-center gap-2">
             ${isTerlambat ? `
-              <div class="relative group ml-2 inline-flex items-center">
-                <span class="inline-flex h-5 w-5 items-center justify-center text-rose-600 cursor-pointer" aria-label="Informasi keterlambatan">
-                  ${renderIcon('AlertCircle', 'h-5 w-5')}
+              <div class="relative group inline-flex items-center">
+                <span class="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-rose-700 transition-colors hover:bg-rose-50 hover:text-rose-800" aria-label="Informasi keterlambatan">
+                  ${renderIcon('AlertCircle', 'h-6 w-6')}
                 </span>
-                <div class="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-30 whitespace-nowrap rounded-xl bg-white px-3 py-1.5 text-xs font-medium text-slate-800 shadow-xl border border-slate-200">
+                <div class="pointer-events-none absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity z-30 whitespace-nowrap rounded-xl bg-white px-4 py-3 text-sm font-medium text-slate-900 shadow-xl border border-slate-200">
                   Waktu Terlambat: ${daysLate} Hari
                   <div class="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-white"></div>
                 </div>
               </div>
             ` : ''}
+            ${renderStatusChip({ status: row.status })}
           </div>
         </div>
-        ${isDitolak ? `<div><p class="text-xs font-semibold text-slate-900">Alasan Penolakan</p><div class="mt-2 rounded-2xl border border-zinc-200/80 bg-white p-3.5 text-xs sm:text-sm text-slate-700">${escapeHtml(row.alasanPenolakan || 'Pengembalian ditolak oleh pengelola.')}</div></div>` : ''}
+
+        ${(isDikembalikan || isTerlambat) && row.diprosesOleh ? `<div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Diproses Oleh</p><p class="text-base font-medium text-slate-800">${escapeHtml(row.diprosesOleh)}</p></div>` : ''}
+        ${isDitolak ? `<div><p class="mb-2 text-base font-semibold text-slate-900">Alasan Penolakan</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-700">${escapeHtml(row.alasanPenolakan || 'Pengembalian ditolak oleh pengelola.')}</div></div>` : ''}
+        <div><p class="mb-2 text-base font-semibold text-slate-900">Keperluan Peminjaman Barang</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-800">${escapeHtml(row.keperluan || 'Seminar BEM')}</div></div>
       </div>
 
       <div class="mt-6 flex justify-end">
-        <button type="button" data-close-detail data-autofocus class="rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90">
-          Tutup
-        </button>
+        <button type="button" data-close-detail data-autofocus class="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-110">Tutup</button>
       </div>
     </section>
   </div>`;
@@ -198,7 +170,7 @@ function renderActionDialog() {
       variant: 'success',
       title: 'Pengembalian Berhasil Dikirim Kembali!',
       description: 'Anda telah berhasil mengirimkan kembali pengajuan pengembalian.',
-      primaryAction: { label: 'Kembali', action: 'close-return-dialog', className: 'w-full rounded-xl bg-primary text-white' },
+      primaryAction: { label: 'Kembali', action: 'close-return-dialog', className: 'w-full rounded-xl bg-primary text-white transition-colors hover:brightness-110' },
     });
   }
   return renderGlobalModal({
@@ -207,7 +179,7 @@ function renderActionDialog() {
     description: 'Periksa kembali data pengajuan yang akan anda kirim',
     actions: [
       { label: 'Kembali', action: 'close-return-dialog', variant: 'outline', className: 'w-1/2 rounded-xl' },
-      { label: 'Kirim', action: 'submit-return-again', variant: 'default', className: 'w-1/2 rounded-xl bg-primary text-white' },
+      { label: 'Kirim', action: 'submit-return-again', variant: 'default', className: 'w-1/2 rounded-xl bg-primary text-white transition-colors hover:brightness-110' },
     ],
   });
 }
