@@ -91,7 +91,7 @@ function renderModal() {
       : 'bg-rose-600 text-white hover:bg-rose-700';
     const gif = approve ? 'assets/animations/modal-approve.gif' : 'assets/animations/modal-reject.gif';
     const action = approve ? 'confirm-approve' : 'confirm-reject';
-    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" data-modal-backdrop>
+    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-modal-backdrop>
       <section role="dialog" aria-modal="true" aria-labelledby="request-pj-confirm-title" class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
         <div class="flex flex-col items-center text-center">
           <img src="${gif}" alt="" class="mb-4 h-24 w-24 object-contain" />
@@ -107,7 +107,7 @@ function renderModal() {
   }
   if (feedbackModal?.stage === 'reject-form') {
     const showError = rejectionValidationCount > 0;
-    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" data-modal-backdrop>
+    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-modal-backdrop>
       <section role="dialog" aria-modal="true" aria-labelledby="request-pj-reject-title" class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
         <h2 id="request-pj-reject-title" class="text-xl font-bold tracking-tight text-slate-900">Permohonan Ditolak</h2>
         <div class="mt-5 space-y-2">
@@ -183,7 +183,7 @@ function renderContent() {
     <div class="mb-9"><h1 class="text-3xl font-semibold tracking-tight text-slate-900">List Pengajuan Penanggung Jawab</h1><p class="mt-1 text-sm text-slate-400">Pantau dan kelola proses pengajuan penanggung jawab inventaris.</p></div>
     <div class="mb-3 inline-flex items-center gap-1 rounded-xl bg-white p-1.5">${tabs.map(([value, label]) => `<button type="button" data-action="tab" data-tab="${value}" class="rounded-lg px-4 py-2 text-[11px] font-medium transition ${activeTab === value ? 'bg-blue-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}">${label}</button>`).join('')}</div>
     <div class="rounded-xl bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.025)] sm:p-6">
-      <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><h2 class="text-lg font-semibold text-slate-900">List ${activeTab === STATUS_REQUEST_PJ.MENUNGGU ? 'Menunggu' : activeTab === STATUS_REQUEST_PJ.DISETUJUI ? 'Disetujui' : 'Ditolak'}</h2><div class="flex items-center gap-3">${renderSearchInput({ id: 'search-pemohon-pj', value: searchTerm, placeholder: 'Cari nama pemohon', ariaLabel: 'Cari nama pemohon', className: 'w-full sm:w-64' })}<button type="button" data-action="filter" title="Filter nama pemohon" aria-label="Filter pengajuan" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100">${renderIcon('ListFilter', 'h-4 w-4')}</button></div></div>
+      <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><h2 class="text-lg font-semibold text-slate-900">List ${activeTab === STATUS_REQUEST_PJ.MENUNGGU ? 'Menunggu' : activeTab === STATUS_REQUEST_PJ.DISETUJUI ? 'Disetujui' : 'Ditolak'}</h2><div class="flex items-center gap-3">${renderSearchInput({ id: 'search-pemohon-pj', value: searchTerm, placeholder: 'Cari nama pemohon', ariaLabel: 'Cari nama pemohon', className: 'w-full sm:w-64' })}</div></div>
       ${toastMessage ? `<div role="status" class="mb-3 rounded-lg px-4 py-2 text-sm ${toastType === 'error' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}">${escapeHtml(toastMessage)}</div>` : ''}
       <div class="w-full overflow-x-auto"><table class="w-full min-w-[650px] border-collapse text-left">
         <thead>
@@ -232,7 +232,6 @@ export async function mount(root) {
     if (action === 'tab') { activeTab = button.dataset.tab; currentPage = 1; toastMessage = ''; refresh(); return; }
     if (action === 'prev') { currentPage = Math.max(1, currentPage - 1); refresh(); return; }
     if (action === 'next') { currentPage = Math.min(Math.max(1, Math.ceil(visibleRows().length / PAGE_SIZE)), currentPage + 1); refresh(); return; }
-    if (action === 'filter') { searchTerm = ''; currentPage = 1; refresh(); return; }
     if (action === 'approve') {
       modalRow = rows.find((row) => String(row.id) === String(id)) || null;
       feedbackModal = { stage: 'approve-confirm', requestId: id };
