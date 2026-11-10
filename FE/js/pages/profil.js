@@ -6,27 +6,32 @@ import { escapeHtml } from '../ui/html.js';
 import { renderIcon } from '../ui/icons.js';
 import { ROLES } from '../lib/constants.js';
 import { renderModal as renderModalComponent } from '../ui/modal.js';
+import { ubahPassword } from '../services/auth.js';
+import { renderOrganisasiLogo } from '../ui/organisasi-badge.js';
 
 let rootElement = null;
 let clickHandler = null;
 let submitHandler = null;
 let modalMode = null;
 let passwordError = '';
+let pendingPasswordLama = '';
+let pendingPasswordBaru = '';
+let pendingKonfirmasiPassword = '';
 
 function organizationOf(user) {
-  return user?.displayOrganization || user?.organisasi?.namaOrganisasi || user?.namaOrganisasi || '—';
+  return (
+    user?.displayOrganization ||
+    user?.organisasi?.namaOrganisasi ||
+    user?.organisasi?.nama ||
+    user?.organisasi?.singkatan ||
+    user?.namaOrganisasi ||
+    (typeof user?.organisasi === 'string' ? user.organisasi : null) ||
+    '—'
+  );
 }
 
-function organizationBadge(organization) {
-  const key = String(organization || '').toUpperCase();
-  const classes = {
-    HMTI: 'bg-amber-400 text-amber-950',
-    HME: 'bg-fuchsia-600 text-white',
-    HMS: 'bg-emerald-600 text-white',
-    HIMANIA: 'bg-blue-600 text-white',
-    BEM: 'bg-indigo-600 text-white',
-  };
-  return `<span class="inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${classes[key] || 'bg-slate-200 text-slate-700'}">${escapeHtml(String(organization || 'O').slice(0, 1).toUpperCase())}</span>`;
+function organizationBadge(organization, logoUrl = null) {
+  return renderOrganisasiLogo(organization, logoUrl, 'h-5 w-5', 'bg-white shadow-xs');
 }
 
 function roleLabel(user) {
@@ -121,8 +126,9 @@ function passwordInput(id, label) {
 
 export function render(ctx = {}) {
   const user = ctx.user || {};
-  const name = user.nama || 'Pengguna';
+  const name = user.nama || user.namaPengguna || 'Pengguna';
   const organization = organizationOf(user);
+  const logoUrl = user?.organisasi?.logoUrl || null;
   const initials = getInitials(name) || 'PD';
   return `
     <section class="mx-auto w-full max-w-[1080px] pb-10">
@@ -136,7 +142,7 @@ export function render(ctx = {}) {
         <div class="min-w-0" style="transform: translateY(30px)">
           <h2 class="truncate text-xl font-semibold tracking-tight text-slate-700 sm:text-xl">${escapeHtml(name)}</h2>
           <div class="mt-0.5 flex flex-wrap items-center gap-2 text-[13px] text-slate-500 sm:text-sm">
-            <span>${escapeHtml(user.nim || '—')}</span><span class="text-slate-300">•</span>${organizationBadge(organization)}<span>${escapeHtml(organization)}</span>
+            <span>${escapeHtml(user.nim || '—')}</span><span class="text-slate-300">•</span>${organizationBadge(organization, logoUrl)}<span>${escapeHtml(organization)}</span>
           </div>
         </div>
           <button 
@@ -151,7 +157,7 @@ export function render(ctx = {}) {
         <dl class="mt-5 space-y-5">
           ${field('Nama', escapeHtml(name))}
           ${field('NIM', escapeHtml(user.nim || '—'))}
-          ${field('Organisasi', `<span class="inline-flex items-center gap-2">${organizationBadge(organization)}${escapeHtml(organization)}</span>`)}
+          ${field('Organisasi', `<span class="inline-flex items-center gap-2">${organizationBadge(organization, logoUrl)}${escapeHtml(organization)}</span>`)}
           ${field('Role', `<span class="inline-flex rounded-lg bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">${escapeHtml(roleLabel(user))}</span>`)}
         </dl>
       </article>
@@ -162,7 +168,7 @@ export function render(ctx = {}) {
 
 export function mount(root, ctx = {}) {
   rootElement = root;
-  clickHandler = (event) => {
+  clickHandler = async (event) => {
     const actionEl = event.target.closest('[data-action]');
     if (!actionEl) return;
     const action = actionEl.dataset.action;
@@ -181,7 +187,18 @@ export function mount(root, ctx = {}) {
       modalMode = 'form';
       rootElement.innerHTML = render(ctx);
     } else if (action === 'confirm-password') {
-      modalMode = 'success';
+      try {
+        await ubahPassword({
+          passwordLama: pendingPasswordLama,
+          passwordBaru: pendingPasswordBaru,
+          konfirmasiPassword: pendingKonfirmasiPassword,
+        });
+        modalMode = 'success';
+        passwordError = '';
+      } catch (err) {
+        modalMode = 'form';
+        passwordError = err?.message || 'Gagal mengubah password.';
+      }
       rootElement.innerHTML = render(ctx);
     } else if (action === 'toggle-password') {
       const input = rootElement.querySelector(`#${actionEl.dataset.target}`);
@@ -202,6 +219,9 @@ export function mount(root, ctx = {}) {
     } else if (next !== confirmation) {
       passwordError = 'Konfirmasi password baru tidak cocok.';
     } else {
+      pendingPasswordLama = current;
+      pendingPasswordBaru = next;
+      pendingKonfirmasiPassword = confirmation;
       passwordError = '';
       modalMode = 'confirm';
     }
@@ -219,4 +239,7 @@ export function unmount() {
   submitHandler = null;
   modalMode = null;
   passwordError = '';
+  pendingPasswordLama = '';
+  pendingPasswordBaru = '';
+  pendingKonfirmasiPassword = '';
 }
