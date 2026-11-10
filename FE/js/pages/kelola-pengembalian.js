@@ -1,6 +1,5 @@
 /** Halaman Pengelolaan > Kelola Pengembalian. */
-import { getPeminjaman } from '../services/peminjaman.js';
-import { updateMockPengembalianStatus } from '../services/pengembalian.js';
+import { getKelolaPengembalian, updateMockPengembalianStatus } from '../services/pengembalian.js';
 import { STATUS_PEMINJAMAN } from '../lib/constants.js';
 import { formatTanggal } from '../lib/format.js';
 import { renderIcon } from '../ui/icons.js';
@@ -13,6 +12,7 @@ import { selectClass, inputClass } from '../ui/classes.js';
 import { renderModal as renderGlobalModal } from '../ui/modal.js';
 import { compressImageToDataUrl } from './kelola-inventaris-form.js';
 import { validateFotoFile } from '../lib/inventaris-form.js';
+import { renderOrganisasiLogo } from '../ui/organisasi-badge.js';
 
 function renderReturnStatusChip(status) {
   const isRejected = String(status || '').toLowerCase().trim() === 'ditolak';
@@ -252,7 +252,7 @@ function renderTableRows() {
 
     return `<tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
       <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${start + index + 1}</td>
-      <td class="min-w-[190px] px-4 py-3"><div class="flex items-center gap-2.5"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-semibold text-white">${escapeHtml(initials(name))}</span><span class="min-w-0"><span class="block truncate text-xs font-medium text-slate-500">${escapeHtml(name)}</span><span class="mt-0.5 flex items-center gap-1 text-xs text-slate-500"><span class="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-100 text-[8px] font-bold text-amber-800">${escapeHtml(org.slice(0,1).toUpperCase())}</span>${escapeHtml(org)}</span></span></div></td>
+      <td class="min-w-[190px] px-4 py-3"><div class="flex items-center gap-2.5"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-semibold text-white">${escapeHtml(initials(name))}</span><span class="min-w-0"><span class="block truncate text-xs font-medium text-slate-500">${escapeHtml(name)}</span><span class="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">${renderOrganisasiLogo(org, row.peminjam?.logoUrl || row.logoUrl, 'h-3.5 w-3.5')}<span>${escapeHtml(org)}</span></span></span></div></td>
       <td class="min-w-[140px] px-4 py-4 text-xs text-slate-400">${escapeHtml(itemName(row))}</td>
       <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(dateLabel(row.startDate || row.mulai || row.tanggalMulai))}</td>
       <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(dateLabel(row.endDate || row.selesai || row.tanggalSelesai))}</td>
@@ -383,7 +383,7 @@ function renderModal() {
         <div class="mt-6 space-y-6 text-sm">
           <div class="flex items-center justify-between gap-6">
             <p class="text-base font-semibold text-slate-900">Nama Peminjam</p>
-            <div class="text-right"><p class="text-base font-medium text-slate-800">${escapeHtml(name)}</p><p class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600"><span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-slate-800 text-[9px] font-bold text-white">${escapeHtml(org.slice(0, 1).toUpperCase())}</span>${escapeHtml(org)}</p></div>
+            <div class="text-right"><p class="text-base font-medium text-slate-800">${escapeHtml(name)}</p><p class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600">${renderOrganisasiLogo(org, row.peminjam?.logoUrl || row.logoUrl, 'h-4 w-4')}<span>${escapeHtml(org)}</span></p></div>
           </div>
           <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">NIM</p><p class="text-base font-medium text-slate-800">${escapeHtml(nim)}</p></div>
           <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Barang Dipinjam</p><p class="text-right text-base font-medium text-slate-800">${escapeHtml(itemName(row))}</p></div>
@@ -405,7 +405,7 @@ function renderModal() {
 
         <div class="mt-6 flex justify-end"><button type="button" data-action="close-modal" class="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-110">Tutup</button></div>
       </section>
-      ${isTerlambat ? `<div id="return-late-tooltip" role="tooltip" class="pointer-events-none whitespace-nowrap rounded-xl bg-white px-4 py-3 text-sm font-medium text-slate-900" style="display:none;position:fixed;z-index:100000;filter:drop-shadow(0 5px 12px rgba(15,23,42,0.22))">Waktu Terlambat: ${daysLate} Hari<span aria-hidden="true" style="position:absolute;right:-5px;top:50%;width:10px;height:10px;background:#fff;border-radius:2px;transform:translateY(-50%) rotate(45deg)"></span></div>` : ''}
+      ${isTerlambat ? `<div id="return-late-tooltip" role="tooltip" class="pointer-events-none whitespace-nowrap rounded-xl bg-white px-4 py-3 text-sm font-medium text-slate-900" style="display:none;position:fixed;z-index:100000;filter:drop-shadow(0 5px 12px rgba(15,23,42,0.22))">Waktu Terlambat: ${daysLate} Hari<span aria-hidden="true" style="position:absolute;right:-5px;top:50%;width:10px;height:10px;background:white;border-radius:2px;transform:translateY(-50%) rotate(45deg)"></span></div>` : ''}
     </div>`;
   }
 
@@ -525,7 +525,7 @@ function renderModal() {
     const showError = rejectionValidationCount > 0;
     return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-modal-backdrop>
       <section role="dialog" aria-modal="true" aria-labelledby="return-reject-title" class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <h2 id="return-reject-title" class="text-xl font-bold tracking-tight text-slate-900">Permohonan Ditolak</h2>
+        <h2 id="return-reject-title" class="text-xl font-bold tracking-tight text-slate-900">Pengembalian Ditolak</h2>
         <div class="mt-5 space-y-2">
           <label for="form-alasan-penolakan" class="block text-sm font-semibold text-slate-900">Alasan Penolakan</label>
           <textarea id="form-alasan-penolakan" rows="3" placeholder="Masukkan alasan penolakan" style="resize: none" class="w-full resize-none rounded-xl border ${showError ? 'border-red-300' : 'border-slate-200'} bg-white px-4 py-3 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-slate-300 focus:ring-2 focus:ring-slate-100">${escapeHtml(formData.alasanPenolakan)}</textarea>
@@ -557,7 +557,7 @@ function renderModal() {
 }
 
 async function loadRows() {
-  const all = await getPeminjaman();
+  const all = await getKelolaPengembalian();
   return all.filter((row) => [
     STATUS_PEMINJAMAN.MENUNGGU_KONFIRMASI_PENGEMBALIAN,
     STATUS_PEMINJAMAN.TERLAMBAT,
@@ -804,7 +804,7 @@ export async function mount(root) {
       formData.kondisiPengembalian = 'baik';
       formData.fotoKondisi = '';
       formData.fotoError = '';
-      activeDialog = 'form-approve';
+      activeDialog = 'confirm-approve';
       refresh();
       return;
     }
@@ -881,7 +881,7 @@ export async function mount(root) {
       modalRow = rows.find((row) => String(row.id || row.idPeminjaman) === String(id)) || null;
       formData.alasanPenolakan = '';
       rejectionValidationCount = 0;
-      activeDialog = 'form-reject';
+      activeDialog = 'confirm-reject';
       refresh();
       return;
     }
@@ -1044,7 +1044,9 @@ export async function mount(root) {
   rootElement.addEventListener('pointerout', pointerOutHandler);
   // Capture diperlukan karena event scroll dari elemen modal tidak bubbling.
   rootElement.addEventListener('scroll', tooltipScrollHandler, true);
-  window.addEventListener('resize', tooltipScrollHandler);
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', tooltipScrollHandler);
+  }
 }
 
 export function unmount() {
