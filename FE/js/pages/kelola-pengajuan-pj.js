@@ -6,6 +6,7 @@ import { renderIcon } from '../ui/icons.js';
 import { escapeHtml } from '../ui/html.js';
 import { renderSearchInput } from '../ui/search-input.js';
 import { renderModal as renderModalComponent } from '../ui/modal.js';
+import { renderOrganisasiLogo } from '../ui/organisasi-badge.js';
 
 let rows = [];
 let activeTab = STATUS_REQUEST_PJ.MENUNGGU;
@@ -40,7 +41,7 @@ function visibleRows() {
   const q = searchTerm.trim().toLowerCase();
   return rows.filter((row) => {
     const name = personName(row);
-    const organization = row.organisasi?.namaOrganisasi || row.pemohon?.organisasi?.namaOrganisasi || '';
+    const organization = (typeof row.organisasi === 'string' ? row.organisasi : row.organisasi?.namaOrganisasi) || row.okiPemohon || row.pemohon?.organisasi?.namaOrganisasi || row.pemohon?.displayOrganization || '';
     return String(row.status).toLowerCase() === activeTab && (!q || `${name} ${organization} ${row.pemohon?.nim || ''}`.toLowerCase().includes(q));
   });
 }
@@ -54,11 +55,12 @@ function renderTableRows() {
   return pageRows.map((row, index) => {
     const id = String(row.id);
     const name = personName(row);
+    const org = row.organisasi?.namaOrganisasi || row.pemohon?.organisasi?.namaOrganisasi || row.pemohon?.displayOrganization || row.organisasi || '';
     const status = statusInfo(row.status);
     const pending = row.status === STATUS_REQUEST_PJ.MENUNGGU;
     return `<tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
       <td class="whitespace-nowrap px-4 py-3.5 text-center text-xs text-slate-400">${start + index + 1}</td>
-      <td class="min-w-[220px] px-4 py-3"><div class="flex items-center gap-2.5"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-semibold text-white">${escapeHtml(initials(name))}</span><span class="block truncate text-xs font-medium text-slate-500">${escapeHtml(name)}</span></div></td>
+      <td class="min-w-[220px] px-4 py-3"><div class="flex items-center gap-2.5"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-semibold text-white">${escapeHtml(initials(name))}</span><div class="min-w-0"><span class="block truncate text-xs font-medium text-slate-500">${escapeHtml(name)}</span>${org ? `<span class="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">${renderOrganisasiLogo(org, row.pemohon?.logoUrl || row.logoUrl, 'h-3.5 w-3.5')}<span>${escapeHtml(org)}</span></span>` : ''}</div></div></td>
       <td class="w-[190px] whitespace-nowrap px-4 py-3.5 text-center text-xs text-slate-400">${escapeHtml(dateLabel(row.tanggalPengajuan || row.createdAt))}</td>
       <td class="w-[140px] px-4 py-3.5 text-center"><span class="inline-flex whitespace-nowrap rounded-xl px-2.5 py-1 text-xs font-semibold ${status.cls}">${escapeHtml(status.label)}</span></td>
       <td class="whitespace-nowrap px-4 py-3.5"><div class="flex items-center justify-center gap-0"><button type="button" data-action="detail" data-id="${escapeHtml(id)}" title="Lihat detail" aria-label="Lihat detail" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100">${renderIcon('Info', 'h-4 w-4')}</button>${pending ? `<button type="button" data-action="approve" data-id="${escapeHtml(id)}" title="Setujui pengajuan" aria-label="Setujui pengajuan" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-green-600 hover:bg-green-50">${renderIcon('CircleCheck', 'h-4 w-4')}</button><button type="button" data-action="reject" data-id="${escapeHtml(id)}" title="Tolak pengajuan" aria-label="Tolak pengajuan" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-red-600 hover:bg-red-50">${renderIcon('CircleX', 'h-4 w-4')}</button>` : ''}</div></td>
@@ -91,7 +93,7 @@ function renderModal() {
       : 'bg-rose-600 text-white hover:bg-rose-700';
     const gif = approve ? 'assets/animations/modal-approve.gif' : 'assets/animations/modal-reject.gif';
     const action = approve ? 'confirm-approve' : 'confirm-reject';
-    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" data-modal-backdrop>
+    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-modal-backdrop>
       <section role="dialog" aria-modal="true" aria-labelledby="request-pj-confirm-title" class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
         <div class="flex flex-col items-center text-center">
           <img src="${gif}" alt="" class="mb-4 h-24 w-24 object-contain" />
@@ -107,7 +109,7 @@ function renderModal() {
   }
   if (feedbackModal?.stage === 'reject-form') {
     const showError = rejectionValidationCount > 0;
-    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" data-modal-backdrop>
+    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-modal-backdrop>
       <section role="dialog" aria-modal="true" aria-labelledby="request-pj-reject-title" class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
         <h2 id="request-pj-reject-title" class="text-xl font-bold tracking-tight text-slate-900">Permohonan Ditolak</h2>
         <div class="mt-5 space-y-2">
@@ -134,12 +136,43 @@ function renderModal() {
   if (!modalRow) return '';
   const row = modalRow;
   const status = statusInfo(row.status);
-  const organization = row.organisasi?.namaOrganisasi || row.pemohon?.organisasi?.namaOrganisasi || '—';
+  const organization = (typeof row.organisasi === 'string' ? row.organisasi : row.organisasi?.namaOrganisasi) || row.okiPemohon || row.pemohon?.organisasi?.namaOrganisasi || row.pemohon?.displayOrganization || '—';
   const nim = row.pemohon?.nim || '—';
   const attachment = row.lampiran?.nama || row.lampiran?.name || '';
   const statusClass = status.label === 'Menunggu' ? 'bg-amber-50 text-amber-600' : status.label === 'Disetujui' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600';
   const rejectionReasonText = row.alasanPenolakan || row.alasan_penolakan || '';
-  return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4 sm:p-6" data-modal-backdrop><section role="dialog" aria-modal="true" aria-labelledby="request-pj-detail-title" class="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-2xl"><div class="flex items-center justify-between border-b border-slate-200 px-6 py-4"><h2 id="request-pj-detail-title" class="text-lg font-semibold text-slate-900">Informasi Pemohon</h2><button type="button" data-action="close-modal" aria-label="Tutup detail" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">${renderIcon('X', 'h-5 w-5')}</button></div><div class="px-6 py-4"><dl class="divide-y divide-slate-200 text-sm"><div class="grid grid-cols-1 gap-2 py-3 sm:grid-cols-3"><dt class="flex items-center font-medium text-slate-500">Nama Pemohon</dt><dd class="flex flex-wrap items-center gap-2 font-medium text-slate-900 sm:col-span-2"><span>${escapeHtml(personName(row))}</span><span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600"><span class="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-[9px] font-bold text-amber-700">${escapeHtml(initials(organization).slice(0, 1))}</span>${escapeHtml(organization)}</span></dd></div><div class="grid grid-cols-1 gap-2 py-3 sm:grid-cols-3"><dt class="flex items-center font-medium text-slate-500">NIM</dt><dd class="break-all font-medium text-slate-900 sm:col-span-2">${escapeHtml(nim)}</dd></div><div class="grid grid-cols-1 gap-2 py-3 sm:grid-cols-3"><dt class="flex items-center font-medium text-slate-500">Tanggal Pengajuan</dt><dd class="font-medium text-slate-900 sm:col-span-2">${escapeHtml(dateLabel(row.tanggalPengajuan || row.createdAt))}</dd></div><div class="grid grid-cols-1 gap-2 py-3 sm:grid-cols-3"><dt class="flex items-center font-medium text-slate-500">Status</dt><dd class="sm:col-span-2"><span class="inline-flex rounded-xl px-3 py-1.5 text-xs font-medium ${statusClass}">${escapeHtml(status.label)}</span></dd></div>${status.label === 'Ditolak' ? `<div class="grid grid-cols-1 gap-2 py-3 sm:grid-cols-3"><dt class="font-medium text-slate-500">Alasan Penolakan</dt><dd class="whitespace-pre-line font-medium text-slate-900 sm:col-span-2">${escapeHtml(rejectionReasonText || '—')}</dd></div>` : ''}<div class="grid grid-cols-1 gap-2 py-3 sm:grid-cols-3"><dt class="flex items-center font-medium text-slate-500">Lampiran Surat</dt><dd class="sm:col-span-2"><div class="flex min-h-[62px] items-center gap-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-50/60"><span class="flex h-14 w-16 shrink-0 items-center justify-center bg-slate-100 text-slate-400">${renderIcon('FileImage', 'h-5 w-5')}</span><span class="truncate text-sm font-medium text-slate-900">${escapeHtml(attachment || 'Tidak ada lampiran surat')}</span></div></dd></div></dl></div><div class="flex justify-end border-t border-slate-200 px-6 py-4"><button type="button" data-action="close-modal" class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-110">Tutup</button></div></section></div>`;
+  return `
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-modal-backdrop>
+      <section role="dialog" aria-modal="true" aria-labelledby="request-pj-detail-title" class="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl sm:p-8">
+        <div class="flex items-start justify-between gap-4">
+          <h2 id="request-pj-detail-title" class="text-2xl font-semibold tracking-tight text-slate-900">Informasi Pemohon</h2>
+          <button type="button" data-action="close-modal" aria-label="Tutup detail" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">${renderIcon('X', 'h-5 w-5')}</button>
+        </div>
+
+        <div class="mt-6 space-y-6 text-sm">
+          <div class="flex items-center justify-between gap-6">
+            <p class="text-base font-semibold text-slate-900">Nama Pemohon</p>
+            <div class="text-right">
+              <p class="text-base font-medium text-slate-800">${escapeHtml(personName(row))}</p>
+              <p class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600">${renderOrganisasiLogo(organization, row.pemohon?.logoUrl || row.logoUrl, 'h-4 w-4')}<span>${escapeHtml(organization)}</span></p>
+            </div>
+          </div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">NIM</p><p class="break-all text-right text-base font-medium text-slate-800">${escapeHtml(nim)}</p></div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Tanggal Pengajuan</p><p class="text-right text-base font-medium text-slate-800">${escapeHtml(dateLabel(row.tanggalPengajuan || row.createdAt))}</p></div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Status</p><span class="inline-flex rounded-xl px-4 py-1.5 text-xs font-medium ${statusClass}">${escapeHtml(status.label)}</span></div>
+          ${status.label === 'Ditolak' ? `<div><p class="mb-2 text-base font-semibold text-slate-900">Alasan Penolakan</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-700 whitespace-pre-line">${escapeHtml(rejectionReasonText || '—')}</div></div>` : ''}
+          <div>
+            <p class="mb-2 text-base font-semibold text-slate-900">Lampiran Surat</p>
+            <div class="flex min-h-[62px] items-center gap-3 overflow-hidden rounded-2xl border border-slate-100 bg-white px-5 py-4">
+              <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400">${renderIcon('FileImage', 'h-5 w-5')}</span>
+              <span class="break-words text-base font-medium text-slate-800">${escapeHtml(attachment || 'Tidak ada lampiran surat')}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 flex justify-end"><button type="button" data-action="close-modal" class="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-110">Tutup</button></div>
+      </section>
+    </div>`;
 }
 function renderContent() {
   const count = visibleRows().length;
@@ -152,7 +185,7 @@ function renderContent() {
     <div class="mb-9"><h1 class="text-3xl font-semibold tracking-tight text-slate-900">List Pengajuan Penanggung Jawab</h1><p class="mt-1 text-sm text-slate-400">Pantau dan kelola proses pengajuan penanggung jawab inventaris.</p></div>
     <div class="mb-3 inline-flex items-center gap-1 rounded-xl bg-white p-1.5">${tabs.map(([value, label]) => `<button type="button" data-action="tab" data-tab="${value}" class="rounded-lg px-4 py-2 text-[11px] font-medium transition ${activeTab === value ? 'bg-blue-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}">${label}</button>`).join('')}</div>
     <div class="rounded-xl bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.025)] sm:p-6">
-      <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><h2 class="text-lg font-semibold text-slate-900">List ${activeTab === STATUS_REQUEST_PJ.MENUNGGU ? 'Menunggu' : activeTab === STATUS_REQUEST_PJ.DISETUJUI ? 'Disetujui' : 'Ditolak'}</h2><div class="flex items-center gap-3">${renderSearchInput({ id: 'search-pemohon-pj', value: searchTerm, placeholder: 'Cari nama pemohon', ariaLabel: 'Cari nama pemohon', className: 'w-full sm:w-64' })}<button type="button" data-action="filter" title="Filter nama pemohon" aria-label="Filter pengajuan" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100">${renderIcon('ListFilter', 'h-4 w-4')}</button></div></div>
+      <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><h2 class="text-lg font-semibold text-slate-900">List ${activeTab === STATUS_REQUEST_PJ.MENUNGGU ? 'Menunggu' : activeTab === STATUS_REQUEST_PJ.DISETUJUI ? 'Disetujui' : 'Ditolak'}</h2><div class="flex items-center gap-3">${renderSearchInput({ id: 'search-pemohon-pj', value: searchTerm, placeholder: 'Cari nama pemohon', ariaLabel: 'Cari nama pemohon', className: 'w-full sm:w-64' })}</div></div>
       ${toastMessage ? `<div role="status" class="mb-3 rounded-lg px-4 py-2 text-sm ${toastType === 'error' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}">${escapeHtml(toastMessage)}</div>` : ''}
       <div class="w-full overflow-x-auto"><table class="w-full min-w-[650px] border-collapse text-left">
         <thead>
@@ -176,6 +209,7 @@ function refresh() { if (rootElement) rootElement.innerHTML = renderContent(); }
 export function render() { return renderContent(); }
 export async function mount(root) {
   rootElement = root;
+  activeTab = STATUS_REQUEST_PJ.MENUNGGU;
   searchTerm = '';
   currentPage = 1;
   toastMessage = '';
@@ -200,7 +234,6 @@ export async function mount(root) {
     if (action === 'tab') { activeTab = button.dataset.tab; currentPage = 1; toastMessage = ''; refresh(); return; }
     if (action === 'prev') { currentPage = Math.max(1, currentPage - 1); refresh(); return; }
     if (action === 'next') { currentPage = Math.min(Math.max(1, Math.ceil(visibleRows().length / PAGE_SIZE)), currentPage + 1); refresh(); return; }
-    if (action === 'filter') { searchTerm = ''; currentPage = 1; refresh(); return; }
     if (action === 'approve') {
       modalRow = rows.find((row) => String(row.id) === String(id)) || null;
       feedbackModal = { stage: 'approve-confirm', requestId: id };

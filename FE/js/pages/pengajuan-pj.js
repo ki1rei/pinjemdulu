@@ -14,11 +14,13 @@ import {
 } from '../lib/pengajuan-pj.js';
 import { formatTanggal } from '../lib/format.js';
 import { renderIcon } from '../ui/icons.js';
+import { buttonClass } from '../ui/classes.js';
 import { escapeHtml } from '../ui/html.js';
 import { renderStatusChip } from '../ui/status-chip.js';
 import { renderModal } from '../ui/modal.js';
 import { renderPagination as renderSharedPagination } from '../ui/pagination.js';
 import { mockUsers } from '../data/users.js';
+import { renderOrganisasiLogo } from '../ui/organisasi-badge.js';
 
 const PAGE_SIZE = 5;
 
@@ -73,7 +75,7 @@ function renderTabs() {
     const selected = activeTab === tab.key;
     return `
       <button type="button" data-tab="${tab.key}" aria-pressed="${selected}"
-        class="shrink-0 rounded-lg px-5 py-2.5 text-sm font-medium transition ${selected ? 'bg-info text-info-foreground' : 'text-zinc-600 hover:bg-zinc-50'}">
+        class="shrink-0 cursor-pointer select-none rounded-lg px-4 py-2 text-[11px] font-medium transition ${selected ? 'bg-blue-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}">
         ${tab.label}
       </button>`;
   }).join('');
@@ -99,8 +101,8 @@ function renderRows() {
       <tr class="border-b border-zinc-100 last:border-0 hover:bg-zinc-50/60">
         <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-500">${start + index + 1}</td>
         <td class="px-4 py-4">
-          <div class="flex items-center gap-2 text-xs font-medium text-slate-700">
-            <span class="inline-block h-3.5 w-3.5 shrink-0 rounded-full ${orgDotClass(org)}" aria-hidden="true"></span>
+          <div class="flex items-center gap-1.5 text-xs font-medium text-slate-700">
+            ${renderOrganisasiLogo(org, row.logoUrl, 'h-3.5 w-3.5')}
             <span>${escapeHtml(org)}</span>
           </div>
         </td>
@@ -144,19 +146,6 @@ function renderTableContent() {
   if (title) title.textContent = `List Pengajuan ${tabLabel()}`;
 }
 
-function renderPemohonField(nama, org) {
-  return `
-    <div>
-      <p class="text-xs font-semibold text-slate-900">Nama Pemohon</p>
-      <div class="mt-2 flex items-center justify-between rounded-xl bg-slate-50 px-4 py-3">
-        <span class="text-sm text-slate-800">${escapeHtml(nama)}</span>
-        <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-          <span class="inline-block h-3 w-3 rounded-full ${orgDotClass(org)}" aria-hidden="true"></span>${escapeHtml(org)}
-        </span>
-      </div>
-    </div>`;
-}
-
 function renderFileChip(nama) {
   return `
     <div class="mt-2 inline-flex max-w-full items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-700">
@@ -168,42 +157,43 @@ function renderFileChip(nama) {
 function renderDetail(row) {
   const org = namaOrganisasiPemohon(row.pemohon, row.organisasi);
   const ditolak = row.status === STATUS_REQUEST_PJ.DITOLAK;
+  const statusClass =
+    row.status === STATUS_REQUEST_PJ.MENUNGGU
+      ? 'bg-amber-50 text-amber-600'
+      : row.status === STATUS_REQUEST_PJ.DISETUJUI
+        ? 'bg-green-50 text-green-700'
+        : 'bg-red-50 text-red-600';
+  const statusLabel = TAB_PENGAJUAN_PJ.find((tab) => tab.key === row.status)?.label || '—';
   return `
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-modal-overlay>
-      <section role="dialog" aria-modal="true" aria-labelledby="pj-detail-title" class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+      <section role="dialog" aria-modal="true" aria-labelledby="pj-detail-title" class="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl sm:p-8">
         <div class="flex items-start justify-between gap-4">
-          <h2 id="pj-detail-title" class="text-xl font-bold text-slate-900">Informasi Pemohon</h2>
-          <button type="button" data-action="close-modal" aria-label="Tutup detail" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100">${renderIcon('X', 'h-5 w-5')}</button>
+          <h2 id="pj-detail-title" class="text-2xl font-semibold tracking-tight text-slate-900">Informasi Pemohon</h2>
+          <button type="button" data-action="close-modal" aria-label="Tutup detail" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">${renderIcon('X', 'h-5 w-5')}</button>
         </div>
-        <div class="mt-5 space-y-5">
-          ${renderPemohonField(row.pemohon?.nama || '—', org)}
-          <div>
-            <p class="text-xs font-semibold text-slate-900">NIM</p>
-            <p class="mt-2 text-sm text-slate-700">${escapeHtml(row.pemohon?.nim || '—')}</p>
+
+        <div class="mt-6 space-y-6 text-sm">
+          <div class="flex items-center justify-between gap-6">
+            <p class="text-base font-semibold text-slate-900">Nama Pemohon</p>
+            <div class="text-right">
+              <p class="text-base font-medium text-slate-800">${escapeHtml(row.pemohon?.nama || '—')}</p>
+              <p class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600">${renderOrganisasiLogo(org, row.pemohon?.logoUrl || row.logoUrl || row.organisasi?.logoUrl, 'h-4 w-4')}<span>${escapeHtml(org)}</span></p>
+            </div>
           </div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">NIM</p><p class="break-all text-right text-base font-medium text-slate-800">${escapeHtml(row.pemohon?.nim || '—')}</p></div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Tanggal Pengajuan</p><p class="text-right text-base font-medium text-slate-800">${escapeHtml(dateOnly(row.tanggalPengajuan))}</p></div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Status</p><span class="inline-flex rounded-xl px-4 py-1.5 text-xs font-medium ${statusClass}">${escapeHtml(statusLabel)}</span></div>
+          ${ditolak ? `<div><p class="mb-2 text-base font-semibold text-slate-900">Alasan Penolakan</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-700 whitespace-pre-line">${escapeHtml(row.alasanPenolakan || 'Pengajuan ditolak oleh pengelola.')}</div></div>` : ''}
           <div>
-            <p class="text-xs font-semibold text-slate-900">Tanggal Pengajuan</p>
-            <p class="mt-2 text-sm text-slate-700">${escapeHtml(dateOnly(row.tanggalPengajuan))}</p>
-          </div>
-          <div>
-            <p class="text-xs font-semibold text-slate-900">Status</p>
-            <div class="mt-2">${renderStatusChip({ status: row.status })}</div>
-          </div>
-          ${ditolak ? `
-            <div>
-              <p class="text-xs font-semibold text-slate-900">Alasan Ditolak</p>
-              <div class="mt-2 rounded-2xl border border-zinc-200/80 p-3.5 text-sm text-slate-700 bg-white">
-                ${escapeHtml(row.alasanPenolakan || 'Pengajuan ditolak oleh pengelola.')}
-              </div>
-            </div>` : ''}
-          <div>
-            <p class="text-xs font-semibold text-slate-900">Lampiran Surat</p>
-            ${row.lampiran?.nama ? renderFileChip(row.lampiran.nama) : '<p class="mt-2 text-sm text-slate-400">Tidak ada lampiran</p>'}
+            <p class="mb-2 text-base font-semibold text-slate-900">Lampiran Surat</p>
+            <div class="flex min-h-[62px] items-center gap-3 overflow-hidden rounded-2xl border border-slate-100 bg-white px-5 py-4">
+              <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400">${renderIcon('FileImage', 'h-5 w-5')}</span>
+              <span class="break-words text-base font-medium text-slate-800">${escapeHtml(row.lampiran?.nama || 'Tidak ada lampiran surat')}</span>
+            </div>
           </div>
         </div>
-        <div class="mt-6 flex justify-end">
-          <button type="button" data-action="close-modal" data-autofocus class="rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90">Tutup</button>
-        </div>
+
+        <div class="mt-6 flex justify-end"><button type="button" data-action="close-modal" data-autofocus class="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-110">Tutup</button></div>
       </section>
     </div>`;
 }
@@ -212,28 +202,36 @@ function renderForm(state) {
   const org = namaOrganisasiPemohon(user, null);
   return `
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-modal-overlay>
-      <section role="dialog" aria-modal="true" aria-labelledby="pj-form-title" class="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
-        <h2 id="pj-form-title" class="text-xl font-bold text-slate-900">Tambah Pengajuan</h2>
-        <div class="mt-5 space-y-5">
-          ${renderPemohonField(user?.nama || '—', org)}
-          <div>
-            <p class="text-xs font-semibold text-slate-900">NIM</p>
-            <p class="mt-2 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-800">${escapeHtml(user?.nim || '—')}</p>
+      <section role="dialog" aria-modal="true" aria-labelledby="pj-form-title" class="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl sm:p-8">
+        <div class="flex items-start justify-between gap-4">
+          <h2 id="pj-form-title" class="text-2xl font-semibold tracking-tight text-slate-900">Tambah Pengajuan</h2>
+          <button type="button" data-action="cancel-form" aria-label="Tutup form" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">${renderIcon('X', 'h-5 w-5')}</button>
+        </div>
+
+        <div class="mt-6 space-y-6 text-sm">
+          <div class="flex items-center justify-between gap-6">
+            <p class="text-base font-semibold text-slate-900">Nama Pemohon</p>
+            <div class="text-right">
+              <p class="text-base font-medium text-slate-800">${escapeHtml(user?.nama || '—')}</p>
+              <p class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600">${renderOrganisasiLogo(org, user?.organisasi?.logoUrl || user?.logoUrl, 'h-4 w-4')}<span>${escapeHtml(org)}</span></p>
+            </div>
           </div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">NIM</p><p class="break-all text-right text-base font-medium text-slate-800">${escapeHtml(user?.nim || '—')}</p></div>
           <div>
-            <p class="text-xs font-semibold text-slate-900">Lampiran Surat</p>
+            <p class="mb-2 text-base font-semibold text-slate-900">Lampiran Surat</p>
             <input type="file" data-file-input accept=".jpg,.jpeg,.png,.pdf" class="sr-only" tabindex="-1" aria-hidden="true" />
             <button type="button" data-action="pick-file" data-autofocus aria-describedby="pj-file-hint"
-              class="mt-2 flex w-full items-center gap-3 rounded-xl bg-slate-50 px-4 py-3 text-left text-sm text-slate-500 transition hover:bg-slate-100">
-              ${renderIcon('UploadCloud', 'h-5 w-5 shrink-0 text-slate-400')}
-              <span class="truncate ${state.file ? 'text-slate-800' : ''}" data-file-name>${escapeHtml(state.file ? state.file.name : 'Upload here')}</span>
+              class="flex min-h-[62px] w-full items-center gap-3 overflow-hidden rounded-2xl border border-slate-100 bg-white px-5 py-4 text-left transition-colors hover:bg-slate-50">
+              <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-50 text-slate-400">${renderIcon('UploadCloud', 'h-5 w-5')}</span>
+              <span class="truncate text-base font-medium ${state.file ? 'text-slate-800' : 'text-slate-400'}" data-file-name>${escapeHtml(state.file ? state.file.name : 'Upload here')}</span>
             </button>
-            <p id="pj-file-hint" class="mt-1.5 text-[11px] ${state.error ? 'text-rose-600' : 'text-red-500'}" ${state.error ? 'role="alert"' : ''}>${escapeHtml(state.error || 'Maximum size 2MB')}</p>
+            <p id="pj-file-hint" class="mt-2 text-xs ${state.error ? 'text-rose-600' : 'text-red-500'}" ${state.error ? 'role="alert"' : ''}>${escapeHtml(state.error || 'Maximum size 2MB')}</p>
           </div>
         </div>
+
         <div class="mt-6 flex items-center justify-end gap-3">
-          <button type="button" data-action="cancel-form" class="rounded-xl px-4 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-50">Batal</button>
-          <button type="button" data-action="submit-form" class="rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90">Ajukan</button>
+          <button type="button" data-action="cancel-form" class="rounded-xl px-5 py-3 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-50">Batal</button>
+          <button type="button" data-action="submit-form" class="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-110">Ajukan</button>
         </div>
       </section>
     </div>`;
@@ -344,16 +342,20 @@ export function render() {
         <p class="mt-1 text-sm text-slate-400">Kelola dan pantau pengajuan penanggung jawab inventaris.</p>
       </div>
 
-      <div class="mb-4 inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-white p-1.5" data-tabs role="tablist" aria-label="Filter status pengajuan PJ">
+      <div class="mb-3 inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-white p-1.5" data-tabs role="tablist" aria-label="Filter status pengajuan PJ">
         ${renderTabs()}
       </div>
 
       <div class="rounded-xl bg-white p-4 shadow-[0_1px_4px_rgba(15,23,42,0.025)] sm:p-6">
         <div class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 data-list-title class="text-lg font-semibold text-slate-900">List Pengajuan ${tabLabel()}</h2>
-          <button type="button" data-action="open-form"
-            class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-white shadow-sm hover:opacity-90">
-            ${renderIcon('Plus', 'h-4 w-4')}Tambah Pengajuan
+          <button
+            type="button"
+            data-action="open-form"
+            class="${buttonClass({ variant: 'default', size: 'default', className: 'h-11 rounded-full px-5 gap-1.5 button-hover-soft-primary' })}"
+          >
+            ${renderIcon('Plus', 'h-4 w-4')}
+            <span>Tambah Pengajuan</span>
           </button>
         </div>
         <div class="w-full overflow-x-auto">

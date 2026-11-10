@@ -4,6 +4,7 @@
  */
 import {
   getPeminjaman,
+  getKelolaPeminjaman,
   updateMockPeminjamanStatus,
   updateMockPeminjamanPickup,
 } from "../services/peminjaman.js";
@@ -18,6 +19,7 @@ import { renderStatusChip } from "../ui/status-chip.js";
 import { selectClass, inputClass } from "../ui/classes.js";
 import { validateFotoFile } from "../lib/inventaris-form.js";
 import { compressImageToDataUrl } from "./kelola-inventaris-form.js";
+import { renderOrganisasiLogo } from "../ui/organisasi-badge.js";
 
 const OKI_LIST = [
   "BEM",
@@ -254,7 +256,7 @@ function renderTableRows() {
       <td class="min-w-[210px] px-4 py-3">
         <div class="flex items-center gap-2.5">
           <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-semibold text-white">${escapeHtml(initials(name))}</span>
-          <span class="min-w-0"><span class="block truncate text-xs font-medium text-slate-500">${escapeHtml(name)}</span><span class="mt-1 flex items-center gap-1.5 text-[11px] text-slate-700"><span class="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-100 text-[8px] font-bold text-amber-800">${escapeHtml(org.slice(0, 1).toUpperCase())}</span>${escapeHtml(org)}</span></span>
+          <span class="min-w-0"><span class="block truncate text-xs font-medium text-slate-500">${escapeHtml(name)}</span><span class="mt-1 flex items-center gap-1.5 text-[11px] text-slate-700">${renderOrganisasiLogo(org, row.peminjam?.logoUrl || row.logoUrl, 'h-3.5 w-3.5')}<span>${escapeHtml(org)}</span></span></span>
         </div>
       </td>
       <td class="min-w-[150px] px-4 py-4 text-xs text-slate-400">${escapeHtml(itemName(row))}</td>
@@ -322,7 +324,7 @@ function renderPagination() {
 
 function renderModal() {
   if (pickupModal) {
-    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" data-modal-backdrop>
+    return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-modal-backdrop>
       <section role="dialog" aria-modal="true" aria-labelledby="pickup-title" class="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
         <h2 id="pickup-title" class="text-2xl font-semibold tracking-tight text-slate-900">Pengambilan Barang</h2>
         <div class="mt-5 space-y-4 text-sm">
@@ -343,7 +345,7 @@ function renderModal() {
   }
   if (confirmModal) {
     if (confirmModal.type === "reject-reason") {
-      return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" data-modal-backdrop>
+      return `<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-modal-backdrop>
         <section role="dialog" aria-modal="true" aria-labelledby="reject-loan-title" class="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
           <h2 id="reject-loan-title" class="text-xl font-bold tracking-tight text-slate-900">Permohonan Ditolak</h2>
           <div class="mt-5 space-y-2">
@@ -429,7 +431,7 @@ function renderModal() {
         <div class="mt-6 space-y-6 text-sm">
           <div class="flex items-center justify-between gap-6">
             <p class="text-base font-medium text-slate-900">Nama Peminjam</p>
-            <div class="text-right"><p class="text-base font-medium text-slate-800">${escapeHtml(borrowerName)}</p><p class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600"><span class="inline-block h-4 w-4 rounded-full bg-slate-400" aria-hidden="true"></span>${escapeHtml(org)}</p></div>
+            <div class="text-right"><p class="text-base font-medium text-slate-800">${escapeHtml(borrowerName)}</p><p class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600">${renderOrganisasiLogo(org, borrower.logoUrl || row.logoUrl, 'h-4 w-4')}<span>${escapeHtml(org)}</span></p></div>
           </div>
           <div class="flex items-center justify-between gap-6"><p class="text-base font-medium text-slate-900">NIM</p><p class="text-base font-medium text-slate-800">${escapeHtml(borrowerNim)}</p></div>
           <div class="flex items-center justify-between gap-6"><p class="text-base font-medium text-slate-900">Nama Barang</p><p class="text-base font-medium text-slate-800 text-right">${escapeHtml(name)}</p></div>
@@ -448,7 +450,7 @@ function renderModal() {
 }
 
 async function loadRows() {
-  const all = await getPeminjaman();
+  const all = await getKelolaPeminjaman();
   const active = all.filter(
     (row) =>
       row.status !== STATUS_PEMINJAMAN.DIKEMBALIKAN &&

@@ -660,6 +660,10 @@ select option:hover {
     grid-column: span 2/span 2
 }
 
+.row-span-2 {
+    grid-row: span 2/span 2
+}
+
 .\!m-0 {
     margin: 0 !important
 }
@@ -687,16 +691,12 @@ select option:hover {
     margin-bottom: 1.5rem
 }
 
-.-mt-16 {
-    margin-top: -4rem
+.-mt-12 {
+    margin-top: -3rem
 }
 
 .mb-1 {
     margin-bottom: .25rem
-}
-
-.mb-1\.5 {
-    margin-bottom: .375rem
 }
 
 .mb-10 {
@@ -741,6 +741,10 @@ select option:hover {
 
 .ml-2 {
     margin-left: .5rem
+}
+
+.ml-3 {
+    margin-left: .75rem
 }
 
 .ml-auto {
@@ -988,10 +992,6 @@ select option:hover {
     height: 100vh
 }
 
-.max-h-24 {
-    max-height: 6rem
-}
-
 .max-h-32 {
     max-height: 8rem
 }
@@ -1024,10 +1024,6 @@ select option:hover {
     min-height: 100px
 }
 
-.min-h-\[110px\] {
-    min-height: 110px
-}
-
 .min-h-\[112px\] {
     min-height: 112px
 }
@@ -1050,6 +1046,10 @@ select option:hover {
 
 .min-h-\[240px\] {
     min-height: 240px
+}
+
+.min-h-\[46px\] {
+    min-height: 46px
 }
 
 .min-h-\[60vh\] {
@@ -1421,7 +1421,11 @@ select option:hover {
 }
 
 .rotate-180 {
-    --tw-rotate: 180deg;
+    --tw-rotate: 180deg
+}
+
+.rotate-180,
+.transform {
     transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
 }
 
@@ -1467,10 +1471,6 @@ select option:hover {
     resize: none
 }
 
-.resize-y {
-    resize: vertical
-}
-
 .resize {
     resize: both
 }
@@ -1495,6 +1495,10 @@ select option:hover {
 
 .grid-cols-7 {
     grid-template-columns: repeat(7, minmax(0, 1fr))
+}
+
+.grid-cols-\[96px_minmax\(0\2c 1fr\)\] {
+    grid-template-columns: 96px minmax(0, 1fr)
 }
 
 .flex-col {
@@ -1694,6 +1698,10 @@ select option:hover {
     align-self: flex-start
 }
 
+.justify-self-start {
+    justify-self: start
+}
+
 .overflow-hidden {
     overflow: hidden
 }
@@ -1879,6 +1887,11 @@ select option:hover {
     border-color: rgb(253 164 175/var(--tw-border-opacity, 1))
 }
 
+.border-rose-400 {
+    --tw-border-opacity: 1;
+    border-color: rgb(251 113 133/var(--tw-border-opacity, 1))
+}
+
 .border-rose-500 {
     --tw-border-opacity: 1;
     border-color: rgb(244 63 94/var(--tw-border-opacity, 1))
@@ -1937,11 +1950,6 @@ select option:hover {
 .border-zinc-300 {
     --tw-border-opacity: 1;
     border-color: rgb(212 212 216/var(--tw-border-opacity, 1))
-}
-
-.border-zinc-50 {
-    --tw-border-opacity: 1;
-    border-color: rgb(250 250 250/var(--tw-border-opacity, 1))
 }
 
 .border-t-white {
@@ -2165,10 +2173,6 @@ select option:hover {
     background-color: rgb(241 245 249/var(--tw-bg-opacity, 1))
 }
 
-.bg-slate-100\/80 {
-    background-color: rgba(241, 245, 249, .8)
-}
-
 .bg-slate-200 {
     --tw-bg-opacity: 1;
     background-color: rgb(226 232 240/var(--tw-bg-opacity, 1))
@@ -2242,10 +2246,6 @@ select option:hover {
 
 .bg-white\/5 {
     background-color: hsla(0, 0%, 100%, .05)
-}
-
-.bg-white\/90 {
-    background-color: hsla(0, 0%, 100%, .9)
 }
 
 .bg-zinc-100 {
@@ -2575,10 +2575,6 @@ select option:hover {
     padding-right: 2.5rem
 }
 
-.pr-11 {
-    padding-right: 2.75rem
-}
-
 .pr-12 {
     padding-right: 3rem
 }
@@ -2693,10 +2689,6 @@ select option:hover {
     font-size: 20px
 }
 
-.text-\[22px\] {
-    font-size: 22px
-}
-
 .text-\[23px\] {
     font-size: 23px
 }
@@ -2797,10 +2789,6 @@ select option:hover {
 
 .leading-tight {
     line-height: 1.25
-}
-
-.tracking-\[0\.02em\] {
-    letter-spacing: .02em
 }
 
 .tracking-\[0\.03em\] {
@@ -3183,16 +3171,10 @@ select option:hover {
 
 .shadow-\[0_1px_4px_rgba\(15\2c 23\2c 42\2c 0\.025\)\] {
     --tw-shadow: 0 1px 4px rgba(15, 23, 42, .025);
-    --tw-shadow-colored: 0 1px 4px var(--tw-shadow-color);
-    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+    --tw-shadow-colored: 0 1px 4px var(--tw-shadow-color)
 }
 
-.shadow-\[0_8px_28px_rgba\(15\2c 23\2c 42\2c 0\.14\)\] {
-    --tw-shadow: 0 8px 28px rgba(15, 23, 42, .14);
-    --tw-shadow-colored: 0 8px 28px var(--tw-shadow-color)
-}
-
-.shadow-\[0_8px_28px_rgba\(15\2c 23\2c 42\2c 0\.14\)\],
+.shadow-\[0_1px_4px_rgba\(15\2c 23\2c 42\2c 0\.025\)\],
 .shadow-lg {
     box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
 }
@@ -3260,22 +3242,17 @@ select option:hover {
     filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)
 }
 
-.backdrop-blur {
-    --tw-backdrop-blur: blur(8px)
-}
-
-.backdrop-blur,
-.backdrop-blur-\[2px\] {
-    backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)
-}
-
 .backdrop-blur-\[2px\] {
     --tw-backdrop-blur: blur(2px)
 }
 
+.backdrop-blur-\[2px\],
 .backdrop-blur-sm {
-    --tw-backdrop-blur: blur(4px);
     backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)
+}
+
+.backdrop-blur-sm {
+    --tw-backdrop-blur: blur(4px)
 }
 
 .transition {
@@ -3304,6 +3281,12 @@ select option:hover {
 
 .transition-opacity {
     transition-property: opacity;
+    transition-timing-function: cubic-bezier(.4, 0, .2, 1);
+    transition-duration: .15s
+}
+
+.transition-shadow {
+    transition-property: box-shadow;
     transition-timing-function: cubic-bezier(.4, 0, .2, 1);
     transition-duration: .15s
 }
@@ -3436,6 +3419,16 @@ select option:hover {
 
 .empty\:hidden:empty {
     display: none
+}
+
+.focus-within\:border-primary:focus-within {
+    border-color: var(--primary)
+}
+
+.focus-within\:ring-2:focus-within {
+    --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
+    --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
+    box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000)
 }
 
 .hover\:-translate-y-0\.5:hover {
@@ -3587,11 +3580,6 @@ select option:hover {
 .hover\:text-red-600:hover {
     --tw-text-opacity: 1;
     color: rgb(220 38 38/var(--tw-text-opacity, 1))
-}
-
-.hover\:text-rose-600:hover {
-    --tw-text-opacity: 1;
-    color: rgb(225 29 72/var(--tw-text-opacity, 1))
 }
 
 .hover\:text-rose-800:hover {
@@ -3788,6 +3776,11 @@ select option:hover {
     --tw-ring-color: var(--ring)
 }
 
+.focus-visible\:ring-rose-300:focus-visible {
+    --tw-ring-opacity: 1;
+    --tw-ring-color: rgb(253 164 175/var(--tw-ring-opacity, 1))
+}
+
 .focus-visible\:ring-offset-0:focus-visible {
     --tw-ring-offset-width: 0px
 }
@@ -3893,6 +3886,10 @@ select option:hover {
         grid-column: span 2/span 2
     }
 
+    .sm\:row-span-1 {
+        grid-row: span 1/span 1
+    }
+
     .sm\:-m-7 {
         margin: -1.75rem
     }
@@ -3953,8 +3950,16 @@ select option:hover {
         grid-template-columns: repeat(4, minmax(0, 1fr))
     }
 
+    .sm\:grid-cols-5 {
+        grid-template-columns: repeat(5, minmax(0, 1fr))
+    }
+
     .sm\:grid-cols-\[230px_1fr\] {
         grid-template-columns: 230px 1fr
+    }
+
+    .sm\:grid-cols-\[96px_minmax\(0\2c 1fr\)_auto\] {
+        grid-template-columns: 96px minmax(0, 1fr) auto
     }
 
     .sm\:flex-row {
@@ -3995,6 +4000,10 @@ select option:hover {
 
     .sm\:self-auto {
         align-self: auto
+    }
+
+    .sm\:justify-self-end {
+        justify-self: end
     }
 
     .sm\:p-10 {
@@ -4250,8 +4259,32 @@ select option:hover {
     flex-shrink: 0
 }
 
-/* Hover warna ikon dan chevron pada menu grup sidebar. */
+
+/* Sidebar group hover: ikon dan panah mengikuti warna teks tombol. */
 .sidebar-nav-group:hover .sidebar-nav-group-icon-svg,
-.sidebar-nav-group:hover .sidebar-nav-group-chevron-svg {
+.sidebar-nav-group:hover [data-chevron] svg {
   color: #18181b !important;
+}
+
+
+/* Status Ditolak pada Kelola Pengembalian: dimensi identik dengan chip bersama. */
+.status-chip-return-rejected {
+  background-color: #fca5a5 !important;
+  color: #450a0a !important;
+  border-radius: 9999px !important;
+  padding: 0.25rem 0.875rem !important;
+  font-size: 0.75rem !important;
+  line-height: 1rem !important;
+  font-weight: 500 !important;
+}
+
+/* Status Ditolak pada tabel Dashboard: dimensi identik dengan badge dashboard. */
+.status-chip-return-rejected-dashboard {
+  background-color: #fca5a5 !important;
+  color: #450a0a !important;
+  border-radius: 0.75rem !important;
+  padding: 0.375rem 0.75rem !important;
+  font-size: 10px !important;
+  line-height: 1.5 !important;
+  font-weight: 500 !important;
 }

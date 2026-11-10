@@ -13,6 +13,7 @@ import { escapeHtml } from '../ui/html.js';
 import { renderSearchInput } from '../ui/search-input.js';
 import { renderStatusChip } from '../ui/status-chip.js';
 import { renderModal } from '../ui/modal.js';
+import { renderOrganisasiLogo } from '../ui/organisasi-badge.js';
 
 const TABS = [
   { key: 'diajukan', label: 'Diajukan', statuses: [STATUS_PEMINJAMAN.DIAJUKAN, 'diajukan'] },
@@ -100,7 +101,7 @@ function renderTabs() {
     const selected = activeTab === tab.key;
     return `
       <button type="button" data-tab="${tab.key}" aria-pressed="${selected}"
-        class="shrink-0 rounded-lg px-5 py-2.5 text-sm font-medium transition ${selected ? 'bg-info text-info-foreground' : 'text-zinc-600 hover:bg-zinc-50'}">
+        class="shrink-0 cursor-pointer select-none rounded-lg px-4 py-2 text-[11px] font-medium transition ${selected ? 'bg-blue-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50'}">
         ${tab.label}
       </button>`;
   }).join('');
@@ -149,8 +150,8 @@ function renderRows() {
         <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-500">${start + index + 1}</td>
         <td class="min-w-[180px] px-4 py-3">
           <div class="max-w-[220px] truncate text-xs font-medium text-slate-500" title="${escapeHtml(name)}">${escapeHtml(name)}</div>
-          <div class="mt-1.5 flex items-center gap-2 text-xs font-medium text-slate-700">
-            <span class="inline-block h-3.5 w-3.5 shrink-0 rounded-full ${orgDotClass(org)}" aria-hidden="true"></span>
+          <div class="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-slate-700">
+            ${renderOrganisasiLogo(org, item.logoUrl || row.logoUrl, 'h-3.5 w-3.5')}
             <span>${escapeHtml(org)}</span>
           </div>
         </td>
@@ -218,69 +219,40 @@ function renderDetail(row) {
   const name = item.namaBarang || 'Barang inventaris';
   const org = item.namaOrganisasi || row.namaOrganisasi || '—';
   const ditolak = getTabForStatus(row.status) === 'ditolak' || String(row.status).toLowerCase() === 'ditolak';
+  const showPickup = activeTab === 'dipinjam' && (String(row.status).toLowerCase() === 'dipinjam' || row.status === STATUS_PEMINJAMAN.DIPINJAM);
+  const dateColumns = [
+    { label: 'Tanggal Pengajuan', value: dateOnly(row.tanggalPengajuan || row.createdAt) },
+    { label: 'Tanggal Mulai', value: dateOnly(row.startDate || row.mulai || row.tanggalMulai) },
+    ...(showPickup ? [{ label: 'Tanggal Pengambilan', value: row.tanggalPengambilan ? dateOnly(row.tanggalPengambilan) : '–' }] : []),
+    { label: 'Tanggal Selesai', value: dateOnly(row.endDate || row.selesai || row.tanggalSelesai) },
+  ];
   return `
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm p-4" data-modal-overlay>
-      <section role="dialog" aria-modal="true" aria-labelledby="detail-title" class="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+      <section role="dialog" aria-modal="true" aria-labelledby="detail-title" class="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl sm:p-8">
         <div class="flex items-start justify-between gap-4">
-          <h2 id="detail-title" class="text-xl font-bold text-slate-900">Detail Peminjaman</h2>
-          <button type="button" data-close-detail aria-label="Tutup detail" class="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100">${renderIcon('X', 'h-5 w-5')}</button>
+          <h2 id="detail-title" class="text-2xl font-semibold tracking-tight text-slate-900">Detail Peminjaman</h2>
+          <button type="button" data-close-detail aria-label="Tutup detail" class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">${renderIcon('X', 'h-5 w-5')}</button>
         </div>
-        <div class="mt-6 space-y-5">
-          <div>
-            <p class="text-xs font-semibold text-slate-900">Nama Barang</p>
-            <div class="mt-2 flex items-center justify-between">
-              <span class="text-sm font-normal text-slate-800">${escapeHtml(name)}</span>
-              <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                <span class="inline-block h-3 w-3 rounded-full ${orgDotClass(org)}" aria-hidden="true"></span>${escapeHtml(org)}
-              </span>
+        <div class="mt-6 space-y-6 text-sm">
+          <div class="flex items-center justify-between gap-6">
+            <p class="text-base font-semibold text-slate-900">Barang Dipinjam</p>
+            <div class="text-right">
+              <p class="text-base font-medium text-slate-800">${escapeHtml(name)}</p>
+              <p class="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-slate-600">
+                ${renderOrganisasiLogo(org, item.logoUrl || row.logoUrl, 'h-4 w-4')}<span>${escapeHtml(org)}</span>
+              </p>
             </div>
           </div>
-          <div class="grid grid-cols-1 gap-3 sm:grid-cols-4 sm:gap-0 sm:divide-x sm:divide-zinc-200">
-            <div class="sm:pr-4">
-              <p class="text-xs font-semibold text-slate-900">Tanggal Pengajuan</p>
-              <p class="mt-2 text-xs sm:text-sm text-slate-700">${escapeHtml(dateOnly(row.tanggalPengajuan || row.createdAt))}</p>
-            </div>
-            <div class="sm:px-4">
-              <p class="text-xs font-semibold text-slate-900">Tanggal Mulai</p>
-              <p class="mt-2 text-xs sm:text-sm text-slate-700">${escapeHtml(dateOnly(row.startDate || row.mulai || row.tanggalMulai))}</p>
-            </div>
-            ${activeTab === 'dipinjam' && (String(row.status).toLowerCase() === 'dipinjam' || row.status === STATUS_PEMINJAMAN.DIPINJAM) ? `<div class="sm:px-4">
-              <p class="text-xs font-semibold text-slate-900">Tanggal Pengambilan</p>
-              <p class="mt-2 text-xs sm:text-sm text-slate-700">${row.tanggalPengambilan ? escapeHtml(dateOnly(row.tanggalPengambilan)) : '–'}</p>
-            </div>` : ''}
-            <div class="sm:px-4">
-              <p class="text-xs font-semibold text-slate-900">Tanggal Selesai</p>
-              <p class="mt-2 text-xs sm:text-sm text-slate-700">${escapeHtml(dateOnly(row.endDate || row.selesai || row.tanggalSelesai))}</p>
-            </div>
+          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Jumlah Unit</p><p class="text-base font-medium text-slate-800">${escapeHtml(row.jumlahPinjam ?? row.jumlahUnit ?? 1)}</p></div>
+          <div class="grid grid-cols-2 gap-4 ${showPickup ? 'sm:grid-cols-4' : 'sm:grid-cols-3'} sm:gap-0 sm:divide-x sm:divide-slate-300">
+            ${dateColumns.map((date, index) => `<div class="text-center ${index === 0 ? 'sm:px-2' : 'sm:px-4'}"><p class="text-sm font-semibold text-slate-900 sm:text-base">${date.label}</p><p class="mt-3 text-sm font-medium text-slate-800 sm:text-base">${escapeHtml(date.value)}</p></div>`).join('')}
           </div>
-          <div>
-            <p class="text-xs font-semibold text-slate-900">Jumlah</p>
-            <p class="mt-2 text-xs sm:text-sm text-slate-700">${escapeHtml(row.jumlahPinjam ?? row.jumlahUnit ?? 1)}</p>
-          </div>
-          <div>
-            <p class="text-xs font-semibold text-slate-900">Keperluan Peminjaman Barang</p>
-            <div class="mt-2 rounded-2xl border border-zinc-200/80 p-3.5 text-xs sm:text-sm text-slate-700 bg-white">
-              ${escapeHtml(row.keperluan || '—')}
-            </div>
-          </div>
-          <div>
-            <p class="text-xs font-semibold text-slate-900">Status</p>
-            <div class="mt-2">
-              ${renderStatusChip({ status: row.status })}
-            </div>
-          </div>
-          ${ditolak ? `
-            <div>
-              <p class="text-xs font-semibold text-slate-900">Alasan Ditolak</p>
-              <div class="mt-2 rounded-2xl border border-zinc-200/80 p-3.5 text-xs sm:text-sm text-slate-700 bg-white">
-                ${escapeHtml(row.alasanPenolakan || 'Peminjaman tidak dapat diproses karena alasan operasional')}
-              </div>
-            </div>` : ''}
+          <div class="flex items-center justify-between gap-6"><p class="text-base font-semibold text-slate-900">Status</p><div>${renderStatusChip({ status: row.status })}</div></div>
+          ${ditolak ? `<div><p class="mb-2 text-base font-semibold text-slate-900">Alasan Ditolak</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-700">${escapeHtml(row.alasanPenolakan || 'Peminjaman tidak dapat diproses karena alasan operasional')}</div></div>` : ''}
+          <div><p class="mb-2 text-base font-semibold text-slate-900">Keperluan Peminjaman Barang</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base font-medium text-slate-800">${escapeHtml(row.keperluan || '—')}</div></div>
         </div>
         <div class="mt-6 flex justify-end">
-          <button type="button" data-close-detail data-autofocus class="rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90">
-            Tutup
-          </button>
+          <button type="button" data-close-detail data-autofocus class="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-110">Tutup</button>
         </div>
       </section>
     </div>`;
@@ -302,7 +274,7 @@ function renderConfirmReturn(state) {
         label: state.submitting ? 'Mengirim...' : 'Kirim',
         action: 'confirm-return',
         variant: 'default',
-        className: 'flex-1 rounded-xl bg-primary text-white hover:bg-primary/90',
+        className: 'flex-1 rounded-xl bg-primary text-white transition-colors hover:brightness-110',
         disabled: state.submitting,
       },
     ],
@@ -320,7 +292,7 @@ function renderSuccessReturn() {
         label: 'Kembali',
         action: 'close-success',
         variant: 'default',
-        className: 'w-full rounded-xl bg-primary text-white hover:bg-primary/90',
+        className: 'w-full rounded-xl bg-primary text-white transition-colors hover:brightness-110',
       },
     ],
   });
@@ -356,7 +328,8 @@ async function submitReturn() {
   showDialog({ ...dialog, submitting: true, error: '' });
   try {
     const updated = await ajukanPengembalian(row.id || row.idPeminjaman);
-    row.status = updated?.status ?? row.status;
+    row.status = updated?.status ?? STATUS_PEMINJAMAN.MENUNGGU_KONFIRMASI_PENGEMBALIAN;
+    row.bisaAjukanPengembalian = false;
     lastTrigger = null;
     renderTableContent();
     showDialog({ type: 'sukses' });
@@ -373,7 +346,7 @@ export function render() {
         <p class="mt-1 text-sm text-slate-400">Pantau status pengajuan dan riwayat peminjaman barangmu.</p>
       </div>
 
-      <div class="mb-4 inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-white p-1.5" data-tabs role="tablist" aria-label="Filter status peminjaman">
+      <div class="mb-3 inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-xl bg-white p-1.5" data-tabs role="tablist" aria-label="Filter status peminjaman">
         ${renderTabs()}
       </div>
 
@@ -413,7 +386,7 @@ export async function mount(root, ctx = {}) {
     const nim = user?.nim || user?.pengguna?.nim || null;
     pageRows = all.filter((row) => {
       if (!nim) return true;
-      const ownerNim = row.pengguna?.nim || row.peminjam?.nim || row.nim || null;
+      const ownerNim = row.pengguna?.nim || row.peminjam?.nim || row.nim || row.nimPeminjam || null;
       return !ownerNim || String(ownerNim) === String(nim);
     });
     if (!pageRows.length && all.length) {

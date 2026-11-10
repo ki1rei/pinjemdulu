@@ -16,7 +16,7 @@ import {
 import { renderIcon } from '../ui/icons.js';
 import { renderModal } from '../ui/modal.js';
 import {
-  getInventarisById,
+  getInventarisKelolaDetail,
   createInventaris,
   updateInventaris,
 } from '../services/inventaris.js';
@@ -34,6 +34,7 @@ import {
 } from '../lib/inventaris-form.js';
 import { normalizeKondisi } from '../lib/kondisi.js';
 import { KONDISI_BARANG } from '../lib/constants.js';
+import { renderOrganisasiLogo } from '../ui/organisasi-badge.js';
 
 export const HANDLED_FORM_ACTIONS = [
   'back-to-list',
@@ -297,6 +298,7 @@ export function renderFormPageContent(state = {}) {
     kategoriQuery = '',
     isKategoriDropdownOpen = false,
     isSubmitting = false,
+    namaOrganisasi = 'OKI Anda',
     loading = false,
     notFound = false,
     forbidden = false,
@@ -391,6 +393,18 @@ export function renderFormPageContent(state = {}) {
           <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <!-- Kolom Kiri: Input Data Utama (7 cols) -->
             <div class="lg:col-span-7 space-y-6">
+              <!-- Organisasi Pengelola -->
+              <div class="space-y-2">
+                <label class="${labelClass()}">Organisasi Pengelola</label>
+                <div class="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-700">
+                  <div class="flex items-center gap-2.5">
+                    ${raw(renderOrganisasiLogo(namaOrganisasi, null, 'h-5 w-5'))}
+                    <span class="font-medium text-slate-800">${namaOrganisasi}</span>
+                  </div>
+                  ${renderIcon('Lock', 'h-4 w-4 text-slate-400')}
+                </div>
+              </div>
+
               <!-- Field 1: Nama Barang -->
               <div class="space-y-2">
                 <div class="flex items-center justify-between">
@@ -771,6 +785,8 @@ function readCurrentFormInputs() {
     kondisi: normalizeKondisi(kondisi),
     deskripsi: deskripsi !== undefined ? deskripsi : pageState.formData.deskripsi,
     thumbnail: pageState.formData.thumbnail || '',
+    fotoFile: pageState.formData.fotoFile || null,
+    hapusFoto: Boolean(pageState.formData.hapusFoto),
   };
 }
 
@@ -847,6 +863,8 @@ async function handleFotoFileSelected(file) {
   try {
     const dataUrl = await compressImageToDataUrl(file);
     pageState.formData.thumbnail = dataUrl;
+    pageState.formData.fotoFile = file;
+    pageState.formData.hapusFoto = false;
     delete pageState.formErrors.fotoFile;
     updateUI();
   } catch {
@@ -935,6 +953,8 @@ async function handleDocumentClick(e) {
     }
   } else if (action === 'remove-foto') {
     pageState.formData.thumbnail = '';
+    pageState.formData.fotoFile = null;
+    pageState.formData.hapusFoto = true;
     const fileInput = document.getElementById('form-foto-input');
     if (fileInput) fileInput.value = '';
     updateUI();
@@ -1110,7 +1130,7 @@ export async function mount(container, ctx = {}) {
   // Jika mode edit, muat data inventaris
   if (mode === 'edit' && idInventaris) {
     try {
-      const inv = await getInventarisById(idInventaris);
+      const inv = await getInventarisKelolaDetail(idInventaris);
       if (!inv) {
         pageState.notFound = true;
         pageState.loading = false;
@@ -1134,12 +1154,12 @@ export async function mount(container, ctx = {}) {
       const initialData = {
         idInventaris: inv.idInventaris,
         namaBarang: inv.namaBarang,
-        totalBarang: inv.totalBarang,
+        totalBarang: inv.totalBarang ?? inv.totalUnit,
         idKategori: inv.idKategori,
         kondisi: normalizeKondisi(inv.kondisi) || 'baik',
-        deskripsi: inv.deskripsiBarang || '',
-        thumbnail: inv.thumbnail || '',
-        minTotal: 1,
+        deskripsi: inv.deskripsi || inv.deskripsiBarang || '',
+        thumbnail: inv.fotoUrl || inv.thumbnail || '',
+        minTotal: inv.unitKeluar || 1,
       };
 
       pageState.formData = { ...initialData };

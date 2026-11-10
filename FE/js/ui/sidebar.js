@@ -134,7 +134,12 @@ function renderSidebarNav(items, collapsed, currentHash, role = '', idPrefix = '
 
         const childItems = (item.children || [])
           .map((child) => {
-            const childActive = isActivePath(child.href, currentHash);
+            // Kelola Kategori merupakan tab di dalam halaman Kelola Inventaris,
+            // sehingga menu sidebar Kelola Inventaris tetap aktif pada kedua route.
+            const isKelolaInventarisMenu = child.key === 'nav-kelola-inventaris';
+            const childActive =
+              isActivePath(child.href, currentHash) ||
+              (isKelolaInventarisMenu && isActivePath('#/kelola/kategori', currentHash));
             const childBadge = child.badge
               ? `<span class="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-white">${escapeHtml(String(child.badge))}</span>`
               : '';
