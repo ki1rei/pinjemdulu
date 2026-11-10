@@ -3,8 +3,8 @@
  * Mempertahankan gaya dashboard peminjam dan menambahkan tabel Pengelolaan.
  */
 
-import { getPeminjaman, updateMockPeminjamanStatus, updateMockPeminjamanPickup } from '../services/peminjaman.js';
-import { updateMockPengembalianStatus } from '../services/pengembalian.js';
+import { getPeminjaman, getKelolaPeminjaman, getDashboardPjStats, updateMockPeminjamanStatus, updateMockPeminjamanPickup } from '../services/peminjaman.js';
+import { getKelolaPengembalian, updateMockPengembalianStatus } from '../services/pengembalian.js';
 import { getRequestPj } from '../services/request-pj.js';
 import { STATUS_PEMINJAMAN } from '../lib/constants.js';
 import { formatTanggal } from '../lib/format.js';
@@ -15,6 +15,7 @@ import { renderStatusChip } from '../ui/status-chip.js';
 import { renderModal as renderModalComponent } from '../ui/modal.js';
 import { compressImageToDataUrl } from './kelola-inventaris-form.js';
 import { validateFotoFile } from '../lib/inventaris-form.js';
+import { renderOrganisasiLogo } from '../ui/organisasi-badge.js';
 
 const DEMO_PENGEMBALIAN_ROWS = [
   {
@@ -115,8 +116,10 @@ let activeTab = 'peminjaman';
 let managementTab = 'peminjaman';
 let currentUser = null;
 let livePeminjaman = [];
+let livePengembalian = [];
 let liveRequestPj = [];
 let liveInventaris = [];
+let liveStats = null;
 let detailRow = null;
 let rootElement = null;
 let clickHandler = null;
@@ -288,10 +291,10 @@ function getPengembalianTableRows() {
 }
 
 function renderSummaryCards() {
-  const applications = livePeminjaman.filter((row) => String(row.status || '').toLowerCase() === 'diajukan').length || 2;
-  const damaged = liveInventaris.filter((row) => String(row.kondisi || '').toLowerCase() === 'rusak').length || 3;
-  const available = liveInventaris.filter((row) => Number(row.sisaHariIni ?? row.totalBarang ?? 0) > 0 && String(row.kondisi || '').toLowerCase() !== 'rusak').length || 4;
-  const late = livePeminjaman.filter((row) => String(row.status || '').toLowerCase() === 'terlambat').length;
+  const applications = liveStats?.pengajuan ?? (livePeminjaman.filter((row) => String(row.status || '').toLowerCase() === 'diajukan').length || 2);
+  const damaged = liveStats?.rusak ?? (liveInventaris.filter((row) => String(row.kondisi || '').toLowerCase() === 'rusak').length || 3);
+  const available = liveStats?.tersedia ?? (liveInventaris.filter((row) => Number(row.sisaHariIni ?? row.totalBarang ?? 0) > 0 && String(row.kondisi || '').toLowerCase() !== 'rusak').length || 4);
+  const late = liveStats?.terlambat ?? livePeminjaman.filter((row) => String(row.status || '').toLowerCase() === 'terlambat').length;
   const cards = [
     { label: 'Pengajuan', value: applications, icon: 'Inbox', iconBoxClass: 'bg-blue-50 text-blue-600' },
     { label: 'Rusak', value: damaged, icon: 'CircleX', iconBoxClass: 'bg-rose-50 text-rose-600' },
@@ -309,8 +312,8 @@ function renderSummaryCards() {
 }
 
 function renderRightBannerCards() {
-  const totalUnits = liveInventaris.reduce((sum, item) => sum + Number(item.totalBarang || 0), 0) || 9;
-  const approvals = livePeminjaman.filter((row) => String(row.status || '').toLowerCase() === 'diajukan').length || 1;
+  const totalUnits = liveStats?.totalUnit ?? (liveInventaris.reduce((sum, item) => sum + Number(item.totalBarang || 0), 0) || 9);
+  const approvals = liveStats?.persetujuanPj ?? (livePeminjaman.filter((row) => String(row.status || '').toLowerCase() === 'diajukan').length || 1);
   return `
     <div class="flex flex-col gap-3">
       <div class="relative flex min-h-[96px] flex-col items-center justify-between overflow-hidden rounded-2xl bg-primary px-5 py-3 text-white shadow-sm">
@@ -331,15 +334,16 @@ function renderRightBannerCards() {
 function renderManagementTable() {
   const isReturn = managementTab === 'pengembalian';
   const targetRoute = isReturn ? '#/kelola/pengembalian' : '#/kelola/peminjaman';
-  const allRows = livePeminjaman.map((row, index) => ({
-    id: String(row.id || row.idPeminjaman || index),
-    nama: row.peminjam?.nama || row.pengguna?.nama || row.namaPeminjam || 'Peminjam',
-    organisasi: row.inventaris?.namaOrganisasi || row.barang?.namaOrganisasi || row.barang?.organisasi || row.inventaris?.organisasi || '—',
-    barang: row.inventaris?.namaBarang || row.barang?.namaBarang || row.namaBarang || 'Barang inventaris',
+  const sourceRows = isReturn && livePengembalian.length ? livePengembalian : livePeminjaman;
+  const allRows = sourceRows.map((row, index) => ({
+    id: String(row.id || row.idPengembalian || row.idPeminjaman || index),
+    nama: row.peminjam?.nama || row.pengguna?.nama || row.namaPeminjam || row.nama || 'Peminjam',
+    organisasi: row.peminjam?.organisasi || row.okiPeminjam || row.inventaris?.namaOrganisasi || row.barang?.namaOrganisasi || row.barang?.organisasi || row.inventaris?.organisasi || row.organisasi || '—',
+    barang: row.inventaris?.namaBarang || row.barang?.namaBarang || row.barang?.nama || row.namaBarang || row.barang || 'Barang inventaris',
     mulai: row.startDate || row.mulai || row.tanggalMulai,
     pengambilan: row.tanggalPengambilan,
     selesai: row.endDate || row.selesai || row.tanggalSelesai,
-    tanggalKembali: row.tanggalPengembalian,
+    tanggalKembali: row.tanggalPengembalian || row.tanggalDikembalikan,
     jumlah: row.jumlahPinjam ?? row.jumlahUnit ?? 1,
     status: row.status || 'diajukan',
   }));
@@ -368,7 +372,7 @@ function renderManagementTable() {
       : `${actionButton('management-detail-loan', 'Lihat detail peminjaman', 'Info')}${pending ? `${actionButton('management-approve-loan', 'Setujui pengajuan', 'CircleCheck', 'text-green-600 hover:bg-green-50')}${actionButton('management-reject-loan', 'Tolak pengajuan', 'CircleX', 'text-red-600 hover:bg-red-50')}` : approved ? actionButton('management-pickup', 'Konfirmasi pengambilan', 'HandCoins', 'text-slate-400 hover:bg-slate-100') : ''}`;
     return `<tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50/60">
       <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${index + 1}</td>
-      <td class="min-w-[190px] px-4 py-3"><div class="flex items-center gap-2.5"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-semibold text-white">${escapeHtml(initials)}</span><span class="min-w-0"><span class="block truncate text-xs font-medium text-slate-500">${escapeHtml(row.nama)}</span><span class="mt-1 flex items-center gap-1.5 text-[11px] text-slate-700"><span class="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-100 text-[8px] font-bold text-amber-800">${escapeHtml(String(row.organisasi || 'O').slice(0, 1).toUpperCase())}</span>${escapeHtml(row.organisasi)}</span></span></div></td>
+      <td class="min-w-[190px] px-4 py-3"><div class="flex items-center gap-2.5"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary text-xs font-semibold text-white">${escapeHtml(initials)}</span><span class="min-w-0"><span class="block truncate text-xs font-medium text-slate-500">${escapeHtml(row.nama)}</span><span class="mt-1 flex items-center gap-1.5 text-[11px] text-slate-700">${renderOrganisasiLogo(row.organisasi, row.logoUrl, 'h-3.5 w-3.5')}${escapeHtml(row.organisasi)}</span></span></div></td>
       <td class="min-w-[150px] px-4 py-4 text-xs text-slate-400">${escapeHtml(row.barang)}</td>
       <td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(formatDateEnOrId(row.mulai))}</td>
       ${isReturn ? `<td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(formatDateEnOrId(row.selesai))}</td><td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(formatDateEnOrId(row.tanggalKembali))}</td>` : `<td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(approved || status === String(STATUS_PEMINJAMAN.DIPINJAM).toLowerCase() ? formatDateEnOrId(row.pengambilan) : '—')}</td><td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(formatDateEnOrId(row.selesai))}</td><td class="whitespace-nowrap px-4 py-4 text-center text-xs text-slate-400">${escapeHtml(row.jumlah)}</td>`}
@@ -435,7 +439,7 @@ function renderTable() {
           <td class="min-w-[180px] px-4 py-3">
             <div class="max-w-[220px] truncate text-xs font-medium text-slate-500" title="${escapeHtml(row.namaBarang)}">${escapeHtml(row.namaBarang)}</div>
             <div class="mt-1 flex items-center gap-1.5 text-[11px] font-medium text-slate-700">
-              <span class="inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[8px] font-bold ${orgBadgeCls}">${escapeHtml(orgInitial)}</span>
+              ${renderOrganisasiLogo(row.organisasi, row.logoUrl, 'h-3.5 w-3.5')}
               <span>${escapeHtml(row.organisasi)}</span>
             </div>
           </td>
@@ -501,7 +505,7 @@ function renderDetailModal() {
         <dl class="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 text-sm">
           <div>
             <dt class="text-xs text-slate-400">Organisasi</dt>
-            <dd class="mt-1 font-medium text-slate-700">${escapeHtml(detailRow.organisasi)}</dd>
+            <dd class="mt-1 font-medium text-slate-700 inline-flex items-center gap-1.5">${renderOrganisasiLogo(detailRow.organisasi, detailRow.logoUrl, 'h-4 w-4')}<span>${escapeHtml(detailRow.organisasi)}</span></dd>
           </div>
           <div>
             <dt class="text-xs text-slate-400">Status</dt>
@@ -597,7 +601,7 @@ function renderManagementModal() {
           ${isReturn && row.fotoKondisi ? `<div><p class="mb-2 text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Foto Kondisi Barang Saat Dikembalikan</p><img src="${escapeHtml(row.fotoKondisi)}" alt="Foto kondisi barang saat dikembalikan" class="max-h-48 rounded-xl object-contain"></div>` : ''}
           ${isReturn && row.sanksi ? `<div><p class="mb-2 text-base ${isReturn ? 'font-semibold' : 'font-medium'} text-slate-900">Sanksi</p><div class="rounded-2xl border border-slate-100 bg-white px-5 py-4 text-base text-slate-700">${escapeHtml(row.sanksi)}</div></div>` : ''}
         </div><div class="mt-6 flex justify-end"><button type="button" data-action="management-close" class="rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:brightness-110">Tutup</button></div>
-      </section>${isLate ? `<div id="dashboard-late-tooltip" role="tooltip" class="pointer-events-none whitespace-nowrap rounded-xl bg-white px-4 py-3 text-sm font-medium text-slate-900" style="display:none;position:fixed;z-index:100000;filter:drop-shadow(0 5px 12px rgba(15,23,42,0.22))">Waktu Terlambat: ${escapeHtml(row.waktuTerlambat || 3)} Hari<span aria-hidden="true" style="position:absolute;right:-5px;top:50%;width:10px;height:10px;background:#fff;border-radius:2px;transform:translateY(-50%) rotate(45deg)"></span></div>` : ''}</div>`;
+      </section>${isLate ? `<div id="dashboard-late-tooltip" role="tooltip" class="pointer-events-none whitespace-nowrap rounded-xl bg-white px-4 py-3 text-sm font-medium text-slate-900" style="display:none;position:fixed;z-index:100000;filter:drop-shadow(0 5px 12px rgba(15,23,42,0.22))">Waktu Terlambat: ${escapeHtml(row.waktuTerlambat || 3)} Hari<span aria-hidden="true" style="position:absolute;right:-5px;top:50%;width:10px;height:10px;background:white;border-radius:2px;transform:translateY(-50%) rotate(45deg)"></span></div>` : ''}</div>`;
   }
 
   if (managementModal === 'confirm-approve-loan') return renderModalComponent({ variant: 'approve', title: 'Setujui pengajuan peminjaman?', description: 'Saya yakin ingin menyetujui peminjaman ini', actions: [close, action('Setujui','management-execute-approve-loan','default','w-1/2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700')] });
@@ -768,16 +772,30 @@ export async function mount(root, ctx = {}) {
   managementReturnSanksi = '';
   managementReturnPhotoError = '';
 
-  try {
-    const [loans, pjRequests, inventoryResult] = await Promise.all([getPeminjaman(), getRequestPj(), getInventarisKelola()]);
-    livePeminjaman = Array.isArray(loans) ? loans : [];
-    liveRequestPj = Array.isArray(pjRequests) ? pjRequests : [];
-    liveInventaris = Array.isArray(inventoryResult?.data) ? inventoryResult.data : [];
-  } catch {
-    livePeminjaman = [];
-    liveRequestPj = [];
-    liveInventaris = [];
-  }
+  const reloadData = async () => {
+    try {
+      const [loans, returns, pjRequests, inventoryResult, stats] = await Promise.all([
+        getKelolaPeminjaman().catch(() => getPeminjaman()),
+        getKelolaPengembalian().catch(() => []),
+        getRequestPj().catch(() => []),
+        getInventarisKelola().catch(() => ({ data: [] })),
+        getDashboardPjStats().catch(() => null),
+      ]);
+      livePeminjaman = Array.isArray(loans) ? loans : [];
+      livePengembalian = Array.isArray(returns) ? returns : [];
+      liveRequestPj = Array.isArray(pjRequests) ? pjRequests : [];
+      liveInventaris = Array.isArray(inventoryResult?.data) ? inventoryResult.data : [];
+      liveStats = stats;
+    } catch {
+      livePeminjaman = [];
+      livePengembalian = [];
+      liveRequestPj = [];
+      liveInventaris = [];
+      liveStats = null;
+    }
+  };
+
+  await reloadData();
 
   if (rootElement) {
     rootElement.innerHTML = renderDashboardContent(ctx);
@@ -798,7 +816,9 @@ export async function mount(root, ctx = {}) {
       try { dateInput?.showPicker?.(); } catch { dateInput?.focus(); }
       return;
     }
-    const findManagementRow = (id) => livePeminjaman.find((row) => String(row.id || row.idPeminjaman) === String(id)) || null;
+    const findManagementRow = (id) =>
+      livePeminjaman.find((row) => String(row.id || row.idPeminjaman) === String(id)) ||
+      livePengembalian.find((row) => String(row.id || row.idPengembalian || row.idPeminjaman) === String(id)) || null;
     const setManagementModal = (name, id = actionEl.dataset.id) => {
       managementModalRow = findManagementRow(id);
       managementModal = managementModalRow ? name : null;
@@ -827,7 +847,8 @@ export async function mount(root, ctx = {}) {
       const id = managementModalRow?.id || managementModalRow?.idPeminjaman;
       try {
         await updateMockPeminjamanStatus(id, action === 'management-execute-approve-loan' ? STATUS_PEMINJAMAN.DISETUJUI : STATUS_PEMINJAMAN.DITOLAK, action === 'management-execute-reject-loan' ? { alasanPenolakan: managementRejectReason } : {});
-        livePeminjaman = await getPeminjaman(); managementNotice = action === 'management-execute-approve-loan' ? 'Pengajuan berhasil disetujui.' : 'Pengajuan berhasil ditolak.';
+        await reloadData();
+        managementNotice = action === 'management-execute-approve-loan' ? 'Pengajuan berhasil disetujui.' : 'Pengajuan berhasil ditolak.';
         managementModal = action === 'management-execute-approve-loan' ? 'success-approve-loan' : 'success-reject-loan'; managementError = ''; refreshDashboard();
       } catch (error) { managementError = error?.message || 'Status pengajuan gagal diperbarui.'; refreshDashboard(); }
       return;
@@ -836,7 +857,7 @@ export async function mount(root, ctx = {}) {
     if (action === 'management-submit-pickup') {
       managementPickupDate = rootElement.querySelector('#dashboard-pickup-date')?.value || '';
       if (!managementPickupDate) { managementError = 'Tanggal pengambilan wajib diisi.'; refreshDashboard(); return; }
-      try { await updateMockPeminjamanPickup(managementModalRow?.id || managementModalRow?.idPeminjaman, { tanggalPengambilan: managementPickupDate, fotoPengambilan: managementPickupPhoto }); livePeminjaman = await getPeminjaman(); managementModal = null; managementModalRow = null; managementError = ''; refreshDashboard(); }
+      try { await updateMockPeminjamanPickup(managementModalRow?.id || managementModalRow?.idPeminjaman, { tanggalPengambilan: managementPickupDate, fotoPengambilan: managementPickupPhoto }); await reloadData(); managementModal = null; managementModalRow = null; managementError = ''; refreshDashboard(); }
       catch (error) { managementError = error?.message || 'Pengambilan gagal dikonfirmasi.'; refreshDashboard(); }
       return;
     }
@@ -858,8 +879,9 @@ export async function mount(root, ctx = {}) {
     if (action === 'management-choose-pickup-photo') { rootElement.querySelector('#dashboard-pickup-photo')?.click(); return; }
     if (action === 'management-execute-approve-return') {
       try {
-        await updateMockPengembalianStatus(managementModalRow?.id || managementModalRow?.idPeminjaman, STATUS_PEMINJAMAN.DIKEMBALIKAN, { tanggalPengembalian: managementReturnDate, sanksi: managementReturnSanksi, kondisiPengembalian: managementReturnCondition, fotoKondisi: managementReturnPhoto });
-        livePeminjaman = await getPeminjaman(); managementModal = 'success-approve-return'; managementError = '';
+        await updateMockPengembalianStatus(managementModalRow?.id || managementModalRow?.idPengembalian || managementModalRow?.idPeminjaman, STATUS_PEMINJAMAN.DIKEMBALIKAN, { tanggalPengembalian: managementReturnDate, sanksi: managementReturnSanksi, kondisiPengembalian: managementReturnCondition, fotoKondisi: managementReturnPhoto });
+        await reloadData();
+        managementModal = 'success-approve-return'; managementError = '';
         refreshDashboard();
       } catch (error) { managementError = error?.message || 'Pengembalian gagal dikonfirmasi.'; managementModal = 'form-approve-return'; refreshDashboard(); }
       return;
@@ -876,7 +898,7 @@ export async function mount(root, ctx = {}) {
     }
     if (action === 'management-back-reject-return') { managementModal = 'reject-return'; managementError = ''; refreshDashboard(); return; }
     if (action === 'management-execute-reject-return') {
-      try { await updateMockPengembalianStatus(managementModalRow?.id || managementModalRow?.idPeminjaman, STATUS_PEMINJAMAN.DITOLAK, { alasanPenolakan: managementReturnReason }); livePeminjaman = await getPeminjaman(); managementModal = 'success-reject-return'; managementError = ''; refreshDashboard(); }
+      try { await updateMockPengembalianStatus(managementModalRow?.id || managementModalRow?.idPengembalian || managementModalRow?.idPeminjaman, STATUS_PEMINJAMAN.DITOLAK, { alasanPenolakan: managementReturnReason }); await reloadData(); managementModal = 'success-reject-return'; managementError = ''; refreshDashboard(); }
       catch (error) { managementError = error?.message || 'Pengembalian gagal ditolak.'; managementModal = 'confirm-reject-return'; refreshDashboard(); }
       return;
     }
