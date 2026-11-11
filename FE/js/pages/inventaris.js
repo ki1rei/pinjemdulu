@@ -534,23 +534,27 @@ export async function mount(root, ctx = {}) {
       const totalPages = Math.max(1, Math.ceil(total / KATALOG_DEFAULTS.LIMIT));
 
       if (items.length === 0) {
+        const hasActiveFilters =
+          currentCari.trim() !== '' ||
+          currentKategoriIds.length > 0 ||
+          currentOkiIds.length > 0;
         resultsArea.innerHTML = html`
-          <div class="rounded-2xl border border-dashed border-zinc-300 bg-white px-4 py-12 text-center">
-            <h2 class="text-base font-semibold text-zinc-900 sm:text-lg">
-              Barang tidak ditemukan
-            </h2>
-            <p class="mx-auto mt-2 max-w-md text-sm text-zinc-500">
-              Coba ubah kata kunci pencarian atau atur ulang filter kategori dan OKI.
-            </p>
-            <div class="mt-5">
-              <button
-                type="button"
-                data-action="reset-filters"
-                class="${buttonClass({ variant: 'outline' })} rounded-xl"
-              >
-                Atur Ulang Filter
-              </button>
-            </div>
+          <div class="rounded-2xl border border-dashed border-zinc-200 bg-white px-4 py-12 text-center">
+            <img src="assets/animations/empty-state.gif" alt="Belum ada data" class="mx-auto h-32 w-32 sm:h-36 sm:w-36 object-contain select-none pointer-events-none" />
+            <p class="mt-4 text-sm font-medium text-slate-600 sm:text-base">Belum ada data untuk ditampilkan</p>
+            ${hasActiveFilters
+              ? html`
+                <div class="mt-5">
+                  <button
+                    type="button"
+                    data-action="reset-filters"
+                    class="${buttonClass({ variant: 'outline' })} rounded-xl"
+                  >
+                    Atur Ulang Filter
+                  </button>
+                </div>
+              `
+              : ''}
           </div>
         `.toString();
         return;
