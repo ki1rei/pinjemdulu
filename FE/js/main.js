@@ -184,6 +184,17 @@ function initApp() {
     route();
   });
 
+  // Perbarui badge sidebar setiap data peminjaman berubah (buat pengajuan,
+  // persetujuan/penolakan, konfirmasi pengambilan, dan proses pengembalian).
+  window.addEventListener('pd:peminjaman-changed', () => {
+    renderShell();
+  });
+
+  // Perbarui badge saat notifikasi pada tab/page ditandai sudah dibaca.
+  window.addEventListener('pd:notifications-changed', () => {
+    renderShell();
+  });
+
   checkSession().catch(() => {});
   route();
 }
