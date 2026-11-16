@@ -10,6 +10,7 @@ import { renderNavbar } from './ui/navbar.js';
 import { renderFooter } from './ui/footer.js';
 import { handleRouteChange, navigate } from './router.js';
 import { getPageTitle } from './lib/navigation.js';
+import { refreshBadges, resetLiveBadgeCounts } from './services/badge.js';
 
 function initApp() {
   if (typeof document === 'undefined') return;
@@ -179,6 +180,9 @@ function initApp() {
     }
     renderShell();
     const user = getUser();
+    if (user) {
+      refreshBadges().catch(() => {});
+    }
     await handleRouteChange(mainEl, { user });
     renderShell();
   }
@@ -254,13 +258,19 @@ function initApp() {
     route();
   });
 
-  window.addEventListener('pd:session-change', () => {
+  window.addEventListener('pd:session-change', (e) => {
+    if (!e?.detail) {
+      resetLiveBadgeCounts();
+    } else {
+      refreshBadges().catch(() => {});
+    }
     route();
   });
 
   // Perbarui badge sidebar setiap data peminjaman berubah (buat pengajuan,
   // persetujuan/penolakan, konfirmasi pengambilan, dan proses pengembalian).
   window.addEventListener('pd:peminjaman-changed', () => {
+    refreshBadges().catch(() => {});
     renderShell();
   });
 
@@ -269,7 +279,9 @@ function initApp() {
     renderShell();
   });
 
-  checkSession().catch(() => {});
+  checkSession().then((u) => {
+    if (u) refreshBadges().catch(() => {});
+  }).catch(() => {});
   route();
 }
 
