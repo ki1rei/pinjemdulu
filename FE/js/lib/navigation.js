@@ -1,6 +1,34 @@
 import { ROLES, STATUS_PEMINJAMAN, STATUS_REQUEST_PJ } from './constants.js';
 import { mockPeminjaman } from '../data/peminjaman.js';
 import { mockRequestPj } from '../data/request-pj.js';
+import { isMockEnabled } from '../services/client.js';
+
+let liveBadgeCounts = {
+  'nav-pengajuan-saya-peminjaman': 0,
+  'nav-pengajuan-saya-pengembalian': 0,
+  'nav-kelola-peminjaman': 0,
+  'nav-kelola-pengembalian': 0,
+  'nav-list-pengajuan-pj': 0,
+  'nav-kelola-pengguna': 0,
+};
+
+export function setLiveBadgeCounts(counts) {
+  liveBadgeCounts = { ...liveBadgeCounts, ...(counts || {}) };
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('pd:notifications-changed'));
+  }
+}
+
+export function resetLiveBadgeCounts() {
+  liveBadgeCounts = {
+    'nav-pengajuan-saya-peminjaman': 0,
+    'nav-pengajuan-saya-pengembalian': 0,
+    'nav-kelola-peminjaman': 0,
+    'nav-kelola-pengembalian': 0,
+    'nav-list-pengajuan-pj': 0,
+    'nav-kelola-pengguna': 0,
+  };
+}
 
 /**
  * Label tampilan peran (untuk sidebar, header, dsb.)
@@ -28,6 +56,7 @@ function notificationReadKey(item) {
 
 /** Tandai seluruh data pada tab/status yang dibuka sebagai sudah dibaca. */
 export function markNotificationsRead(groupKey, statuses, items = null) {
+  if (!isMockEnabled()) return;
   const source = items || (groupKey === 'request-pj' ? mockRequestPj : mockPeminjaman);
   const normalized = new Set(statuses.map((value) => String(value).trim().toLowerCase()));
   const matchedKeys = source
@@ -232,32 +261,38 @@ function withBadges(items, counts) {
  * List Pengajuan PJ = Menunggu.
  */
 export function getNavForRole(role) {
-  const peminjamanSaya = countUnreadStatus(mockPeminjaman, [
-    STATUS_PEMINJAMAN.DISETUJUI, STATUS_PEMINJAMAN.DIPINJAM, STATUS_PEMINJAMAN.DITOLAK,
-  ], 'peminjaman-saya');
-  const pengembalianSaya = countUnreadStatus(mockPeminjaman, [
-    STATUS_PEMINJAMAN.DIKEMBALIKAN, STATUS_PEMINJAMAN.TERLAMBAT, STATUS_PEMINJAMAN.DITOLAK,
-  ], 'pengembalian-saya');
-  const diajukan = countUnreadStatus(mockPeminjaman, [STATUS_PEMINJAMAN.DIAJUKAN], 'kelola-peminjaman');
-  const menungguPengembalian = countUnreadStatus(mockPeminjaman, [
-    STATUS_PEMINJAMAN.MENUNGGU_KONFIRMASI_PENGEMBALIAN,
-  ], 'kelola-pengembalian');
-  const requestMenunggu = countUnreadStatus(mockRequestPj, [STATUS_REQUEST_PJ.MENUNGGU], 'request-pj');
+  let counts = {};
 
-  if (role === ROLES.PEMINJAM) {
-    return withBadges(NAV_PEMINJAM, {
-      'nav-pengajuan-saya-peminjaman': peminjamanSaya,
-      'nav-pengajuan-saya-pengembalian': pengembalianSaya,
-    });
-  }
-  if (role === ROLES.PENANGGUNG_JAWAB) {
-    return withBadges(NAV_PENANGGUNG_JAWAB, {
+  if (isMockEnabled()) {
+    const peminjamanSaya = countUnreadStatus(mockPeminjaman, [
+      STATUS_PEMINJAMAN.DISETUJUI, STATUS_PEMINJAMAN.DIPINJAM, STATUS_PEMINJAMAN.DITOLAK,
+    ], 'peminjaman-saya');
+    const pengembalianSaya = countUnreadStatus(mockPeminjaman, [
+      STATUS_PEMINJAMAN.DIKEMBALIKAN, STATUS_PEMINJAMAN.TERLAMBAT, STATUS_PEMINJAMAN.DITOLAK,
+    ], 'pengembalian-saya');
+    const diajukan = countUnreadStatus(mockPeminjaman, [STATUS_PEMINJAMAN.DIAJUKAN], 'kelola-peminjaman');
+    const menungguPengembalian = countUnreadStatus(mockPeminjaman, [
+      STATUS_PEMINJAMAN.MENUNGGU_KONFIRMASI_PENGEMBALIAN,
+    ], 'kelola-pengembalian');
+    const requestMenunggu = countUnreadStatus(mockRequestPj, [STATUS_REQUEST_PJ.MENUNGGU], 'request-pj');
+
+    counts = {
       'nav-pengajuan-saya-peminjaman': peminjamanSaya,
       'nav-pengajuan-saya-pengembalian': pengembalianSaya,
       'nav-kelola-peminjaman': diajukan,
       'nav-kelola-pengembalian': menungguPengembalian,
       'nav-list-pengajuan-pj': requestMenunggu,
-    });
+      'nav-kelola-pengguna': 0,
+    };
+  } else {
+    counts = liveBadgeCounts;
+  }
+
+  if (role === ROLES.PEMINJAM) {
+    return withBadges(NAV_PEMINJAM, counts);
+  }
+  if (role === ROLES.PENANGGUNG_JAWAB) {
+    return withBadges(NAV_PENANGGUNG_JAWAB, counts);
   }
   return [];
 }
@@ -298,7 +333,7 @@ export function getPageTitle(hash = '') {
   if (clean === '#/kelola/inventaris/tambah') return { title: 'Tambah Barang', icon: 'Inbox' };
   if (/^#\/kelola\/inventaris\/[^/]+\/ubah$/.test(clean)) return { title: 'Kelola Inventaris', icon: 'Inbox' };
   if (clean === '#/kelola/inventaris') return { title: 'Kelola Inventaris', icon: 'Inbox' };
-  if (clean === '#/kelola/kategori') return { title: 'Kelola Inventaris', icon: 'Inbox' };
+  if (clean === '#/kelola/kategori') return { title: 'Kelola Kategori', icon: 'FolderTree' };
   if (clean === '#/kelola/peminjaman') return { title: 'Kelola Peminjaman', icon: 'Sliders' };
   if (clean === '#/kelola/pengembalian') return { title: 'Kelola Pengembalian', icon: 'Sliders' };
   if (clean === '#/kelola/pengajuan-pj') return { title: 'List Pengajuan PJ', icon: 'Sliders' };
