@@ -383,9 +383,21 @@ export function mount(root) {
         hasError = true;
       }
 
+      const whatsappDigits = whatsapp.replace(/\D/g, '');
+      const normalizedWhatsappDigits = whatsappDigits.startsWith('62')
+        ? whatsappDigits.slice(2)
+        : whatsappDigits.replace(/^0+/, '');
+
       if (!whatsapp) {
         if (whatsappError) {
           whatsappError.textContent = 'Nomor WhatsApp wajib diisi.';
+          whatsappError.classList.remove('hidden');
+        }
+        whatsappInput?.setAttribute('aria-invalid', 'true');
+        hasError = true;
+      } else if (normalizedWhatsappDigits.length < 10) {
+        if (whatsappError) {
+          whatsappError.textContent = 'Nomor WhatsApp minimal 10 angka.';
           whatsappError.classList.remove('hidden');
         }
         whatsappInput?.setAttribute('aria-invalid', 'true');
