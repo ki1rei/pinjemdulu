@@ -376,22 +376,41 @@ export async function lupaPassword(payload) {
     err.errors = { noWhatsapp: 'Nomor WhatsApp wajib diisi' };
     throw err;
   }
-  if (!/^[0-9+]{8,20}$/.test(waStr)) {
-    const err = new Error('No WhatsApp hanya boleh angka dan +, 8 sampai 20 karakter');
+  const whatsappDigits = waStr.replace(/\D/g, '');
+  const normalizedWhatsappDigits = whatsappDigits.startsWith('62')
+    ? whatsappDigits.slice(2)
+    : whatsappDigits.replace(/^0+/, '');
+  if (!/^[0-9+\s()-]+$/.test(waStr) || normalizedWhatsappDigits.length < 10 || normalizedWhatsappDigits.length > 20) {
+    const message = 'Nomor WhatsApp harus terdiri dari minimal 10 angka.';
+    const err = new Error(message);
     err.statusCode = 422;
-    err.errors = { noWhatsapp: 'No WhatsApp hanya boleh angka dan +, 8 sampai 20 karakter' };
+    err.errors = { noWhatsapp: message };
     throw err;
   }
 
   if (isMockEnabled()) {
     await delay(30);
-    const exists = getUsersMock().some((u) => String(u.nim || '').trim() === nimStr);
-    if (!exists) {
+    const user = getUsersMock().find((u) => String(u.nim || '').trim() === nimStr);
+    if (!user) {
       const err = new Error('NIM tidak terdaftar');
       err.statusCode = 404;
       err.code = 'NIM_TIDAK_TERDAFTAR';
       throw err;
     }
+
+    const savedWhatsapp = String(user.noWhatsapp || user.no_whatsapp || '').replace(/\D/g, '');
+    const normalizeWhatsapp = (digits) => (
+      digits.startsWith('62') ? digits.slice(2) : digits.replace(/^0+/, '')
+    );
+    if (!savedWhatsapp || normalizeWhatsapp(savedWhatsapp) !== normalizeWhatsapp(whatsappDigits)) {
+      const message = 'Nomor WhatsApp tidak sesuai dengan NIM tersebut.';
+      const err = new Error(message);
+      err.statusCode = 422;
+      err.code = 'WHATSAPP_TIDAK_SESUAI';
+      err.errors = { noWhatsapp: message };
+      throw err;
+    }
+
     return { message: 'Permintaan ubah password dikirim ke penanggung jawab OKI Anda' };
   }
 
