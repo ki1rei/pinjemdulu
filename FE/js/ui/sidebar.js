@@ -374,11 +374,14 @@ export function renderMobileDrawer({ user = null, currentHash = '#/dashboard-pem
             alt="Logo PinjemDulu"
             class="h-11 w-11 shrink-0 rounded-[12px] object-contain shadow-sm"
           />
-          <div class="flex min-w-0 flex-col leading-tight">
-            <span class="truncate text-[20px] font-bold tracking-tight">
+          <div class="flex min-w-0 flex-col leading-none">
+            <span class="whitespace-nowrap font-bold tracking-tight" style="font-size: 24px; line-height: 1;">
               <span class="text-zinc-900">Pinjem</span><span class="text-primary">Dulu</span>
             </span>
-            <span class="mt-1.5 truncate text-[8px] font-semibold uppercase tracking-[0.26em] text-zinc-500">
+            <span
+              style="letter-spacing: 0.24em;"
+              class="mt-0.5 truncate text-[8px] font-semibold uppercase text-zinc-500"
+            >
               INVENTARIS OKI KAMPUS
             </span>
           </div>
