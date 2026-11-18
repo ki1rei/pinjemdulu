@@ -40,8 +40,17 @@ function renderModal() {
       description: 'Periksa kembali data yang akan anda kirim',
       variant: 'send',
       actions: [
-        { label: 'Kembali', action: 'back-reset-form', variant: 'outline' },
-        { label: 'Kirim', action: 'confirm-reset-password' },
+        {
+          label: 'Kembali',
+          action: 'back-reset-form',
+          variant: 'outline',
+          className: 'flex-1',
+        },
+        {
+          label: 'Kirim',
+          action: 'confirm-reset-password',
+          className: 'flex-1',
+        },
       ],
     }).toString();
   }
@@ -51,7 +60,7 @@ function renderModal() {
       title: 'Ubah Password berhasil!',
       description: 'Anda telah berhasil mengubah password',
       variant: 'success',
-      actions: [{ label: 'Kembali', action: 'back-to-login' }],
+      actions: [{ label: 'Kembali', action: 'back-to-login', className: 'w-full rounded-xl transition-all duration-200 hover:brightness-110' }],
     }).toString();
   }
   return '';
@@ -88,7 +97,17 @@ export function render(ctx = {}) {
               ${passwordField('reset-password-baru', 'Password Baru')}
               ${passwordField('reset-konfirmasi-password', 'Konfirmasi Password')}
               <p id="reset-password-error" role="alert" class="text-xs text-rose-600 ${formError ? '' : 'hidden'}">${formError}</p>
-              <button type="submit" class="${buttonClass({ variant: 'default', size: 'lg' })} h-12 w-full rounded-xl">Ubah Password</button>
+              <div class="flex w-full items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  data-action="cancel-reset-password"
+                  class="${buttonClass({ variant: 'outline', size: 'default', className: 'h-11 w-full min-w-0 flex-1 transition-colors duration-200' })}"
+                >Batal</button>
+                <button
+                  type="submit"
+                  class="${buttonClass({ variant: 'default', size: 'default', className: 'h-11 w-full min-w-0 flex-1 transition-colors duration-200' })}"
+                >Kirim</button>
+              </div>
             </form>
           `}
         </section>
@@ -110,6 +129,14 @@ export function mount(root, ctx = {}) {
     if (action === 'toggle-password') {
       const input = root.querySelector(`#${actionElement.dataset.target}`);
       if (input) input.type = input.type === 'password' ? 'text' : 'password';
+      return;
+    }
+    if (action === 'cancel-reset-password') {
+      modalMode = null;
+      formError = '';
+      pendingPassword = '';
+      pendingConfirmation = '';
+      navigate('#/login');
       return;
     }
     if (action === 'back-reset-form') {
