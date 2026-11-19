@@ -2465,8 +2465,8 @@ select option:hover {
 }
 
 .px-4 {
-    padding-left: 1rem;
-    padding-right: 1rem
+    padding-left: 1.25rem;
+    padding-right: .7rem
 }
 
 .px-5 {
