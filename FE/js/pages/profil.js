@@ -6,7 +6,7 @@ import { escapeHtml } from '../ui/html.js';
 import { renderIcon } from '../ui/icons.js';
 import { ROLES } from '../lib/constants.js';
 import { renderModal as renderModalComponent } from '../ui/modal.js';
-import { ubahPassword, ubahWhatsapp } from '../services/auth.js';
+import { ubahPassword, ubahWhatsapp, cekPassword } from '../services/auth.js';
 import { renderOrganisasiLogo } from '../ui/organisasi-badge.js';
 
 let rootElement = null;
@@ -366,7 +366,7 @@ export function mount(root, ctx = {}) {
     }
   };
 
-  submitHandler = (event) => {
+  submitHandler = async (event) => {
     if (event.target.id === 'password-form') {
       event.preventDefault();
       const form = new FormData(event.target);
@@ -375,18 +375,34 @@ export function mount(root, ctx = {}) {
       const confirmation = String(form.get('konfirmasi-password') || '').trim();
       if (!current || !next || !confirmation) {
         passwordError = 'Semua field password wajib diisi.';
-      } else if (next === current) {
+        rootElement.innerHTML = render(ctx);
+        return;
+      }
+      if (next === current) {
         passwordError = 'Password baru tidak boleh sama dengan password saat ini.';
-      } else if (next.length < 8) {
+        rootElement.innerHTML = render(ctx);
+        return;
+      }
+      if (next.length < 8) {
         passwordError = 'Password baru minimal 8 karakter.';
-      } else if (next !== confirmation) {
+        rootElement.innerHTML = render(ctx);
+        return;
+      }
+      if (next !== confirmation) {
         passwordError = 'Konfirmasi password baru tidak cocok.';
-      } else {
+        rootElement.innerHTML = render(ctx);
+        return;
+      }
+
+      try {
+        await cekPassword({ passwordLama: current, passwordBaru: next });
         pendingPasswordLama = current;
         pendingPasswordBaru = next;
         pendingKonfirmasiPassword = confirmation;
         passwordError = '';
         modalMode = 'password-confirm';
+      } catch (err) {
+        passwordError = err?.message || 'Password baru tidak boleh sama dengan password saat ini.';
       }
       rootElement.innerHTML = render(ctx);
     } else if (event.target.id === 'whatsapp-form') {

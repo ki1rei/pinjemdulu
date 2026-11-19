@@ -263,6 +263,57 @@ export async function getCurrentUser(userId) {
 }
 
 /**
+ * Layanan Cek Password Sebelum Mengubah Password.
+ * Memastikan password baru tidak sama dengan password saat ini dan password saat ini valid.
+ * @param {{ passwordLama: string, passwordBaru: string }} payload
+ * @returns {Promise<{ valid: boolean, message: string }>}
+ */
+export async function cekPassword(payload) {
+  const { passwordLama, passwordBaru } = payload || {};
+  const current = String(passwordLama || '').trim();
+  const next = String(passwordBaru || '').trim();
+
+  if (!current) {
+    const err = new Error('Password saat ini wajib diisi');
+    err.statusCode = 422;
+    err.errors = { passwordLama: 'Password saat ini wajib diisi' };
+    throw err;
+  }
+  if (!next) {
+    const err = new Error('Password baru wajib diisi');
+    err.statusCode = 422;
+    err.errors = { passwordBaru: 'Password baru minimal 8 karakter' };
+    throw err;
+  }
+  if (next.length < 8) {
+    const err = new Error('Password baru minimal 8 karakter');
+    err.statusCode = 422;
+    err.errors = { passwordBaru: 'Password baru minimal 8 karakter' };
+    throw err;
+  }
+  if (next === current) {
+    const err = new Error('Password baru tidak boleh sama dengan password saat ini.');
+    err.statusCode = 422;
+    err.code = 'PASSWORD_SAMA';
+    err.errors = { passwordBaru: 'Password baru tidak boleh sama dengan password saat ini.' };
+    throw err;
+  }
+
+  if (isMockEnabled()) {
+    await delay(30);
+    return { valid: true, message: 'Password valid dan dapat digunakan' };
+  }
+
+  return await apiFetch('/api/cek-password', {
+    method: 'POST',
+    body: {
+      passwordLama: current,
+      passwordBaru: next,
+    },
+  });
+}
+
+/**
  * Layanan Ubah Password.
  * @param {{ passwordLama: string, passwordBaru: string, konfirmasiPassword: string }} payload
  * @returns {Promise<{ message: string, token?: string, user?: object }>}
@@ -286,6 +337,13 @@ export async function ubahPassword(payload) {
     const err = new Error('Konfirmasi password harus sama dengan password baru');
     err.statusCode = 422;
     err.errors = { konfirmasiPassword: 'Konfirmasi password harus sama dengan password baru' };
+    throw err;
+  }
+  if (passwordBaru === passwordLama) {
+    const err = new Error('Password baru tidak boleh sama dengan password saat ini.');
+    err.statusCode = 422;
+    err.code = 'PASSWORD_SAMA';
+    err.errors = { passwordBaru: 'Password baru tidak boleh sama dengan password saat ini.' };
     throw err;
   }
 
