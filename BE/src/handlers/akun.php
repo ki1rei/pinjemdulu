@@ -50,6 +50,46 @@ function h_me(array $p): void
     json_out(user_payload(require_login()));
 }
 
+function h_cek_password(array $p): void
+{
+    $u = me();
+    $err = [];
+    $b = body();
+    $lama = $b['passwordLama'] ?? $b['passwordSaatIni'] ?? '';
+    $baru = $b['passwordBaru'] ?? '';
+
+    if (!is_string($lama) || $lama === '') {
+        $err['passwordLama'] = 'Password saat ini wajib diisi';
+    }
+    if (!is_string($baru) || $baru === '') {
+        $err['passwordBaru'] = 'Password baru wajib diisi';
+    } elseif (mb_strlen($baru) < 8) {
+        $err['passwordBaru'] = 'Password baru minimal 8 karakter';
+    }
+
+    if (is_string($lama) && is_string($baru) && $lama !== '' && $baru !== '' && $lama === $baru) {
+        $err['passwordBaru'] = 'Password baru tidak boleh sama dengan password saat ini';
+    }
+
+    validasi_selesai($err);
+
+    $hash = (string) db_val('SELECT password_hash FROM pengguna WHERE nim = :nim', ['nim' => $u['nim']]);
+    if ($hash === '' || !password_verify($lama, $hash)) {
+        fail(422, 'PASSWORD_LAMA_SALAH', 'Password saat ini salah', ['passwordLama' => 'Password saat ini salah']);
+    }
+
+    if (password_verify($baru, $hash)) {
+        fail(422, 'PASSWORD_SAMA', 'Password baru tidak boleh sama dengan password saat ini', [
+            'passwordBaru' => 'Password baru tidak boleh sama dengan password saat ini',
+        ]);
+    }
+
+    json_out([
+        'valid' => true,
+        'message' => 'Password valid dan dapat digunakan',
+    ]);
+}
+
 function h_ubah_password(array $p): void
 {
     $u = me();
@@ -67,6 +107,9 @@ function h_ubah_password(array $p): void
     }
     if ($konf !== $baru) {
         $err['konfirmasiPassword'] = 'Konfirmasi password harus sama dengan password baru';
+    }
+    if (is_string($lama) && is_string($baru) && $lama !== '' && $baru !== '' && $lama === $baru) {
+        $err['passwordBaru'] = 'Password baru tidak boleh sama dengan password saat ini';
     }
     validasi_selesai($err);
 
