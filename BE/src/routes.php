@@ -11,6 +11,7 @@ return [
     ['GET',  '/api/health',                       'h_health',               'public'],
     ['POST', '/api/login',                        'h_login',                'public'],
     ['POST', '/api/lupa-password',                'h_lupa_password',        'public'],
+    ['GET',  '/api/reset-password/cek',           'h_cek_token_reset',      'public'],
     ['POST', '/api/reset-password',               'h_reset_password',       'public'],
     ['GET',  '/api/berkas/{path}',                'h_berkas',               'public'],
 

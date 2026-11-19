@@ -481,6 +481,42 @@ export async function lupaPassword(payload) {
   });
 }
 
+const PESAN_TAUTAN_TIDAK_VALID = 'Tautan tidak valid, sudah dipakai atau kedaluwarsa';
+
+function tautanTidakValidError() {
+  const err = new Error(PESAN_TAUTAN_TIDAK_VALID);
+  err.statusCode = 400;
+  err.code = 'TAUTAN_TIDAK_VALID';
+  return err;
+}
+
+/**
+ * Layanan Cek Token Reset Password.
+ * Dipanggil saat halaman ubah password pertama kali dibuka. Hanya MEMERIKSA token
+ * (GET /api/reset-password/cek) tanpa mengonsumsinya, sehingga tautan yang sudah
+ * dipakai/kedaluwarsa bisa langsung ditolak sebelum user mengisi form.
+ * Mode mock: token berawalan "dipakai", "expired", "kedaluwarsa" atau "invalid" dianggap tidak valid.
+ * @param {{ token: string }} payload
+ * @returns {Promise<{ valid: boolean }>}
+ * @throws {Error} statusCode 400 + code TAUTAN_TIDAK_VALID bila tautan tidak bisa dipakai
+ */
+export async function cekTokenReset(payload) {
+  const tokenStr = String(payload?.token || '').trim();
+  if (!tokenStr) {
+    throw tautanTidakValidError();
+  }
+
+  if (isMockEnabled()) {
+    await delay(30);
+    if (/^(dipakai|used|expired|kedaluwarsa|invalid)/i.test(tokenStr)) {
+      throw tautanTidakValidError();
+    }
+    return { valid: true };
+  }
+
+  return await apiFetch(`/api/reset-password/cek?token=${encodeURIComponent(tokenStr)}`);
+}
+
 /**
  * Layanan Reset Password menggunakan token tautan.
  * @param {{ token: string, passwordBaru: string, konfirmasiPassword: string }} payload

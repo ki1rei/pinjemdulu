@@ -186,6 +186,37 @@ function h_ubah_whatsapp(array $p): void
     json_out(['message' => 'Nomor WhatsApp berhasil diubah', 'noWhatsapp' => $wa]);
 }
 
+/**
+ * GET /api/reset-password/cek?token=... : memeriksa apakah tautan ubah password masih bisa dipakai.
+ * Hanya MEMBACA (SELECT biasa) -- token TIDAK dipakai/dikonsumsi. Token baru dikonsumsi saat
+ * POST /api/reset-password dipanggil. Dipanggil FE saat halaman ubah password pertama kali dibuka.
+ * Syaratnya sama persis dengan sp_reset_password_dengan_token (belum dipakai, belum kedaluwarsa).
+ */
+function h_cek_token_reset(array $p): void
+{
+    $token = qs('token');
+    if ($token === '' || mb_strlen($token) > 200) {
+        fail(400, 'TAUTAN_TIDAK_VALID', 'Tautan tidak valid, sudah dipakai, atau kedaluwarsa');
+    }
+
+    rl_check('reset-cek-ip:' . client_ip(), 30, 900);
+    // SHA-256 heks di PHP identik dengan encode(digest(token, 'sha256'), 'hex') di PostgreSQL.
+    $ada = db_one(
+        "SELECT 1 AS ok
+           FROM request_password
+          WHERE token_hash = :h
+            AND status IN ('Menunggu', 'Dikonfirmasi')
+            AND token_dipakai_pada IS NULL
+            AND token_kedaluwarsa > now()",
+        ['h' => hash('sha256', $token)]
+    );
+    if ($ada === null) {
+        rl_hit('reset-cek-ip:' . client_ip(), 900);
+        fail(400, 'TAUTAN_TIDAK_VALID', 'Tautan tidak valid, sudah dipakai, atau kedaluwarsa');
+    }
+    json_out(['valid' => true]);
+}
+
 function h_reset_password(array $p): void
 {
     $err = [];

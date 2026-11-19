@@ -1,11 +1,11 @@
 /** Halaman reset password publik dari tautan request ubah password. */
 
 import { html, raw, escapeHtml } from '../ui/html.js';
-import { inputClass, labelClass, buttonClass } from '../ui/classes.js';
+import { inputClass, labelClass, buttonClass, alertClass } from '../ui/classes.js';
 import { renderIcon } from '../ui/icons.js';
 import { renderModal as renderModalComponent } from '../ui/modal.js';
 import { navigate } from '../router.js';
-import { resetPassword } from '../services/auth.js';
+import { resetPassword, cekTokenReset } from '../services/auth.js';
 
 let modalMode = null;
 let formError = '';
@@ -15,6 +15,20 @@ let submitHandler = null;
 let currentToken = '';
 let pendingPassword = '';
 let pendingConfirmation = '';
+// Status tautan: 'checking' (sedang dicek ke BE) | 'valid' | 'invalid'
+let tokenStatus = 'checking';
+let isMounted = false;
+
+const PESAN_TAUTAN_TIDAK_VALID = 'Tautan tidak valid, sudah dipakai atau kedaluwarsa';
+
+function renderTokenAlert() {
+  return html`
+    <div role="alert" id="reset-password-token-alert" class="${alertClass({ variant: 'destructive', className: 'fixed left-1/2 top-4 z-50 flex w-full max-w-md -translate-x-1/2 items-center gap-2 shadow-lg' })}">
+      ${raw(renderIcon('AlertTriangle', 'h-5 w-5 shrink-0'))}
+      <span>${PESAN_TAUTAN_TIDAK_VALID}</span>
+    </div>
+  `.toString();
+}
 
 function passwordField(id, label) {
   return html`
@@ -69,7 +83,8 @@ function renderModal() {
 export function render(ctx = {}) {
   const token = ctx.query?.token || '';
   currentToken = token;
-  const invalidToken = !token;
+  const invalidToken = !token || tokenStatus === 'invalid';
+  const checking = !invalidToken && tokenStatus === 'checking';
 
   return html`
     <main class="min-h-screen w-full bg-primary text-zinc-900">
@@ -88,10 +103,10 @@ export function render(ctx = {}) {
           </div>
 
           ${invalidToken ? html`
-            <div role="alert" class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs text-rose-700">
-              Tautan ubah password tidak valid atau sudah kedaluwarsa.
-            </div>
+            <p class="text-sm leading-6 text-zinc-500">Tautan ubah password ini tidak dapat digunakan. Silakan ajukan permintaan ubah password yang baru.</p>
             <a href="#/login" class="${buttonClass({ variant: 'default', size: 'lg' })} mt-6 h-12 w-full rounded-xl">Kembali ke Login</a>
+          ` : checking ? html`
+            <p id="reset-password-checking" class="text-sm text-zinc-500" aria-live="polite">Memeriksa tautan...</p>
           ` : html`
             <form id="reset-password-form" novalidate class="space-y-5">
               ${passwordField('reset-password-baru', 'Password Baru')}
@@ -112,14 +127,17 @@ export function render(ctx = {}) {
           `}
         </section>
       </div>
+      ${invalidToken ? raw(renderTokenAlert()) : ''}
       ${raw(renderModal())}
     </main>
   `.toString();
 }
 
-export function mount(root, ctx = {}) {
+export async function mount(root, ctx = {}) {
   currentRoot = root;
   currentToken = ctx.query?.token || '';
+  isMounted = true;
+  tokenStatus = currentToken ? 'checking' : 'invalid';
 
   clickHandler = async (event) => {
     const actionElement = event.target.closest('[data-action]');
@@ -155,7 +173,13 @@ export function mount(root, ctx = {}) {
         formError = '';
       } catch (err) {
         modalMode = null;
-        formError = err?.message || 'Gagal mengubah password.';
+        if (err?.code === 'TAUTAN_TIDAK_VALID') {
+          // Tautan keburu dipakai/kedaluwarsa saat submit: tampilkan alert yang sama
+          tokenStatus = 'invalid';
+          formError = '';
+        } else {
+          formError = err?.message || 'Gagal mengubah password.';
+        }
       }
       root.innerHTML = render(ctx);
       return;
@@ -192,6 +216,23 @@ export function mount(root, ctx = {}) {
 
   root.addEventListener('click', clickHandler);
   root.addEventListener('submit', submitHandler);
+
+  // Cek token ke BE (tanpa mengonsumsinya) begitu halaman dibuka.
+  if (currentToken) {
+    const tokenYangDicek = currentToken;
+    try {
+      await cekTokenReset({ token: tokenYangDicek });
+      tokenStatus = 'valid';
+    } catch (err) {
+      // 400/TAUTAN_TIDAK_VALID = tautan memang tidak bisa dipakai.
+      // Galat lain (jaringan/server) tidak membuktikan tautan rusak: biarkan form tampil,
+      // BE tetap memvalidasi ulang saat submit.
+      tokenStatus = err?.code === 'TAUTAN_TIDAK_VALID' || err?.statusCode === 400 ? 'invalid' : 'valid';
+    }
+    // Abaikan hasil jika user sudah pindah halaman / token berubah saat menunggu
+    if (!isMounted || currentRoot !== root || currentToken !== tokenYangDicek) return;
+  }
+  root.innerHTML = render(ctx);
 }
 
 export function unmount() {
@@ -205,4 +246,6 @@ export function unmount() {
   currentToken = '';
   pendingPassword = '';
   pendingConfirmation = '';
+  tokenStatus = 'checking';
+  isMounted = false;
 }
