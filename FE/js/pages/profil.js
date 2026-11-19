@@ -235,7 +235,7 @@ export function render(ctx = {}) {
   const waDisplay = formatWaDisplay(user.noWhatsapp || user.no_whatsapp);
 
   return `
-    <section class="mx-auto w-full max-w-[1200px] pb-10">
+    <section class="w-full pb-10">
       <!-- Banner Header -->
       <div class="relative h-36 overflow-visible rounded-[24px] bg-gradient-to-br from-blue-700 via-primary to-blue-950 sm:h-40">
         <span class="absolute -right-4 -top-8 h-28 w-28 rounded-full bg-white/10"></span>
