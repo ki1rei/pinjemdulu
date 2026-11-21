@@ -3,10 +3,10 @@
 import { getInitials } from '../lib/navigation.js';
 import { ROLE_LABEL } from '../lib/navigation.js';
 import { escapeHtml } from '../ui/html.js';
-import { renderIcon } from '../ui/icons.js';
+import { renderIcon, renderWhatsappFlag } from '../ui/icons.js';
 import { ROLES } from '../lib/constants.js';
 import { renderModal as renderModalComponent } from '../ui/modal.js';
-import { ubahPassword, ubahWhatsapp } from '../services/auth.js';
+import { ubahPassword, ubahWhatsapp, cekPassword } from '../services/auth.js';
 import { renderOrganisasiLogo } from '../ui/organisasi-badge.js';
 
 let rootElement = null;
@@ -80,7 +80,7 @@ function renderModals(user) {
       title: 'Ubah Password berhasil!',
       description: 'Anda telah berhasil merubah password',
       variant: 'success',
-      actions: [{ label: 'Kembali', action: 'close-modal', className: 'w-full rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90' }],
+      actions: [{ label: 'Kembali', action: 'close-modal', className: 'w-full rounded-xl bg-primary text-primary-foreground button-hover-soft-neutral' }],
     }).toString();
   }
 
@@ -92,8 +92,8 @@ function renderModals(user) {
       description: 'Periksa kembali data yang akan anda kirim',
       variant: 'send',
       actions: [
-        { label: 'Kembali', action: 'back-password-form', variant: 'outline', className: 'w-1/2 rounded-xl' },
-        { label: 'Kirim', action: 'confirm-password', className: 'w-1/2 rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90' },
+        { label: 'Kembali', action: 'back-password-form', variant: 'outline', className: 'w-1/2 rounded-xl button-hover-soft-neutral' },
+        { label: 'Kirim', action: 'confirm-password', className: 'w-1/2 rounded-xl bg-primary text-primary-foreground button-hover-soft-primary' },
       ],
     }).toString();
   }
@@ -106,8 +106,8 @@ function renderModals(user) {
       description: 'Apakah anda yakin ingin batal mengubah password ?',
       variant: 'error',
       actions: [
-        { label: 'Kembali', action: 'back-password-form', variant: 'outline', className: 'w-1/2 rounded-xl' },
-        { label: 'Batalkan', action: 'close-modal', className: 'w-1/2 rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90' },
+        { label: 'Kembali', action: 'back-password-form', variant: 'outline', className: 'w-1/2 rounded-xl button-hover-soft-neutral' },
+        { label: 'Batalkan', action: 'close-modal', className: 'w-1/2 rounded-xl bg-primary text-primary-foreground button-hover-soft-red' },
       ],
     }).toString();
   }
@@ -115,8 +115,8 @@ function renderModals(user) {
   // 4. Password Form
   if (modalMode === 'password-form') {
     return `
-      <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 p-4" data-modal-backdrop>
-        <section role="dialog" aria-modal="true" aria-labelledby="password-form-title" class="w-full max-w-md rounded-2xl bg-white p-6 text-left shadow-2xl sm:p-7">
+      <div class="pd-fade-in fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/30 p-4" data-modal-backdrop>
+        <section role="dialog" aria-modal="true" aria-labelledby="password-form-title" class="pd-pop-in max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 text-left shadow-2xl sm:p-7">
           <h2 id="password-form-title" class="text-xl font-bold text-slate-900">Ubah Password</h2>
           <form id="password-form" class="mt-5 space-y-4" novalidate>
             ${passwordInput('password-lama', 'Password Saat Ini')}
@@ -125,11 +125,11 @@ function renderModals(user) {
             <p id="password-form-error" class="text-xs text-rose-600 ${passwordError ? '' : 'hidden'}">${escapeHtml(passwordError)}</p>
             <div class="flex items-center justify-end gap-3 pt-3">
               <button type="button" data-action="cancel-password-modal"
-                class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50">
+                class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-600 transition-colors button-hover-soft-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 Batal
               </button>
               <button type="submit"
-                class="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
+                class="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-sm transition-colors button-hover-soft-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 Kirim
               </button>
             </div>
@@ -144,8 +144,8 @@ function renderModals(user) {
     const rawWa = user?.noWhatsapp || user?.no_whatsapp || '';
     const cleanNum = formatNomorWa(rawWa);
     return `
-      <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/30 p-4" data-modal-backdrop>
-        <section role="dialog" aria-modal="true" aria-labelledby="wa-form-title" class="w-full max-w-md rounded-2xl bg-white p-6 text-left shadow-2xl sm:p-7">
+      <div class="pd-fade-in fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/30 p-4" data-modal-backdrop>
+        <section role="dialog" aria-modal="true" aria-labelledby="wa-form-title" class="pd-pop-in max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-6 text-left shadow-2xl sm:p-7">
           <h2 id="wa-form-title" class="text-xl font-bold text-slate-900">Edit Nomor Whatsapp</h2>
           <form id="whatsapp-form" class="mt-5 space-y-4" novalidate>
             <div>
@@ -162,22 +162,19 @@ function renderModals(user) {
                   class="h-11 flex-1 border-0 border-none bg-transparent px-3 text-sm text-slate-800 outline-none ring-0 shadow-none focus:border-0 focus:border-none focus:outline-none focus:ring-0 focus:shadow-none"
                   style="border: none !important; outline: none !important; box-shadow: none !important;"
                 />
-                <span class="pr-3 flex items-center justify-center">
-                  <svg class="h-4 w-4 shrink-0 rounded-full border border-slate-200 overflow-hidden" viewBox="0 0 24 24">
-                    <path d="M0,0 H24 V12 H0 Z" class="fill-rose-600" />
-                    <path d="M0,12 H24 V24 H0 Z" class="fill-white" />
-                  </svg>
+                <span class="flex items-center justify-center pr-4">
+                  ${renderWhatsappFlag()}
                 </span>
               </div>
               <p id="whatsapp-form-error" class="mt-1 text-xs text-rose-600 ${whatsappError ? '' : 'hidden'}">${escapeHtml(whatsappError)}</p>
             </div>
             <div class="flex items-center justify-end gap-3 pt-3">
               <button type="button" data-action="close-modal"
-                class="inline-flex h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-50">
+                class="inline-flex h-10 w-[108px] items-center justify-center rounded-xl border border-slate-200 bg-white px-6 text-sm font-semibold text-slate-600 transition-colors button-hover-soft-red focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 Batal
               </button>
               <button type="submit"
-                class="inline-flex h-10 items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
+                class="inline-flex h-10 w-[108px] items-center justify-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground shadow-sm transition-colors button-hover-soft-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 Edit
               </button>
             </div>
@@ -195,8 +192,8 @@ function renderModals(user) {
       description: 'Periksa kembali data yang akan anda kirim',
       variant: 'send',
       actions: [
-        { label: 'Kembali', action: 'back-wa-form', variant: 'outline', className: 'w-1/2 rounded-xl' },
-        { label: 'Kirim', action: 'confirm-wa', className: 'w-1/2 rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90' },
+        { label: 'Kembali', action: 'back-wa-form', variant: 'outline', className: 'w-1/2 rounded-xl button-hover-soft-neutral' },
+        { label: 'Kirim', action: 'confirm-wa', className: 'w-1/2 rounded-xl bg-primary text-primary-foreground button-hover-soft-primary' },
       ],
     }).toString();
   }
@@ -208,7 +205,7 @@ function renderModals(user) {
       title: 'Nomor Whatsapp berhasil diubah!',
       description: 'Nomor WhatsApp Anda telah berhasil diperbarui.',
       variant: 'success',
-      actions: [{ label: 'Kembali', action: 'close-modal', className: 'w-full rounded-xl bg-primary text-primary-foreground transition-colors hover:bg-primary/90' }],
+      actions: [{ label: 'Kembali', action: 'close-modal', className: 'w-full rounded-xl bg-primary text-primary-foreground button-hover-soft-neutral' }],
     }).toString();
   }
 
@@ -220,7 +217,7 @@ function passwordInput(id, label) {
     <label for="${id}" class="block text-xs font-medium text-slate-500">${escapeHtml(label)}<span class="text-rose-500">*</span>
       <span class="relative mt-1.5 block">
         <input id="${id}" name="${id}" type="password" required class="h-10 w-full rounded-xl border border-slate-200 px-3 pr-10 text-sm text-slate-800 outline-none focus:border-primary focus:ring-2 focus:ring-primary/10">
-        <button type="button" data-action="toggle-password" data-target="${id}" aria-label="Tampilkan password" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-slate-400">${renderIcon('Eye', 'h-4 w-4')}</button>
+        <button type="button" data-action="toggle-password" data-target="${id}" aria-label="Tampilkan password" class="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-zinc-100 hover:text-slate-600 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">${renderIcon('Eye', 'h-4 w-4')}</button>
       </span>
     </label>
   `;
@@ -235,7 +232,7 @@ export function render(ctx = {}) {
   const waDisplay = formatWaDisplay(user.noWhatsapp || user.no_whatsapp);
 
   return `
-    <section class="mx-auto w-full max-w-[1080px] pb-10">
+    <section class="pd-page-in w-full pb-10">
       <!-- Banner Header -->
       <div class="relative h-36 overflow-visible rounded-[24px] bg-gradient-to-br from-blue-700 via-primary to-blue-950 sm:h-40">
         <span class="absolute -right-4 -top-8 h-28 w-28 rounded-full bg-white/10"></span>
@@ -243,7 +240,7 @@ export function render(ctx = {}) {
         <span class="absolute -bottom-10 -left-7 h-28 w-28 rounded-full bg-white/10"></span>
       </div>
 
-      <div class="relative z-10 -mt-12 flex items-center gap-4 px-7 sm:px-10">
+      <div class="pd-rise-in relative z-10 -mt-12 flex items-center gap-4 px-7 sm:px-10">
         <div class="flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-4 border-white bg-blue-500 text-3xl font-semibold text-white shadow-md">
           ${escapeHtml(initials)}
         </div>
@@ -256,7 +253,7 @@ export function render(ctx = {}) {
       </div>
 
       <!-- Card 1: Identitas Pengguna -->
-      <article class="mt-9 rounded-2xl bg-white p-7 shadow-sm transition-shadow duration-200 hover:shadow-md sm:p-8">
+      <article class="pd-rise-in mt-9 rounded-2xl bg-white p-7 shadow-sm transition-shadow duration-200 hover:shadow-md sm:p-8" style="animation-delay:60ms">
         <h3 class="text-xl font-semibold tracking-tight text-slate-900">Identitas Pengguna</h3>
         <dl class="mt-5 space-y-5">
           ${field('Nama', escapeHtml(name))}
@@ -267,7 +264,7 @@ export function render(ctx = {}) {
       </article>
 
       <!-- Card 2: Informasi Akun (Password & Nomor Whatsapp) -->
-      <article class="mt-6 rounded-2xl bg-white p-7 shadow-sm transition-shadow duration-200 hover:shadow-md sm:p-8">
+      <article class="pd-rise-in mt-6 rounded-2xl bg-white p-7 shadow-sm transition-shadow duration-200 hover:shadow-md sm:p-8" style="animation-delay:120ms">
         <h3 class="text-xl font-semibold tracking-tight text-slate-900">Informasi Akun</h3>
         <dl class="mt-5 space-y-4">
           <div class="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -279,7 +276,7 @@ export function render(ctx = {}) {
               type="button"
               data-action="open-password-modal"
               aria-label="Ubah Password"
-              class="rounded-lg p-2 text-slate-400 transition hover:bg-slate-50 hover:text-slate-600"
+              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               ${renderIcon('Pencil', 'h-4 w-4')}
             </button>
@@ -293,7 +290,7 @@ export function render(ctx = {}) {
               type="button"
               data-action="open-wa-modal"
               aria-label="Edit Nomor Whatsapp"
-              class="rounded-lg p-2 text-slate-400 transition hover:bg-slate-50 hover:text-slate-600"
+              class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               ${renderIcon('Pencil', 'h-4 w-4')}
             </button>
@@ -366,7 +363,7 @@ export function mount(root, ctx = {}) {
     }
   };
 
-  submitHandler = (event) => {
+  submitHandler = async (event) => {
     if (event.target.id === 'password-form') {
       event.preventDefault();
       const form = new FormData(event.target);
@@ -375,16 +372,34 @@ export function mount(root, ctx = {}) {
       const confirmation = String(form.get('konfirmasi-password') || '').trim();
       if (!current || !next || !confirmation) {
         passwordError = 'Semua field password wajib diisi.';
-      } else if (next.length < 8) {
+        rootElement.innerHTML = render(ctx);
+        return;
+      }
+      if (next === current) {
+        passwordError = 'Password baru tidak boleh sama dengan password saat ini.';
+        rootElement.innerHTML = render(ctx);
+        return;
+      }
+      if (next.length < 8) {
         passwordError = 'Password baru minimal 8 karakter.';
-      } else if (next !== confirmation) {
+        rootElement.innerHTML = render(ctx);
+        return;
+      }
+      if (next !== confirmation) {
         passwordError = 'Konfirmasi password baru tidak cocok.';
-      } else {
+        rootElement.innerHTML = render(ctx);
+        return;
+      }
+
+      try {
+        await cekPassword({ passwordLama: current, passwordBaru: next });
         pendingPasswordLama = current;
         pendingPasswordBaru = next;
         pendingKonfirmasiPassword = confirmation;
         passwordError = '';
         modalMode = 'password-confirm';
+      } catch (err) {
+        passwordError = err?.message || 'Password baru tidak boleh sama dengan password saat ini.';
       }
       rootElement.innerHTML = render(ctx);
     } else if (event.target.id === 'whatsapp-form') {
@@ -392,8 +407,15 @@ export function mount(root, ctx = {}) {
       const form = new FormData(event.target);
       const waRaw = String(form.get('noWhatsapp') || '').trim();
       const digits = waRaw.replace(/\D/g, '').replace(/^0+/, '').replace(/^62/, '');
+      const currentWa = String(ctx.user?.noWhatsapp || ctx.user?.no_whatsapp || '');
+      const currentDigits = currentWa.replace(/\D/g, '').replace(/^0+/, '').replace(/^62/, '');
       if (!digits || digits.length < 8) {
         whatsappError = 'Nomor WhatsApp tidak valid (minimal 8 angka).';
+        rootElement.innerHTML = render(ctx);
+        return;
+      }
+      if (digits === currentDigits) {
+        whatsappError = 'Nomor WhatsApp baru tidak boleh sama dengan nomor saat ini.';
         rootElement.innerHTML = render(ctx);
         return;
       }
