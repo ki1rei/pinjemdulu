@@ -14,14 +14,6 @@ import { navigate } from '../router.js';
 import { renderModal as renderModalComponent } from '../ui/modal.js';
 import { renderOrganisasiLogo } from '../ui/organisasi-badge.js';
 
-export function formatNomorWa(num) {
-  if (!num) return '';
-  const digits = String(num).replace(/\D/g, '').replace(/^0+/, '').replace(/^62/, '');
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7, 12)}`;
-}
-
 let currentCaptchaId = '';
 let currentCaptchaText = '';
 let authView = 'login';
@@ -32,15 +24,40 @@ let pendingForgotWhatsapp = '';
 
 function renderForgotPasswordPage() {
   let modal = '';
-  if (forgotModal === 'confirm') {
+  if (forgotModal === 'whatsapp-error') {
+    modal = renderModalComponent({
+      id: 'modal-forgot-password-whatsapp-error',
+      title: 'Nomor WhatsApp tidak sesuai!',
+      description: 'Nomor WhatsApp yang Anda masukkan tidak terdaftar pada NIM tersebut.',
+      variant: 'cancel',
+      maxWidth: 'max-w-md',
+      gifSize: '9rem',
+      actions: [
+        {
+          label: 'Kembali',
+          action: 'forgot-close-whatsapp-error',
+          className: 'w-full h-12 rounded-xl transition-all duration-200 hover:brightness-110',
+        },
+      ],
+    }).toString();
+  } else if (forgotModal === 'confirm') {
     modal = renderModalComponent({
       id: 'modal-forgot-password-confirm',
       title: 'Kirim Data Ubah Password?',
-      description: 'Pastikan No Whatsapp anda aktif dan dapat dihubungi',
+      description: 'Pastikan No. WhatsApp Anda aktif dan dapat dihubungi.',
       variant: 'send',
       actions: [
-        { label: 'Kembali', action: 'forgot-back-form', variant: 'outline' },
-        { label: 'Kirim', action: 'forgot-submit-confirm', className: 'bg-primary hover:bg-primary/90 text-primary-foreground' },
+        {
+          label: 'Kembali',
+          action: 'forgot-back-form',
+          variant: 'outline',
+          className: 'flex-1 rounded-xl transition-all duration-200 hover:bg-secondary-hover hover:text-secondary-hover-foreground hover:border-secondary-hover',
+        },
+        {
+          label: 'Kirim',
+          action: 'forgot-submit-confirm',
+          className: 'flex-1 rounded-xl transition-all duration-200 hover:brightness-110',
+        },
       ],
     }).toString();
   } else if (forgotModal === 'success') {
@@ -49,30 +66,22 @@ function renderForgotPasswordPage() {
       title: 'Data Ubah Password Berhasil Dikirim!',
       description: 'Permintaan ubah password Anda berhasil dikirim. Silakan periksa WhatsApp Anda secara berkala untuk mendapatkan informasi dan melanjutkan ke tahap berikutnya.',
       variant: 'success',
-      actions: [{ label: 'Mengerti', action: 'forgot-close-success', className: 'w-full bg-primary hover:bg-primary/90 text-primary-foreground' }],
-    }).toString();
-  } else if (forgotModal === 'error-wa') {
-    modal = renderModalComponent({
-      id: 'modal-forgot-password-error',
-      title: 'Nomor whatsapp tidak sesuai!',
-      description: 'Nomor WhatsApp yang Anda masukkan tidak terdaftar pada NIM tersebut.',
-      variant: 'error',
-      actions: [{ label: 'Kembali', action: 'forgot-back-form', className: 'w-full bg-primary hover:bg-primary/90 text-primary-foreground' }],
+      actions: [{ label: 'Mengerti', action: 'forgot-close-success', className: 'w-full rounded-xl transition-all duration-200 hover:brightness-110' }],
     }).toString();
   }
 
   return html`
-    <main class="min-h-screen w-full overflow-x-hidden bg-white text-zinc-900">
-      <div class="flex min-h-screen w-full">
+    <main class="min-h-[100dvh] w-full overflow-x-hidden bg-white text-zinc-900">
+      <div class="flex min-h-[100dvh] w-full">
         <aside aria-hidden="true" class="hidden w-1/2 shrink-0 md:flex md:items-stretch lg:w-[48%]">
           <div class="flex h-full w-full flex-col bg-primary"></div>
         </aside>
-        <section class="flex min-h-screen w-full flex-1 flex-col items-center justify-start px-5 py-10 sm:px-8 md:w-1/2 md:px-12 md:py-14 lg:w-[52%] lg:px-20 lg:py-20 xl:px-28">
+        <section class="flex min-h-[100dvh] w-full flex-1 flex-col items-center justify-start px-5 py-10 sm:px-8 md:w-1/2 md:px-12 md:py-14 lg:w-[52%] lg:px-20 lg:py-20 xl:px-28">
           <div class="flex w-full max-w-xl flex-1 flex-col">
-            <a href="#/login" data-action="forgot-back-login" aria-label="PinjemDulu beranda" class="mb-10 inline-flex items-center gap-3 transition hover:opacity-90">
+            <div aria-label="Logo PinjemDulu" class="mb-10 inline-flex items-center gap-3 self-start">
               <img src="assets/img/Logo-PinjemDulu.png" alt="Logo PinjemDulu" class="h-[42px] w-[42px] shrink-0 rounded-[14px] object-contain shadow-sm sm:h-[44px] sm:w-[44px]" />
               <span class="flex items-baseline text-2xl font-extrabold tracking-tight"><span class="text-zinc-900">Pinjem</span><span class="text-primary">Dulu</span></span>
-            </a>
+            </div>
             <div class="mb-8">
               <p class="mb-2 text-sm font-medium text-zinc-500">Selamat Datang Kembali!</p>
               <h1 class="mb-2 text-3xl font-semibold leading-[1.4] tracking-[0] text-zinc-900 sm:text-[32px]">Atur Ulang Password</h1>
@@ -81,17 +90,24 @@ function renderForgotPasswordPage() {
             <form id="forgot-password-form" novalidate class="space-y-5">
               <div>
                 <label for="forgot-nim" class="${labelClass('mb-2 block text-zinc-600')}">NIM<span class="ml-0.5 text-rose-500">*</span></label>
-                <input id="forgot-nim" name="nim" type="text" inputmode="numeric" placeholder="Masukkan NIM anda" class="${inputClass('h-12 rounded-2xl px-4 py-3')}" required />
+                <input id="forgot-nim" name="nim" type="text" inputmode="numeric" value="${escapeHtml(pendingForgotNim)}" placeholder="Masukkan NIM anda" class="${inputClass('h-12 rounded-2xl px-4 py-3')}" required />
                 <p id="forgot-nim-error" class="mt-1 text-xs text-rose-600 ${forgotError ? '' : 'hidden'}">${escapeHtml(forgotError)}</p>
               </div>
               <div>
-                <label for="forgot-whatsapp" class="${labelClass('mb-2 block text-zinc-600')}">No.Whatsapp<span class="ml-0.5 text-rose-500">*</span></label>
-                <input id="forgot-whatsapp" name="whatsapp" type="tel" inputmode="tel" placeholder="812-3456-7890" class="${inputClass('h-12 rounded-2xl px-4 py-3')}" required />
+                <label for="forgot-whatsapp" class="${labelClass('mb-2 block text-zinc-600')}">No. Whatsapp<span class="ml-0.5 text-rose-500">*</span></label>
+                <input id="forgot-whatsapp" name="whatsapp" type="tel" inputmode="tel" value="${escapeHtml(pendingForgotWhatsapp)}" placeholder="Masukkan nomor whatsapp yang bisa dihubungi" class="${inputClass('h-12 rounded-2xl px-4 py-3')}" required />
                 <p id="forgot-whatsapp-error" class="mt-1 text-xs text-rose-600 hidden"></p>
               </div>
-              <div class="flex items-center justify-end gap-3 pt-3">
-                <button type="button" data-action="forgot-back-login" class="inline-flex h-11 items-center justify-center rounded-xl px-6 text-sm font-medium text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-800 border w-full">Batal</button>
-                <button type="submit" class="inline-flex h-11 items-center justify-center rounded-xl bg-primary px-8 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 w-full">Kirim</button>
+              <div class="flex w-full items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  data-action="forgot-back-login"
+                  class="${buttonClass({ variant: 'outline', size: 'lg' })} min-w-0 flex-1"
+                >Batal</button>
+                <button
+                  type="submit"
+                  class="${buttonClass({ variant: 'default', size: 'lg' })} h-12 min-w-0 flex-1 rounded-2xl transition-all duration-200 hover:brightness-110"
+                >Kirim</button>
               </div>
             </form>
             <footer class="mt-auto py-4 text-center text-xs text-zinc-400">&copy; 2026. PinjemDulu - All Rights Reserved.</footer>
@@ -118,18 +134,18 @@ export function render(ctx = {}) {
   }
 
   return html`
-    <main class="min-h-screen w-full overflow-x-hidden bg-white text-zinc-900">
-      <div class="flex min-h-screen w-full">
+    <main class="min-h-[100dvh] w-full overflow-x-hidden bg-white text-zinc-900">
+      <div class="flex min-h-[100dvh] w-full">
         <!-- Panel kiri: BIRU TUA POLOS. Hidden di layar < md -->
         <aside aria-hidden="true" class="hidden w-1/2 shrink-0 md:flex md:items-stretch lg:w-[48%]">
           <div class="flex h-full w-full flex-col bg-primary"></div>
         </aside>
 
         <!-- Panel kanan: form login + logo + quick login + copyright -->
-        <section class="flex min-h-screen w-full flex-1 flex-col items-center justify-start px-5 py-10 sm:px-8 md:w-1/2 md:px-12 md:py-14 lg:w-[52%] lg:px-20 lg:py-20 xl:px-28">
+        <section class="flex min-h-[100dvh] w-full flex-1 flex-col items-center justify-start px-5 py-10 sm:px-8 md:w-1/2 md:px-12 md:py-14 lg:w-[52%] lg:px-20 lg:py-20 xl:px-28">
           <div class="flex w-full max-w-xl flex-1 flex-col">
             <!-- Logo Brand -->
-            <a href="#/login" aria-label="PinjemDulu beranda" class="mb-10 inline-flex items-center gap-3 self-start transition hover:opacity-90">
+            <div aria-label="Logo PinjemDulu" class="mb-10 inline-flex items-center gap-3 self-start">
               <img
                 src="assets/img/Logo-PinjemDulu.png"
                 alt="Logo PinjemDulu"
@@ -138,7 +154,7 @@ export function render(ctx = {}) {
               <span class="flex items-baseline text-2xl font-extrabold tracking-tight">
                 <span class="text-zinc-900">Pinjem</span><span class="text-primary">Dulu</span>
               </span>
-            </a>
+            </div>
 
             <!-- Header Sapaan -->
             <div class="mb-8">
@@ -201,7 +217,7 @@ export function render(ctx = {}) {
                     data-action="toggle-password"
                     aria-label="Tampilkan kata sandi"
                     aria-pressed="false"
-                    class="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-zinc-400 hover:text-zinc-600 transition"
+                    class="absolute right-3 top-1/2 -translate-y-1/2 rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-600"
                   >
                     <span id="pwd-icon-show">${renderIcon('Eye', 'h-5 w-5')}</span>
                     <span id="pwd-icon-hide" class="hidden">${renderIcon('EyeOff', 'h-5 w-5')}</span>
@@ -218,18 +234,19 @@ export function render(ctx = {}) {
                 <div class="mb-2 flex items-center gap-3">
                   <div
                     id="captcha-text-display"
-                    class="flex h-12 flex-1 items-center justify-center rounded-2xl border border-input bg-zinc-100 font-mono text-xl font-bold tracking-[0.3em] text-zinc-800 select-none"
+                    class="flex h-12 flex-1 items-center justify-center rounded-2xl border border-input bg-zinc-100 font-mono text-lg font-bold tracking-[0.25em] text-zinc-800 select-none sm:text-xl sm:tracking-[0.3em]"
                   >
                     ${currentCaptchaText}
                   </div>
                   <button
                     type="button"
+                    id="btn-refresh-captcha"
                     data-action="refresh-captcha"
                     aria-label="Dapatkan captcha baru"
                     title="Dapatkan captcha baru"
                     class="${buttonClass({ variant: 'outline', size: 'icon' })} h-12 w-12 rounded-2xl shrink-0"
                   >
-                    ${renderIcon('RefreshCw', 'h-5 w-5')}
+                    <span id="captcha-refresh-icon" class="inline-flex">${renderIcon('RefreshCw', 'h-5 w-5')}</span>
                   </button>
                 </div>
                 <div>
@@ -245,7 +262,7 @@ export function render(ctx = {}) {
                 </div>
               </div>
 
-              <button type="button" data-action="forgot-password" class="mt-2 text-left text-xs font-medium text-primary hover:underline">
+              <button type="button" data-action="forgot-password" class="mt-2 text-left text-xs font-medium text-primary transition-colors hover:text-primary/80 hover:underline">
                 Lupa Password?
               </button>
 
@@ -253,7 +270,7 @@ export function render(ctx = {}) {
               <button
                 id="btn-login-submit"
                 type="submit"
-                class="${buttonClass({ variant: 'default', size: 'lg' })} w-full rounded-2xl h-12"
+                class="${buttonClass({ variant: 'default', size: 'lg' })} w-full rounded-2xl h-12 transition-all duration-200 hover:brightness-110"
               >
                 <span>Masuk</span>
               </button>
@@ -292,8 +309,9 @@ export function mount(root) {
         forgotModal = null;
         forgotError = '';
         root.innerHTML = render();
-      } else if (action === 'forgot-back-form') {
+      } else if (action === 'forgot-back-form' || action === 'forgot-close-whatsapp-error') {
         forgotModal = null;
+        forgotError = '';
         root.innerHTML = render();
       } else if (action === 'forgot-submit-confirm') {
         try {
@@ -301,21 +319,22 @@ export function mount(root) {
           forgotModal = 'success';
           forgotError = '';
         } catch (err) {
-          const errMsg = String(err?.message || '');
-          if (err?.code === 'WHATSAPP_TIDAK_SESUAI' || errMsg.toLowerCase().includes('whatsapp') || errMsg.toLowerCase().includes('tidak terdaftar')) {
-            forgotModal = 'error-wa';
+          const errorDetails = [
+            err?.message,
+            err?.data?.message,
+            err?.code,
+            ...Object.entries(err?.errors || {}).flatMap(([key, value]) => [key, value]),
+          ].filter(Boolean).join(' ');
+          const whatsappError = /whatsapp|nomor\s*wa|no[_ -]?wa/i.test(errorDetails);
+          if (whatsappError) {
+            forgotModal = 'whatsapp-error';
             forgotError = '';
           } else {
             forgotModal = null;
-            forgotError = errMsg || 'Gagal mengirim permintaan ubah password.';
+            forgotError = err?.message || 'Gagal mengirim permintaan ubah password.';
           }
         }
         root.innerHTML = render();
-      }
-    });
-    root.addEventListener('input', (event) => {
-      if (event.target.id === 'forgot-whatsapp') {
-        event.target.value = formatNomorWa(event.target.value);
       }
     });
     root.addEventListener('submit', (event) => {
@@ -324,9 +343,7 @@ export function mount(root) {
 
       const formData = new FormData(event.target);
       const nim = String(formData.get('nim') || '').trim();
-      const rawWa = String(formData.get('whatsapp') || '').trim();
-      const waDigits = rawWa.replace(/\D/g, '').replace(/^0+/, '').replace(/^62/, '');
-      const whatsapp = waDigits ? (waDigits.startsWith('0') ? waDigits : '0' + waDigits) : '';
+      const whatsapp = String(formData.get('whatsapp') || '').trim();
       const nimError = root.querySelector('#forgot-nim-error');
       const whatsappError = root.querySelector('#forgot-whatsapp-error');
       const nimInput = root.querySelector('#forgot-nim');
@@ -367,9 +384,21 @@ export function mount(root) {
         hasError = true;
       }
 
+      const whatsappDigits = whatsapp.replace(/\D/g, '');
+      const normalizedWhatsappDigits = whatsappDigits.startsWith('62')
+        ? whatsappDigits.slice(2)
+        : whatsappDigits.replace(/^0+/, '');
+
       if (!whatsapp) {
         if (whatsappError) {
           whatsappError.textContent = 'Nomor WhatsApp wajib diisi.';
+          whatsappError.classList.remove('hidden');
+        }
+        whatsappInput?.setAttribute('aria-invalid', 'true');
+        hasError = true;
+      } else if (normalizedWhatsappDigits.length < 10) {
+        if (whatsappError) {
+          whatsappError.textContent = 'Nomor WhatsApp minimal 10 angka.';
           whatsappError.classList.remove('hidden');
         }
         whatsappInput?.setAttribute('aria-invalid', 'true');
@@ -380,6 +409,9 @@ export function mount(root) {
       pendingForgotNim = nim;
       pendingForgotWhatsapp = whatsapp;
       forgotError = '';
+
+      // Selalu tampilkan konfirmasi terlebih dahulu. Validasi format dan kecocokan
+      // nomor WhatsApp dilakukan setelah pengguna menekan Kirim pada modal konfirmasi.
       forgotModal = 'confirm';
       root.innerHTML = render();
     });
@@ -399,6 +431,7 @@ export function mount(root) {
   const passwordError = root.querySelector('#password-error');
   const captchaError = root.querySelector('#captcha-error');
   const submitBtn = root.querySelector('#btn-login-submit');
+  const refreshCaptchaIcon = root.querySelector('#captcha-refresh-icon');
   const togglePwdBtn = root.querySelector('[data-action="toggle-password"]');
   const pwdIconShow = root.querySelector('#pwd-icon-show');
   const pwdIconHide = root.querySelector('#pwd-icon-hide');
@@ -437,6 +470,11 @@ export function mount(root) {
     if (captchaIdInput) captchaIdInput.value = c.captchaId;
     if (captchaDisplay) captchaDisplay.textContent = c.text;
     if (captchaAnswerInput) captchaAnswerInput.value = '';
+    if (refreshCaptchaIcon) {
+      refreshCaptchaIcon.classList.remove('pd-spin-once');
+      void refreshCaptchaIcon.offsetWidth;
+      refreshCaptchaIcon.classList.add('pd-spin-once');
+    }
   }
 
   async function performLogin({ nim, email, password, captchaId, captchaAnswer }) {
