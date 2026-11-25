@@ -284,7 +284,7 @@ export function render(ctx = {}) {
           <div class="flex items-center justify-between">
             <div class="grid gap-1.5 sm:grid-cols-[230px_1fr] sm:items-center">
               <dt class="text-base font-medium text-slate-500">Nomor Whatsapp</dt>
-              <dd class="text-base font-medium text-slate-800">${escapeHtml(waDisplay)}</dd>
+              <dd class="text-base font-medium text-slate-800" data-wa-display>${escapeHtml(waDisplay)}</dd>
             </div>
             <button
               type="button"
@@ -298,13 +298,25 @@ export function render(ctx = {}) {
         </dl>
       </article>
 
-      ${renderModals(user)}
+      <div data-modal-host>${renderModals(user)}</div>
     </section>
   `;
 }
 
 export function mount(root, ctx = {}) {
   rootElement = root;
+
+  // Perbarui hanya host modal agar konten halaman tidak dibangun ulang
+  // (mencegah animasi pd-page-in/pd-rise-in diputar ulang sehingga tidak ada kedip).
+  const syncModals = ({ syncWaDisplay = false } = {}) => {
+    const host = rootElement?.querySelector('[data-modal-host]');
+    if (host) host.innerHTML = renderModals(ctx.user);
+    if (syncWaDisplay) {
+      const display = rootElement?.querySelector('[data-wa-display]');
+      if (display) display.textContent = formatWaDisplay(ctx.user?.noWhatsapp || ctx.user?.no_whatsapp);
+    }
+  };
+
   clickHandler = async (event) => {
     const actionEl = event.target.closest('[data-action]');
     if (!actionEl) return;
@@ -313,13 +325,13 @@ export function mount(root, ctx = {}) {
     if (action === 'open-password-modal') {
       modalMode = 'password-form';
       passwordError = '';
-      rootElement.innerHTML = render(ctx);
+      syncModals();
     } else if (action === 'cancel-password-modal') {
       modalMode = 'password-cancel';
-      rootElement.innerHTML = render(ctx);
+      syncModals();
     } else if (action === 'back-password-form') {
       modalMode = 'password-form';
-      rootElement.innerHTML = render(ctx);
+      syncModals();
     } else if (action === 'confirm-password') {
       try {
         await ubahPassword({
@@ -333,14 +345,14 @@ export function mount(root, ctx = {}) {
         modalMode = 'password-form';
         passwordError = err?.message || 'Gagal mengubah password.';
       }
-      rootElement.innerHTML = render(ctx);
+      syncModals();
     } else if (action === 'open-wa-modal') {
       modalMode = 'wa-form';
       whatsappError = '';
-      rootElement.innerHTML = render(ctx);
+      syncModals();
     } else if (action === 'back-wa-form') {
       modalMode = 'wa-form';
-      rootElement.innerHTML = render(ctx);
+      syncModals();
     } else if (action === 'confirm-wa') {
       try {
         await ubahWhatsapp({ noWhatsapp: pendingWhatsapp });
@@ -351,12 +363,12 @@ export function mount(root, ctx = {}) {
         modalMode = 'wa-form';
         whatsappError = err?.message || 'Gagal mengubah nomor WhatsApp.';
       }
-      rootElement.innerHTML = render(ctx);
+      syncModals({ syncWaDisplay: true });
     } else if (action === 'close-modal' || action === 'close-password-modal') {
       modalMode = null;
       passwordError = '';
       whatsappError = '';
-      rootElement.innerHTML = render(ctx);
+      syncModals();
     } else if (action === 'toggle-password') {
       const input = rootElement.querySelector(`#${actionEl.dataset.target}`);
       if (input) input.type = input.type === 'password' ? 'text' : 'password';
@@ -372,22 +384,22 @@ export function mount(root, ctx = {}) {
       const confirmation = String(form.get('konfirmasi-password') || '').trim();
       if (!current || !next || !confirmation) {
         passwordError = 'Semua field password wajib diisi.';
-        rootElement.innerHTML = render(ctx);
+        syncModals();
         return;
       }
       if (next === current) {
         passwordError = 'Password baru tidak boleh sama dengan password saat ini.';
-        rootElement.innerHTML = render(ctx);
+        syncModals();
         return;
       }
       if (next.length < 8) {
         passwordError = 'Password baru minimal 8 karakter.';
-        rootElement.innerHTML = render(ctx);
+        syncModals();
         return;
       }
       if (next !== confirmation) {
         passwordError = 'Konfirmasi password baru tidak cocok.';
-        rootElement.innerHTML = render(ctx);
+        syncModals();
         return;
       }
 
@@ -401,7 +413,7 @@ export function mount(root, ctx = {}) {
       } catch (err) {
         passwordError = err?.message || 'Password baru tidak boleh sama dengan password saat ini.';
       }
-      rootElement.innerHTML = render(ctx);
+      syncModals();
     } else if (event.target.id === 'whatsapp-form') {
       event.preventDefault();
       const form = new FormData(event.target);
@@ -411,18 +423,18 @@ export function mount(root, ctx = {}) {
       const currentDigits = currentWa.replace(/\D/g, '').replace(/^0+/, '').replace(/^62/, '');
       if (!digits || digits.length < 8) {
         whatsappError = 'Nomor WhatsApp tidak valid (minimal 8 angka).';
-        rootElement.innerHTML = render(ctx);
+        syncModals();
         return;
       }
       if (digits === currentDigits) {
         whatsappError = 'Nomor WhatsApp baru tidak boleh sama dengan nomor saat ini.';
-        rootElement.innerHTML = render(ctx);
+        syncModals();
         return;
       }
       pendingWhatsapp = `+62 ${formatNomorWa(digits)}`;
       whatsappError = '';
       modalMode = 'wa-confirm';
-      rootElement.innerHTML = render(ctx);
+      syncModals();
     }
   };
 
